@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Playground</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
+  <style>
+    *{
+      margin:0;
+      padding:0;
+      box-sizing:border-box;
+    }
+
+    body{
+      background:#050816;
+      color:white;
+      overflow-x:hidden;
+      font-family:'Inter',sans-serif;
+      min-height:100vh;
+    }
+
+    /* ===== 背景 ===== */
+
+    .bg{
+      position:fixed;
+      inset:0;
+      background:
+      radial-gradient(circle at top left,#1b2a52 0%,transparent 30%),
+      radial-gradient(circle at bottom right,#00f0ff22 0%,transparent 35%),
+      #050816;
+      z-index:-3;
+    }
+
+    /* グリッド */
+
+    .grid{
+      position:fixed;
+      inset:0;
+      background-image:
+      linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+      background-size:40px 40px;
+      mask-image:linear-gradient(to bottom, rgba(0,0,0,1), rgba(0,0,0,0.2));
+      z-index:-2;
+    }
+
+    /* 浮遊する光 */
+
+    .glow{
+      position:absolute;
+      border-radius:50%;
+      filter:blur(100px);
+      opacity:0.5;
+      animation:float 8s ease-in-out infinite;
+    }
+
+    .g1{
+      width:300px;
+      height:300px;
+      background:#00ffff;
+      top:10%;
+      left:10%;
+    }
+
+    .g2{
+      width:250px;
+      height:250px;
+      background:#7b61ff;
+      bottom:10%;
+      right:10%;
+      animation-delay:2s;
+    }
+
+    @keyframes float{
+      0%,100%{
+        transform:translateY(0px);
+      }
+      50%{
+        transform:translateY(-30px);
+      }
+    }
+
+    /* ===== HERO ===== */
+
+    .hero{
+      min-height:100vh;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+      text-align:center;
+      padding:40px 20px;
+      position:relative;
+    }
+
+    .badge{
+      border:1px solid #00f0ff55;
+      padding:10px 20px;
+      border-radius:999px;
+      background:#00f0ff10;
+      color:#8efcff;
+      margin-bottom:25px;
+      backdrop-filter:blur(12px);
+      animation:fadeUp 1s ease;
+    }
+
+    .title{
+      font-size:clamp(3rem,8vw,7rem);
+      font-family:'Orbitron',sans-serif;
+      font-weight:700;
+      line-height:1;
+      margin-bottom:25px;
+
+      background:linear-gradient(
+      90deg,
+      #ffffff,
+      #00ffff,
+      #7b61ff
+      );
+
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+
+      animation:glitch 5s infinite;
+    }
+
+    @keyframes glitch{
+      0%,100%{
+        text-shadow:none;
+      }
+      20%{
+        text-shadow:2px 0 #00ffff;
+      }
+      40%{
+        text-shadow:-2px 0 #7b61ff;
+      }
+      60%{
+        text-shadow:3px 0 #00ffff;
+      }
+    }
+
+    .subtitle{
+      max-width:700px;
+      color:#c8d3f5;
+      font-size:1.2rem;
+      line-height:1.8;
+      margin-bottom:50px;
+      animation:fadeUp 1.4s ease;
+    }
+
+    @keyframes fadeUp{
+      from{
+        opacity:0;
+        transform:translateY(30px);
+      }
+      to{
+        opacity:1;
+        transform:translateY(0);
+      }
+    }
+
+    /* ===== ボタン ===== */
+
+    .buttons{
+      display:flex;
+      gap:20px;
+      flex-wrap:wrap;
+      justify-content:center;
+      margin-bottom:80px;
+    }
+
+    .btn{
+      padding:18px 34px;
+      border-radius:16px;
+      border:1px solid #ffffff20;
+      text-decoration:none;
+      color:white;
+      font-weight:600;
+      transition:0.3s;
+      position:relative;
+      overflow:hidden;
+      backdrop-filter:blur(12px);
+      background:#ffffff08;
+    }
+
+    .btn::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:linear-gradient(
+      90deg,
+      transparent,
+      rgba(255,255,255,0.2),
+      transparent
+      );
+      transform:translateX(-100%);
+      transition:0.6s;
+    }
+
+    .btn:hover::before{
+      transform:translateX(100%);
+    }
+
+    .btn:hover{
+      transform:translateY(-5px) scale(1.03);
+      border-color:#00ffff88;
+      box-shadow:
+      0 0 20px #00ffff55,
+      0 0 50px #00ffff22;
+    }
+
+    .primary{
+      background:linear-gradient(
+      135deg,
+      #00d9ff,
+      #7b61ff
+      );
+    }
+
+    /* ===== カード ===== */
+
+    .cards{
+      width:100%;
+      max-width:1200px;
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+      gap:30px;
+      margin-top:20px;
+    }
+
+    .card{
+      position:relative;
+      padding:35px;
+      border-radius:28px;
+      background:rgba(255,255,255,0.05);
+      border:1px solid rgba(255,255,255,0.1);
+      backdrop-filter:blur(20px);
+
+      transition:0.4s;
+      overflow:hidden;
+    }
+
+    .card::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:linear-gradient(
+      135deg,
+      transparent,
+      rgba(255,255,255,0.08),
+      transparent
+      );
+      opacity:0;
+      transition:0.4s;
+    }
+
+    .card:hover::before{
+      opacity:1;
+    }
+
+    .card:hover{
+      transform:
+      translateY(-10px)
+      rotateX(5deg)
+      rotateY(-5deg);
+
+      box-shadow:
+      0 10px 40px rgba(0,255,255,0.15);
+    }
+
+    .icon{
+      font-size:3rem;
+      margin-bottom:20px;
+    }
+
+    .card h3{
+      font-size:1.5rem;
+      margin-bottom:15px;
+      font-family:'Orbitron',sans-serif;
+    }
+
+    .card p{
+      color:#b7c3ec;
+      line-height:1.8;
+    }
+
+    /* ===== スクロール ===== */
+
+    .scroll{
+      position:absolute;
+      bottom:30px;
+      color:#7e8bb6;
+      font-size:0.9rem;
+      letter-spacing:2px;
+      animation:bounce 2s infinite;
+    }
+
+    @keyframes bounce{
+      0%,100%{
+        transform:translateY(0);
+      }
+      50%{
+        transform:translateY(10px);
+      }
+    }
+
+    /* ===== レスポンシブ ===== */
+
+    @media(max-width:768px){
+
+      .title{
+        font-size:3rem;
+      }
+
+      .subtitle{
+        font-size:1rem;
+      }
+
+      .buttons{
+        flex-direction:column;
+        width:100%;
+      }
+
+      .btn{
+        width:100%;
+        text-align:center;
+      }
+    }
+
+  </style>
+</head>
+<body>
+
+  <div class="bg"></div>
+  <div class="grid"></div>
+
+  <div class="glow g1"></div>
+  <div class="glow g2"></div>
+
+  <section class="hero">
+
+    <div class="badge">
+      🚀 AI × GAME × EDUCATION
+    </div>
+
+    <h1 class="title">
+      AI PLAYGROUND
+    </h1>
+
+    <p class="subtitle">
+      AIを使ってゲームや教育コンテンツを制作する
+      実験型クリエイティブポータル。<br>
+      遊びながら学べる未来をつくる。
+    </p>
+
+    <div class="buttons">
+      <a href="#" class="btn primary">
+        ▶ ENTER LAB
+      </a>
+
+      <a href="#" class="btn">
+        GitHub
+      </a>
+    </div>
+
+    <div class="cards">
+
+      <a href="games/index.html" class="card">
+        <div class="icon">🎮</div>
+        <h3>AI GAMES</h3>
+        <p>
+          AI RPG、生成ダンジョン、
+          会話型NPCなどの実験作品。
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="icon">🧠</div>
+        <h3>AI EDUCATION</h3>
+        <p>
+          英語学習、数学クイズ、
+          AI先生などの教育コンテンツ。
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="icon">⚡</div>
+        <h3>DEV BLOG</h3>
+        <p>
+          制作ログ、技術記事、
+          AI開発の試行錯誤を公開。
+        </p>
+      </div>
+
+    </div>
+
+    <div class="scroll">
+      SCROLL DOWN
+    </div>
+
+  </section>
+
+</body>
+</html>
