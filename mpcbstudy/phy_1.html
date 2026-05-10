@@ -1,0 +1,964 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>物理基礎：等加速度／落体／相対速度（並べ替え学習）</title>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+:root{--bg:#0b1020;--text:#e9ecff;--muted:#aab2dd;--accent:#7c5cff;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444}
+*{box-sizing:border-box}
+body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans JP","Hiragino Kaku Gothic ProN",Meiryo,sans-serif;background:radial-gradient(1200px 800px at 20% 10%,#1a2450 0%,var(--bg) 55%),var(--bg);color:var(--text)}
+header{padding:20px 18px 8px;max-width:1200px;margin:0 auto}
+h1{margin:0 0 6px;font-size:20px;letter-spacing:.3px}
+.sub{color:var(--muted);font-size:13px;line-height:1.7}
+main{max-width:1200px;margin:0 auto;padding:12px 18px 28px;display:grid;grid-template-columns:360px 1fr;gap:16px}
+@media(max-width:980px){main{grid-template-columns:1fr}}
+.panel{background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.08);border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,.35);overflow:hidden}
+.panel h2{margin:0;padding:14px 14px 10px;font-size:14px;color:#dfe4ff}
+.panel .body{padding:0 14px 14px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+label{font-size:12px;color:var(--muted)}
+select,button{border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.20);color:var(--text);padding:10px 10px;font-size:13px}
+select{width:100%}
+button{cursor:pointer;transition:.15s transform,.15s border}
+button:hover{transform:translateY(-1px);border-color:rgba(255,255,255,.22)}
+.primary{background:linear-gradient(135deg,rgba(124,92,255,.95),rgba(124,92,255,.55));border-color:rgba(124,92,255,.8)}
+.ghost{background:rgba(0,0,0,.10)}
+.prompt{padding:14px;border-radius:14px;background:rgba(0,0,0,.22);border:1px solid rgba(255,255,255,.08);line-height:1.7;font-size:14px;white-space:pre-wrap}
+.board{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:14px}
+@media(max-width:980px){.board{grid-template-columns:1fr}}
+.zone{background:rgba(0,0,0,.18);border:1px dashed rgba(255,255,255,.18);border-radius:18px;min-height:260px;padding:12px}
+.zoneHeader{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.zoneTitle{font-size:13px;color:#dfe4ff}
+.zoneHint{font-size:12px;color:var(--muted)}
+.cardItem{user-select:none;background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.03));border:1px solid rgba(255,255,255,.10);border-radius:16px;padding:10px 10px 10px 12px;margin:10px 0;display:flex;gap:10px;align-items:flex-start;cursor:grab}
+.cardItem:active{cursor:grabbing}
+.badge{min-width:34px;height:22px;border-radius:999px;background:rgba(124,92,255,.20);border:1px solid rgba(124,92,255,.35);display:flex;align-items:center;justify-content:center;font-size:11px;color:#d9d2ff;margin-top:2px;flex:0 0 auto}
+.cardText{font-size:13px;line-height:1.6;color:#eef1ff}
+.cardItem.invalid{border-color:rgba(239,68,68,.7);box-shadow:0 0 0 1px rgba(239,68,68,.35) inset}
+.cardItem.valid{border-color:rgba(34,197,94,.65);box-shadow:0 0 0 1px rgba(34,197,94,.25) inset}
+.dropHover{outline:2px solid rgba(124,92,255,.55);outline-offset:2px}
+.status{padding:12px 14px;border-top:1px solid rgba(255,255,255,.08);display:flex;gap:10px;align-items:flex-start}
+.pill{padding:6px 10px;border-radius:999px;font-size:12px;border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.20);color:var(--muted);white-space:nowrap}
+.pill.ok{border-color:rgba(34,197,94,.55);color:#bff3d1}
+.pill.ng{border-color:rgba(239,68,68,.55);color:#ffd0d0}
+.pill.warn{border-color:rgba(245,158,11,.55);color:#ffe7c2}
+.msg{font-size:13px;line-height:1.6;color:#eef1ff;flex:1}
+.solution,.guide{margin-top:10px;padding:12px;border-radius:14px;border:1px solid rgba(255,255,255,.08)}
+.solution{background:rgba(0,0,0,.18)}
+.guide{background:rgba(124,92,255,.10);border-color:rgba(124,92,255,.24)}
+.solution h3,.guide h3{margin:0 0 8px;font-size:13px;color:#efeaff}
+.solution ol,.guide ul{margin:8px 0 0 20px;padding:0}
+.solution li,.guide li{margin:6px 0;line-height:1.65;color:#eef1ff;font-size:13px}
+.guide .mini{margin-top:10px;color:var(--muted);font-size:12px;line-height:1.6}
+.footer{max-width:1200px;margin:0 auto;padding:0 18px 22px;color:var(--muted);font-size:12px;line-height:1.6}
+.mjx-container{margin:0 .08em}
+.fixedBack{position:fixed;top:calc(12px + env(safe-area-inset-top));left:calc(12px + env(safe-area-inset-left));z-index:9999;display:inline-flex;align-items:center;gap:8px;padding:10px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(0,0,0,.45);color:var(--text);text-decoration:none;font-weight:800;font-size:13px;letter-spacing:.02em;backdrop-filter:blur(10px) saturate(1.2);-webkit-backdrop-filter:blur(10px) saturate(1.2);box-shadow:0 10px 24px rgba(0,0,0,.35)}
+.fixedBack:hover{transform:translateY(-1px);background:rgba(0,0,0,.55);border-color:rgba(255,255,255,.26)}
+#nextWrap{display:flex;align-items:center}
+a.nextBtn{display:inline-flex;align-items:center;justify-content:center;border-radius:12px;border:1px solid rgba(124,92,255,.8);background:linear-gradient(135deg,rgba(124,92,255,.95),rgba(124,92,255,.55));color:#e9ecff;padding:10px 12px;font-size:13px;text-decoration:none;white-space:nowrap}
+/* =========================
+ 物理：絵解説UI
+========================= */
+
+.diagram{
+ margin:0 0 14px;
+ padding:14px;
+ border-radius:16px;
+ background:rgba(255,255,255,.04);
+ border:1px solid rgba(255,255,255,.08);
+ overflow:auto;
+}
+
+.diagramTitle{
+ font-size:12px;
+ color:var(--muted);
+ margin-bottom:10px;
+ letter-spacing:.03em;
+}
+
+.physSvg{
+ width:100%;
+ min-width:520px;
+ height:auto;
+}
+
+.physText{
+ fill:#eef1ff;
+ font-size:13px;
+ font-family:system-ui,sans-serif;
+}
+
+.physNode{
+ fill:rgba(124,92,255,.18);
+ stroke:rgba(124,92,255,.7);
+ stroke-width:2;
+}
+</style>
+</head>
+
+<body>
+<a class="fixedBack" href="index.html" aria-label="入口へ戻る">← 入口へ戻る</a>
+
+<header>
+<h1>物理基礎：等加速度／落体／相対速度（並べ替え学習）</h1>
+<div class="sub">
+等加速度は \(v=v_0+at\)、\(\Delta x=v_0t+\frac12at^2\)、\(v^2=v_0^2+2a\Delta x\)。
+落体は \(a=\pm g\)、相対速度は \(\vec v_{A/B}=\vec v_A-\vec v_B\)。
+</div>
+</header>
+
+<main>
+<section class="panel">
+<h2>問題</h2>
+<div class="body">
+<div class="row" style="margin-bottom:10px"><label for="problemSelect">問題を選択</label></div>
+<select id="problemSelect"></select>
+<div style="height:10px"></div>
+
+<div id="diagramWrap" class="diagram" style="display:none"></div>
+<div class="prompt" id="prompt"></div>
+
+<div style="height:12px"></div>
+<div class="row">
+<button class="primary" id="checkBtn">判定する</button>
+<button class="ghost" id="guideBtn">解法ガイド</button>
+<button class="ghost" id="answerBtn">解答</button>
+<button class="ghost" id="resetBtn">リセット</button>
+</div>
+</div>
+</section>
+
+<section class="panel">
+<h2>並べ替え</h2>
+<div class="board">
+<div class="zone" id="poolZone">
+<div class="zoneHeader"><div class="zoneTitle">カード（シャッフル）</div><div class="zoneHint">ドラッグ / クリックで移動</div></div>
+<div id="pool"></div>
+</div>
+<div class="zone" id="answerZone">
+<div class="zoneHeader"><div class="zoneTitle">解答エリア</div><div class="zoneHint">上から順に評価</div></div>
+<div id="answer"></div>
+</div>
+</div>
+<div class="status">
+<div class="pill" id="pill">未判定</div>
+<div class="msg" id="msg">カードを並べて「判定する」を押してください。</div>
+<div id="nextWrap"></div>
+</div>
+<div class="body">
+<div id="guideWrap" style="display:none"></div>
+<div id="solutionWrap" style="display:none"></div>
+</div>
+</section>
+</main>
+
+<div class="footer">
+表記：等加速度直線運動 \(v=v_0+at\)、\(\Delta x=v_0t+\frac12at^2\)、\(v^2=v_0^2+2a\Delta x\)。
+落体は \(g=9.8\,\mathrm{m/s^2}\)。相対速度 \(\vec v_{A/B}=\vec v_A-\vec v_B\)。
+</div>
+
+<script>
+function autoGuide(id,title,prompt){
+  const text=`${id} ${title} ${prompt}`;
+
+  if(id.startsWith("A")){
+    return "ガイド：等加速度運動は、まず何を求めるかを決める。速度なら \\(v=v_0+at\\)、変位なら \\(\\Delta x=v_0t+\\frac12at^2\\)、時間を消したいなら \\(v^2=v_0^2+2a\\Delta x\\) を使う。符号と単位も確認する。";
+  }
+
+  if(id.startsWith("F")){
+    return "ガイド：落体も等加速度運動として扱う。上向きを正にするなら加速度は \\(-g\\)、下向きを正にするなら \\(+g\\)。最高点では速度が \\(0\\) になる。";
+  }
+
+  if(["P3","P13","P14","P15","P20"].includes(id)){
+    return "ガイド：追いつく・出会う・離れる問題では、相対速度で距離がどれだけ変わるかを見る。時間は基本的に \\(t=\\frac{距離}{相対速度}\\)。";
+  }
+
+  if(["P4","P5","P11","P16"].includes(id)){
+    return "ガイド：地面から見た速度は、乗り物や歩道の速度に、その中での速度を足して考える。逆向きならマイナスとして足す。";
+  }
+
+  if(["P7","P9"].includes(id)){
+    return "ガイド：真北など『横にずれない』条件では、横方向の合計成分が \\(0\\) になるようにする。流れや風を打ち消す成分を先に考える。";
+  }
+
+  if(text.includes("2次元")||text.includes("ベクトル")||text.includes("川")||text.includes("風")||text.includes("雨")||text.includes("成分")||text.includes("北")){
+    return "ガイド：2次元の速度は、東西成分・南北成分に分ける。合成は成分ごとに足し、相対速度は成分ごとに引く。速さは三平方、角度は三角比で求める。";
+  }
+
+  return "ガイド：相対速度は『見る側を止める』と考える。式では \\(v_{Y/X}=v_Y-v_X\\)。まず正の向きを決め、符号を付けて計算し、最後に向きを判断する。";
+}
+
+function Q(id,title,prompt,steps){
+  const answerSteps=steps.map((text,i)=>({
+    id:"s"+(i+1),
+    text,
+    requires:i?["s"+i]:[]
+  }));
+
+  return {
+    id,
+    title,
+    prompt,
+    steps:[
+      {id:"g0", text:autoGuide(id,title,prompt), requires:[]},
+      ...answerSteps
+    ]
+  };
+}
+
+const PROBLEMS=[
+Q("A01","A01 速度の式（静止から）","静止していた物体が一定の加速度 \\(a=2.0\\,\\mathrm{m/s^2}\\) で \\(t=5.0\\,\\mathrm{s}\\) 運動した。速度 \\(v\\) を求めよ。",["与えられた量を整理する（\\(v_0=0\\)、\\(a=2.0\\)、\\(t=5.0\\)）。","等加速度の速度の式 \\(v=v_0+at\\) を用いる。","代入して \\(v=0+2.0\\times5.0=10\\,\\mathrm{m/s}\\)。","答えは \\(10\\,\\mathrm{m/s}\\)。"]),
+Q("A02","A02 速度の式（初速度あり）","初速度 \\(v_0=3.0\\,\\mathrm{m/s}\\)、加速度 \\(a=1.5\\,\\mathrm{m/s^2}\\) で \\(t=4.0\\,\\mathrm{s}\\) 運動した。速度 \\(v\\) を求めよ。",["与えられた量を整理する（\\(v_0=3.0\\)、\\(a=1.5\\)、\\(t=4.0\\)）。","式 \\(v=v_0+at\\) を選ぶ。","\\(v=3.0+1.5\\times4.0=9.0\\,\\mathrm{m/s}\\)。","答えは \\(9.0\\,\\mathrm{m/s}\\)。"]),
+Q("A03","A03 変位（静止から）","静止していた物体が \\(a=1.2\\,\\mathrm{m/s^2}\\) で \\(t=6.0\\,\\mathrm{s}\\) 運動した。変位 \\(\\Delta x\\) を求めよ。",["\\(v_0=0\\)、\\(a=1.2\\)、\\(t=6.0\\) を整理する。","変位の式 \\(\\Delta x=v_0t+\\frac12at^2\\) を用いる。","\\(\\Delta x=0+\\frac12\\times1.2\\times6.0^2=21.6\\,\\mathrm{m}\\)。","答えは \\(21.6\\,\\mathrm{m}\\)。"]),
+Q("A04","A04 変位（初速度あり）","初速度 \\(v_0=4.0\\,\\mathrm{m/s}\\)、加速度 \\(a=2.0\\,\\mathrm{m/s^2}\\) で \\(t=3.0\\,\\mathrm{s}\\) 運動した。変位 \\(\\Delta x\\) を求めよ。",["\\(v_0=4.0\\)、\\(a=2.0\\)、\\(t=3.0\\) を整理する。","\\(\\Delta x=v_0t+\\frac12at^2\\) を使う。","\\(\\Delta x=4.0\\times3.0+\\frac12\\times2.0\\times3.0^2=21\\,\\mathrm{m}\\)。","答えは \\(21\\,\\mathrm{m}\\)。"]),
+Q("A05","A05 加速度の決定（速度変化）","物体の速度が \\(2.0\\,\\mathrm{s}\\) で \\(6.0\\,\\mathrm{m/s}\\) から \\(14.0\\,\\mathrm{m/s}\\) に一定の割合で変化した。加速度 \\(a\\) を求めよ。",["与えられた速度と時間を整理する（\\(v_0=6.0\\)、\\(v=14.0\\)、\\(t=2.0\\)）。","\\(v=v_0+at\\) を \\(a\\) について解く（\\(a=(v-v_0)/t\\)）。","\\(a=(14.0-6.0)/2.0=4.0\\,\\mathrm{m/s^2}\\)。","答えは \\(4.0\\,\\mathrm{m/s^2}\\)。"]),
+Q("A06","A06 停止までの時間（減速）","自動車が \\(v_0=20\\,\\mathrm{m/s}\\) で走っている。一定の加速度 \\(a=-4.0\\,\\mathrm{m/s^2}\\) でブレーキをかけた。停止までの時間 \\(t\\) を求めよ。",["停止なので最終速度 \\(v=0\\) とおく。","\\(v=v_0+at\\) に \\(v=0\\) を代入して \\(t\\) を求める。","\\(0=20+(-4.0)t\\) より \\(t=5.0\\,\\mathrm{s}\\)。","答えは \\(5.0\\,\\mathrm{s}\\)。"]),
+Q("A07","A07 停止距離（公式 \\(v^2\\)）","\\(v_0=18\\,\\mathrm{m/s}\\) で走る物体が一定の加速度 \\(a=-3.0\\,\\mathrm{m/s^2}\\) で停止した。停止距離 \\(\\Delta x\\) を求めよ。",["停止なので \\(v=0\\)。","時間を消去できる式 \\(v^2=v_0^2+2a\\Delta x\\) を使う。","\\(0=18^2+2\\times(-3.0)\\Delta x\\) より \\(\\Delta x=54\\,\\mathrm{m}\\)。","答えは \\(54\\,\\mathrm{m}\\)。"]),
+Q("A08","A08 時間の決定（変位と加速度）","静止から \\(a=3.0\\,\\mathrm{m/s^2}\\) で運動し、\\(\\Delta x=24\\,\\mathrm{m}\\) 進んだ。時間 \\(t\\) を求めよ。",["\\(v_0=0\\)、\\(a=3.0\\)、\\(\\Delta x=24\\) を整理する。","\\(\\Delta x=\\frac12at^2\\) を使う。","\\(24=1.5t^2\\Rightarrow t^2=16\\)。","\\(t=4.0\\,\\mathrm{s}\\)。"]),
+Q("A09","A09 初速度の決定（変位・時間・加速度）","\\(a=2.0\\,\\mathrm{m/s^2}\\) で \\(t=5.0\\,\\mathrm{s}\\) 運動し、\\(\\Delta x=45\\,\\mathrm{m}\\) 進んだ。初速度 \\(v_0\\) を求めよ。",["与えられた量は \\(a=2.0\\)、\\(t=5.0\\)、\\(\\Delta x=45\\)。未知は \\(v_0\\)。","\\(\\Delta x=v_0t+\\frac12at^2\\) を \\(v_0\\) について解く。","\\(45=5v_0+25\\Rightarrow 5v_0=20\\)。","\\(v_0=4.0\\,\\mathrm{m/s}\\)。"]),
+Q("A10","A10 平均速度（等加速度）","等加速度直線運動で、初速度 \\(v_0=6.0\\,\\mathrm{m/s}\\)、\\(t=4.0\\,\\mathrm{s}\\) 後の速度が \\(v=14.0\\,\\mathrm{m/s}\\) になった。変位 \\(\\Delta x\\) を求めよ。",["等加速度運動では平均速度 \\(\\bar v\\) は \\((v_0+v)/2\\) になる。","\\(\\bar v=(6.0+14.0)/2=10.0\\,\\mathrm{m/s}\\)。","変位は \\(\\Delta x=\\bar v\\,t=10.0\\times4.0=40\\,\\mathrm{m}\\)。","答えは \\(40\\,\\mathrm{m}\\)。"]),
+Q("A11","A11 速度の向き（減速して反転しない）","東向きを正とする。\\(v_0=+5.0\\,\\mathrm{m/s}\\)、\\(a=-1.0\\,\\mathrm{m/s^2}\\) で \\(t=3.0\\,\\mathrm{s}\\) 運動した。速度 \\(v\\) と向きを答えよ。",["符号付きで \\(v_0=+5.0\\)、\\(a=-1.0\\)、\\(t=3.0\\) を整理する。","\\(v=v_0+at\\) を用いる。","\\(v=5.0+(-1.0)\\times3.0=2.0\\,\\mathrm{m/s}\\) なので正（東向き）。","答えは東向き \\(2.0\\,\\mathrm{m/s}\\)。"]),
+Q("A12","A12 反転の時刻（停止して向きが変わる）","東向きを正とする。\\(v_0=+8.0\\,\\mathrm{m/s}\\)、\\(a=-2.0\\,\\mathrm{m/s^2}\\) の運動で、速度が0になる時刻 \\(t\\) を求めよ。",["速度が0のときが反転の境目なので \\(v=0\\) とする。","\\(0=v_0+at\\) を用いて \\(t=-v_0/a\\) とする。","\\(t=-8.0/(-2.0)=4.0\\,\\mathrm{s}\\)。","答えは \\(4.0\\,\\mathrm{s}\\)。"]),
+Q("A13","A13 反転までの距離（\\(v^2\\) で）","\\(v_0=12\\,\\mathrm{m/s}\\)、\\(a=-3.0\\,\\mathrm{m/s^2}\\) で減速する。停止までに進む距離 \\(\\Delta x\\) を求めよ。",["停止なので \\(v=0\\)。","\\(v^2=v_0^2+2a\\Delta x\\) を使う。","\\(0=12^2+2\\times(-3.0)\\Delta x\\Rightarrow \\Delta x=24\\,\\mathrm{m}\\)。","答えは \\(24\\,\\mathrm{m}\\)。"]),
+Q("A14","A14 加速度の符号（速度が減る）","速度が \\(10\\,\\mathrm{m/s}\\) から \\(4\\,\\mathrm{m/s}\\) に \\(3.0\\,\\mathrm{s}\\) で変化した。等加速度とすると加速度 \\(a\\) を求めよ。",["\\(v_0=10\\)、\\(v=4\\)、\\(t=3.0\\) を整理する。","\\(a=(v-v_0)/t\\) を用いる。","\\(a=(4-10)/3.0=-2.0\\,\\mathrm{m/s^2}\\)。","答えは \\(-2.0\\,\\mathrm{m/s^2}\\)（減速）。"]),
+Q("A15","A15 変位（初速度が負）","東向きを正とする。\\(v_0=-2.0\\,\\mathrm{m/s}\\)、\\(a=+1.0\\,\\mathrm{m/s^2}\\)、\\(t=4.0\\,\\mathrm{s}\\)。変位 \\(\\Delta x\\) を求めよ。",["符号付きで \\(v_0=-2.0\\)、\\(a=+1.0\\)、\\(t=4.0\\) を整理する。","\\(\\Delta x=v_0t+\\frac12at^2\\) を用いる。","\\(\\Delta x=-2.0\\times4.0+\\frac12\\times1.0\\times16=0\\,\\mathrm{m}\\)。","答えは \\(0\\,\\mathrm{m}\\)（元の位置に戻る）。"]),
+Q("A16","A16 到達時間（\\(v\\) 指定）","\\(v_0=5.0\\,\\mathrm{m/s}\\)、\\(a=2.0\\,\\mathrm{m/s^2}\\) の運動で、速度が \\(v=17\\,\\mathrm{m/s}\\) になる時刻 \\(t\\) を求めよ。",["\\(v_0=5.0\\)、\\(a=2.0\\)、\\(v=17\\) を整理する。","\\(v=v_0+at\\) を \\(t\\) について解く。","\\(t=(17-5.0)/2.0=6.0\\,\\mathrm{s}\\)。","答えは \\(6.0\\,\\mathrm{s}\\)。"]),
+Q("A17","A17 走行距離（速度の式＋平均速度）","等加速度運動で \\(v_0=2.0\\,\\mathrm{m/s}\\)、\\(a=1.0\\,\\mathrm{m/s^2}\\)、\\(t=6.0\\,\\mathrm{s}\\)。変位 \\(\\Delta x\\) を求めよ。",["まず \\(v=v_0+at\\) で終速度を求める。","\\(v=2.0+1.0\\times6.0=8.0\\,\\mathrm{m/s}\\)。","平均速度 \\(\\bar v=(v_0+v)/2=5.0\\,\\mathrm{m/s}\\)。","\\(\\Delta x=\\bar v\\,t=5.0\\times6.0=30\\,\\mathrm{m}\\)。"]),
+Q("A18","A18 加速度（距離と速度）","\\(v_0=4.0\\,\\mathrm{m/s}\\) で運動を始め、\\(\\Delta x=20\\,\\mathrm{m}\\) 進んだとき速度が \\(v=12\\,\\mathrm{m/s}\\) になった。加速度 \\(a\\) を求めよ。",["与えられた量は \\(v_0=4.0\\)、\\(v=12\\)、\\(\\Delta x=20\\)。","\\(v^2=v_0^2+2a\\Delta x\\) を \\(a\\) について解く。","\\(12^2=4.0^2+2a\\times20\\Rightarrow a=3.2\\,\\mathrm{m/s^2}\\)。","答えは \\(3.2\\,\\mathrm{m/s^2}\\)。"]),
+Q("A19","A19 2区間（等加速度＋等速）","物体は静止から \\(a=2.0\\,\\mathrm{m/s^2}\\) で \\(4.0\\,\\mathrm{s}\\) 加速した後、その速度のまま \\(6.0\\,\\mathrm{s}\\) 等速運動した。全変位を求めよ。",["加速区間：\\(v=at=2.0\\times4.0=8.0\\,\\mathrm{m/s}\\)。","加速区間の変位：\\(\\Delta x_1=\\frac12at^2=16\\,\\mathrm{m}\\)。","等速区間の変位：\\(\\Delta x_2=vt=8.0\\times6.0=48\\,\\mathrm{m}\\)。","全変位：\\(\\Delta x=16+48=64\\,\\mathrm{m}\\)。"]),
+Q("A20","A20 減速して停止（距離＋時間）","\\(v_0=30\\,\\mathrm{m/s}\\) で走る物体が \\(a=-5.0\\,\\mathrm{m/s^2}\\) で減速して停止する。停止までの時間と距離を求めよ。",["停止なので \\(v=0\\)。\\(v=v_0+at\\) から \\(t\\) を求める。","\\(0=30+(-5.0)t\\Rightarrow t=6.0\\,\\mathrm{s}\\)。","距離は \\(v^2=v_0^2+2a\\Delta x\\) を使う。","\\(0=30^2+2\\times(-5.0)\\Delta x\\Rightarrow \\Delta x=90\\,\\mathrm{m}\\)。"]),
+
+Q("F01","F01 自由落下の速度","空気抵抗を無視し、静止から自由落下する。\\(g=9.8\\,\\mathrm{m/s^2}\\)。\\(t=2.0\\,\\mathrm{s}\\) 後の速さ \\(v\\) を求めよ。",["下向きを正とすると \\(v_0=0\\)、\\(a=g=9.8\\)。","速度の式 \\(v=v_0+gt\\) を用いる。","\\(v=0+9.8\\times2.0=19.6\\,\\mathrm{m/s}\\)。","答えは \\(19.6\\,\\mathrm{m/s}\\)。"]),
+Q("F02","F02 自由落下の距離","静止から自由落下する。\\(g=9.8\\,\\mathrm{m/s^2}\\)。\\(t=3.0\\,\\mathrm{s}\\) で落下する距離 \\(\\Delta y\\) を求めよ。",["下向きを正、\\(v_0=0\\)、\\(a=g\\)。","\\(\\Delta y=\\frac12gt^2\\) を用いる。","\\(\\Delta y=\\frac12\\times9.8\\times3.0^2=44.1\\,\\mathrm{m}\\)。","答えは \\(44.1\\,\\mathrm{m}\\)。"]),
+Q("F03","F03 高さからの落下時間","高さ \\(19.6\\,\\mathrm{m}\\) から静止で落下する。\\(g=9.8\\,\\mathrm{m/s^2}\\)。地面に着くまでの時間 \\(t\\) を求めよ。",["\\(\\Delta y=\\frac12gt^2\\) を使う。","\\(19.6=4.9t^2\\Rightarrow t^2=4\\)。","\\(t=2.0\\,\\mathrm{s}\\)。","答えは \\(2.0\\,\\mathrm{s}\\)。"]),
+Q("F04","F04 落下直前の速さ（距離から）","高さ \\(45\\,\\mathrm{m}\\) から静止で落下する。\\(g=9.8\\,\\mathrm{m/s^2}\\)。着地直前の速さ \\(v\\) を求めよ。",["\\(v^2=v_0^2+2g\\Delta y\\) を使う。","\\(v^2=2\\times9.8\\times45=882\\)。","\\(v=\\sqrt{882}\\approx29.7\\,\\mathrm{m/s}\\)。","答えは約 \\(29.7\\,\\mathrm{m/s}\\)。"]),
+Q("F05","F05 上向き投げ上げ（最高点までの時間）","鉛直上向きに \\(v_0=14.7\\,\\mathrm{m/s}\\) で投げ上げた。\\(g=9.8\\,\\mathrm{m/s^2}\\)。最高点に達するまでの時間を求めよ。",["上向きを正とすると加速度は \\(a=-g=-9.8\\) で、最高点では \\(v=0\\)。","\\(v=v_0+at\\) に \\(v=0\\) を代入する。","\\(0=14.7-9.8t\\Rightarrow t=1.50\\,\\mathrm{s}\\)。","答えは \\(1.50\\,\\mathrm{s}\\)。"]),
+Q("F06","F06 上向き投げ上げ（最高点の高さ）","鉛直上向きに \\(v_0=19.6\\,\\mathrm{m/s}\\) で投げ上げた。\\(g=9.8\\,\\mathrm{m/s^2}\\)。最高点までの上昇距離を求めよ。",["最高点で \\(v=0\\)。上向きを正、\\(a=-g\\)。","\\(v^2=v_0^2+2a\\Delta y\\) を用いる。","\\(0=19.6^2+2\\times(-9.8)\\Delta y\\Rightarrow \\Delta y=19.6\\,\\mathrm{m}\\)。","答えは \\(19.6\\,\\mathrm{m}\\)。"]),
+Q("F07","F07 投げ上げの往復時間（同じ高さへ戻る）","鉛直上向きに \\(v_0=9.8\\,\\mathrm{m/s}\\) で投げ上げ、同じ高さに戻るまでの時間を求めよ。",["最高点までの時間は \\(t_\\uparrow=v_0/g\\)。","\\(t_\\uparrow=9.8/9.8=1.0\\,\\mathrm{s}\\)。","往復は対称なので \\(t=2t_\\uparrow=2.0\\,\\mathrm{s}\\)。","答えは \\(2.0\\,\\mathrm{s}\\)。"]),
+Q("F08","F08 途中の速さ（落下開始から）","静止から自由落下し、\\(t=4.0\\,\\mathrm{s}\\) 後の速さを求めよ。",["\\(v=v_0+gt\\) で \\(v_0=0\\)。","\\(v=9.8\\times4.0=39.2\\,\\mathrm{m/s}\\)。","答えは \\(39.2\\,\\mathrm{m/s}\\)。"]),
+Q("F09","F09 途中の落下距離（落下開始から）","静止から自由落下し、\\(t=4.0\\,\\mathrm{s}\\) の落下距離を求めよ。",["\\(\\Delta y=\\frac12gt^2\\) を用いる。","\\(\\Delta y=4.9\\times16=78.4\\,\\mathrm{m}\\)。","答えは \\(78.4\\,\\mathrm{m}\\)。"]),
+Q("F10","F10 地面到達直前の速さ（時間から）","高さ \\(78.4\\,\\mathrm{m}\\) から静止で落下し、\\(t=4.0\\,\\mathrm{s}\\) で地面に着いた。直前の速さを求めよ。",["自由落下なので \\(v=v_0+gt\\) で \\(v_0=0\\)。","\\(v=9.8\\times4.0=39.2\\,\\mathrm{m/s}\\)。","答えは \\(39.2\\,\\mathrm{m/s}\\)。"]),
+Q("F11","F11 上向き投げ上げ（2.0s後の速度）","鉛直上向きを正とする。\\(v_0=15\\,\\mathrm{m/s}\\) で投げ上げた。\\(t=2.0\\,\\mathrm{s}\\) 後の速度 \\(v\\) を求めよ。",["加速度は \\(a=-g=-9.8\\,\\mathrm{m/s^2}\\)。","\\(v=v_0+at=15+(-9.8)\\times2.0\\)。","\\(v=15-19.6=-4.6\\,\\mathrm{m/s}\\)（下向き）。","答えは \\(-4.6\\,\\mathrm{m/s}\\)。"]),
+Q("F12","F12 上向き投げ上げ（2.0s後の位置）","鉛直上向きを正、初速度 \\(v_0=15\\,\\mathrm{m/s}\\)。\\(t=2.0\\,\\mathrm{s}\\) 後の変位 \\(\\Delta y\\) を求めよ。",["\\(\\Delta y=v_0t+\\frac12at^2\\) で \\(a=-9.8\\)。","\\(\\Delta y=15\\times2.0+\\frac12\\times(-9.8)\\times(2.0)^2\\)。","\\(\\Delta y=30-19.6=10.4\\,\\mathrm{m}\\)（上）。","答えは \\(10.4\\,\\mathrm{m}\\)。"]),
+Q("F13","F13 落下の途中での速さ（高さ差）","静止から落下して \\(\\Delta y=20\\,\\mathrm{m}\\) 落ちたときの速さを求めよ。",["\\(v^2=v_0^2+2g\\Delta y\\) を使い \\(v_0=0\\)。","\\(v^2=2\\times9.8\\times20=392\\)。","\\(v=\\sqrt{392}=19.8\\,\\mathrm{m/s}\\)（約）。","答えは約 \\(19.8\\,\\mathrm{m/s}\\)。"]),
+Q("F14","F14 高さの決定（速度から）","静止から自由落下し、着地直前の速さが \\(v=24.5\\,\\mathrm{m/s}\\) だった。落下高さ \\(h\\) を求めよ。",["\\(v^2=2gh\\) を用いる。","\\(h=v^2/(2g)=24.5^2/19.6\\)。","\\(24.5^2=600.25\\) なので \\(h\\approx30.6\\,\\mathrm{m}\\)。","答えは約 \\(30.6\\,\\mathrm{m}\\)。"]),
+Q("F15","F15 初速度下向きで落下（速度）","下向きを正とする。初速度 \\(v_0=5.0\\,\\mathrm{m/s}\\) で下向きに投げ下ろした。\\(t=3.0\\,\\mathrm{s}\\) 後の速さを求めよ。",["下向き正なので \\(a=g\\)、\\(v=v_0+gt\\)。","\\(v=5.0+9.8\\times3.0=34.4\\,\\mathrm{m/s}\\)。","答えは \\(34.4\\,\\mathrm{m/s}\\)。"]),
+Q("F16","F16 投げ下ろしの距離","下向きを正。初速度 \\(v_0=5.0\\,\\mathrm{m/s}\\) で投げ下ろし、\\(t=3.0\\,\\mathrm{s}\\) 後までに落ちた距離を求めよ。",["\\(\\Delta y=v_0t+\\frac12gt^2\\) を用いる。","\\(\\Delta y=5.0\\times3.0+\\frac12\\times9.8\\times9\\)。","\\(\\Delta y=15+44.1=59.1\\,\\mathrm{m}\\)。","答えは \\(59.1\\,\\mathrm{m}\\)。"]),
+Q("F17","F17 上向き投げ上げ（最高点の速さ0確認）","鉛直上向きに投げ上げた物体は最高点で速さが0になる。この理由を式で確認せよ。",["上向きを正とすると加速度は一定で \\(a=-g\\) である。","速度は \\(v=v_0+at=v_0-gt\\) と表せる。","ある時刻 \\(t=v_0/g\\) で \\(v=0\\) となる。","よって最高点では速さ0である。"]),
+Q("F18","F18 落下と投げ下ろしの比較（同じ高さ）","同じ高さから、静止で落下する場合と下向き初速度で投げ下ろす場合、どちらが先に地面に着くか。",["下向きを正として \\(\\Delta y=v_0t+\\frac12gt^2\\) を用いる。","静止落下は \\(v_0=0\\) なので \\(\\Delta y=\\frac12gt^2\\)。","投げ下ろしは \\(v_0>0\\) なので同じ \\(\\Delta y\\) を満たす時間 \\(t\\) は小さくなる。","よって投げ下ろしの方が先に到達する。"]),
+Q("F19","F19 落下中の平均速度（静止から）","静止から自由落下して \\(t=2.0\\,\\mathrm{s}\\) の間に進んだ距離を、平均速度を使って求めよ。",["終速度は \\(v=gt=9.8\\times2.0=19.6\\,\\mathrm{m/s}\\)。","等加速度なので平均速度は \\(\\bar v=(0+19.6)/2=9.8\\,\\mathrm{m/s}\\)。","距離は \\(\\Delta y=\\bar v\\,t=9.8\\times2.0=19.6\\,\\mathrm{m}\\)。","答えは \\(19.6\\,\\mathrm{m}\\)。"]),
+Q("F20","F20 自由落下の時間（式の変形）","静止から自由落下し \\(\\Delta y=122.5\\,\\mathrm{m}\\) 落ちた。\\(g=9.8\\)。落下時間 \\(t\\) を求めよ。",["\\(\\Delta y=\\frac12gt^2\\) を \\(t\\) について解く。","\\(t=\\sqrt{2\\Delta y/g}=\\sqrt{2\\times122.5/9.8}\\)。","\\(245/9.8=25\\) なので \\(t=5.0\\,\\mathrm{s}\\)。","答えは \\(5.0\\,\\mathrm{s}\\)。"]),
+
+Q("P1","P1 基本：同方向の相対速度","同一直線上を東向きに、A列車は\\(20\\,\\mathrm{m/s}\\)、B列車は\\(12\\,\\mathrm{m/s}\\)で走る。Bから見たAの相対速度を求めよ。",["定義：相対速度 \\(v_{A/B}=v_A-v_B\\)","代入：\\(v_{A/B}=20-12=8\\,\\mathrm{m/s}\\)","正なので東向き：『東向き\\(8\\,\\mathrm{m/s}\\)』"]),
+Q("P2","P2 反対方向：すれ違いの相対速度","東向きを正とする。A列車は東へ\\(15\\,\\mathrm{m/s}\\)、B列車は西へ\\(10\\,\\mathrm{m/s}\\)で走る。Aから見たBの相対速度を求めよ。",["符号化：\\(v_A=+15\\)、Bは西向きなので\\(v_B=-10\\)","定義：\\(v_{B/A}=v_B-v_A\\)","計算：\\(v_{B/A}=-10-15=-25\\,\\mathrm{m/s}\\)","負→西向き\\(25\\,\\mathrm{m/s}\\)"]),
+Q("P3","P3 追い越し：追いつく時間","同一直線上で東向きに、車Aは\\(25\\,\\mathrm{m/s}\\)、車Bは\\(20\\,\\mathrm{m/s}\\)。AはBの\\(200\\,\\mathrm{m}\\)後ろからスタートする。AがBに追いつくまでの時間を求めよ。",["相対速度：\\(v_{A/B}=25-20=5\\,\\mathrm{m/s}\\)","追いつく条件：相対的に距離\\(200\\,\\mathrm{m}\\)を詰める","時間：\\(t=\\frac{200}{5}=40\\,\\mathrm{s}\\)"]),
+Q("P4","P4 車内歩行：地面に対する速度（同方向）","列車は東向き\\(15\\,\\mathrm{m/s}\\)で走る。車内で人が進行方向へ\\(1.5\\,\\mathrm{m/s}\\)で歩く。地面に対する人の速度を求めよ。",["合成：\\(v_{人}=v_{列車}+v_{人/列車}\\)","代入：\\(v_{人}=15+1.5=16.5\\,\\mathrm{m/s}\\)","向きは東：『東向き\\(16.5\\,\\mathrm{m/s}\\)』"]),
+Q("P5","P5 車内歩行：地面に対する速度（逆方向）","列車は東向き\\(15\\,\\mathrm{m/s}\\)。車内で人が西向きに\\(2\\,\\mathrm{m/s}\\)で歩く。地面に対する人の速度を求めよ。",["符号化：東を正。\\(v_{列車}=+15\\)、\\(v_{人/列車}=-2\\)","合成：\\(v_{人}=15+(-2)=13\\,\\mathrm{m/s}\\)","正→東向き\\(13\\,\\mathrm{m/s}\\)"]),
+Q("P6","P6 2次元：川の流れとボート（合成速度）","川の流れは東へ\\(4\\,\\mathrm{m/s}\\)。ボートは水に対して北へ\\(3\\,\\mathrm{m/s}\\)で進む。地面に対するボートの速さと向きを求めよ。",["ベクトル合成：\\(\\vec{v}=\\vec{v}_{船/水}+\\vec{v}_{水/地}\\)","成分：北\\(3\\)、東\\(4\\)なので速さ\\(\\sqrt{3^2+4^2}=5\\,\\mathrm{m/s}\\)","向き：北から東へ\\(\\tan\\theta=\\frac{4}{3}\\) → \\(\\theta\\approx53.1^\\circ\\)"]),
+Q("P7","P7 2次元：真北に渡る（上流向きにこぐ）","川幅\\(240\\,\\mathrm{m}\\)。流れは東へ\\(2\\,\\mathrm{m/s}\\)。ボートは水に対して速さ\\(5\\,\\mathrm{m/s}\\)。地面に対して真北に進むには、北から西へ何度向けてこげばよいか。また渡り終える時間を求めよ。",["真北条件：東西成分が0 → 船の西成分が\\(2\\,\\mathrm{m/s}\\)必要","角度：船速\\(5\\)で西成分\\(2\\) → \\(\\sin\\theta=\\frac{2}{5}\\)","北成分：\\(v_{北}=\\sqrt{5^2-2^2}=\\sqrt{21}\\approx4.58\\,\\mathrm{m/s}\\)","時間：\\(t=\\frac{240}{4.58}\\approx52.4\\,\\mathrm{s}\\)"]),
+Q("P8","P8 2次元：風の中の飛行機（合成速度）","飛行機の対気速度は北へ\\(200\\,\\mathrm{km/h}\\)。風は東へ\\(60\\,\\mathrm{km/h}\\)。地面に対する速さと、北から東へ何度ずれるかを求めよ。",["合成：\\(\\vec{v}_{地}=\\vec{v}_{機/空}+\\vec{v}_{風/地}\\)","速さ：\\(v=\\sqrt{200^2+60^2}\\approx208.8\\,\\mathrm{km/h}\\)","角度：\\(\\tan\\theta=\\frac{60}{200}\\) → \\(\\theta\\approx16.7^\\circ\\)"]),
+Q("P9","P9 2次元：真北に飛ぶ（風を打ち消す）","風が東へ\\(50\\,\\mathrm{km/h}\\)吹く。飛行機の対気速度は\\(250\\,\\mathrm{km/h}\\)。地面に対して真北に進むには機首を北から西へ何度向けるべきか。また地面に対する速さを求めよ。",["真北条件：東西成分0 → 機の西成分が\\(50\\,\\mathrm{km/h}\\)","角度：\\(250\\)で西成分\\(50\\) → \\(\\sin\\theta=\\frac{50}{250}=0.2\\)","地上速：北成分\\(=\\sqrt{250^2-50^2}\\approx244.9\\,\\mathrm{km/h}\\)"]),
+Q("P10","P10 雨：車から見た雨（相対速度）","雨は地面に対して鉛直下向き\\(8\\,\\mathrm{m/s}\\)で落ちる。車は東向き\\(12\\,\\mathrm{m/s}\\)で走る。車から見た雨の速度と速さ、傾き角を求めよ。",["相対速度：\\(\\vec{v}_{雨/車}=\\vec{v}_{雨/地}-\\vec{v}_{車/地}\\)","成分：東成分\\(-12\\)、鉛直成分\\(-8\\)","速さ：\\(v=\\sqrt{12^2+8^2}=\\sqrt{208}\\approx14.4\\,\\mathrm{m/s}\\)","鉛直から：\\(\\tan\\theta=\\frac{12}{8}=1.5\\) → \\(\\theta\\approx56.3^\\circ\\)"]),
+Q("P11","P11 エスカレーター：歩く速さの合成","エスカレーターは上向き\\(0.5\\,\\mathrm{m/s}\\)。人はエスカレーターに対して上向き\\(1.0\\,\\mathrm{m/s}\\)で歩く。地面に対する人の速さを求めよ。",["合成：\\(v_{人}=v_{esc}+v_{人/esc}\\)","計算：\\(v_{人}=0.5+1.0=1.5\\,\\mathrm{m/s}\\)","向きは上：『上向き\\(1.5\\,\\mathrm{m/s}\\)』"]),
+Q("P12","P12 川：渡り時間と流され距離","人は水に対して真北へ\\(1.5\\,\\mathrm{m/s}\\)で泳げる。川の流れは東へ\\(0.5\\,\\mathrm{m/s}\\)。川幅\\(100\\,\\mathrm{m}\\)を渡る時間と流される距離を求めよ。",["北成分は\\(1.5\\)なので渡る時間：\\(t=\\frac{100}{1.5}\\approx66.7\\,\\mathrm{s}\\)","流され距離：\\(x=0.5\\times66.7\\approx33.3\\,\\mathrm{m}\\)","結論：時間\\(66.7\\,\\mathrm{s}\\)、流され\\(33.3\\,\\mathrm{m}\\)"]),
+Q("P13","P13 すれ違い：川沿いの2船","川に沿って直線上を進む。船Aは下流へ\\(6\\,\\mathrm{km/h}\\)、船Bは上流へ\\(4\\,\\mathrm{km/h}\\)。2船の距離が\\(5\\,\\mathrm{km}\\)のとき、出会うまでの時間を求めよ。",["反対向きなので相対速度：\\(v_{rel}=6+4=10\\,\\mathrm{km/h}\\)","時間：\\(t=\\frac{5}{10}=0.5\\,\\mathrm{h}\\)","分にすると\\(30\\,\\mathrm{min}\\)"]),
+Q("P14","P14 追えない：相対速度で距離が増える","同一直線上で東向き。ランナーは\\(8\\,\\mathrm{m/s}\\)、犬は\\(10\\,\\mathrm{m/s}\\)で走り、犬は最初\\(40\\,\\mathrm{m}\\)前にいる。\\(30\\,\\mathrm{s}\\)後の距離を求めよ。",["相対速度（犬−ランナー）：\\(v_{D/R}=10-8=2\\,\\mathrm{m/s}\\)","増える距離：\\(\\Delta x=2\\times30=60\\,\\mathrm{m}\\)","最終距離：\\(40+60=100\\,\\mathrm{m}\\)"]),
+Q("P15","P15 円周上：向かい合いから出会う時間","円形トラックを2人が逆向きに走る。速さは\\(6\\,\\mathrm{m/s}\\)と\\(4\\,\\mathrm{m/s}\\)。弧長\\(200\\,\\mathrm{m}\\)離れている。最初に出会うまでの時間を求めよ。",["逆向きなので相対速度：\\(v_{rel}=6+4=10\\,\\mathrm{m/s}\\)","出会い条件：弧長\\(200\\,\\mathrm{m}\\)を詰める","時間：\\(t=\\frac{200}{10}=20\\,\\mathrm{s}\\)"]),
+Q("P16","P16 動く歩道：逆向きに歩く","動く歩道は東向き\\(1.2\\,\\mathrm{m/s}\\)。人は歩道に対して西向き\\(0.8\\,\\mathrm{m/s}\\)で歩く。地面に対する人の速度を求めよ。",["合成：\\(v_{人}=v_{歩道}+v_{人/歩道}\\)","代入：\\(v_{人}=1.2+(-0.8)=0.4\\,\\mathrm{m/s}\\)","正→東向き\\(0.4\\,\\mathrm{m/s}\\)"]),
+Q("P17","P17 2次元：速度ベクトルの差","平面上で、Aの速度は\\(\\vec{v}_A=(3,4)\\,\\mathrm{m/s}\\)、Bの速度は\\(\\vec{v}_B=(1,-2)\\,\\mathrm{m/s}\\)。Aから見たBの相対速度ベクトルと速さを求めよ。",["定義：\\(\\vec{v}_{B/A}=\\vec{v}_B-\\vec{v}_A\\)","差：\\(\\vec{v}_{B/A}=(1-3,\\,-2-4)=(-2,-6)\\,\\mathrm{m/s}\\)","速さ：\\(v=\\sqrt{(-2)^2+(-6)^2}=\\sqrt{40}\\approx6.32\\,\\mathrm{m/s}\\)"]),
+Q("P18","P18 2次元：同じ大きさの直交ベクトル","川の流れが東へ\\(5\\,\\mathrm{m/s}\\)。ボートは水に対して北へ\\(5\\,\\mathrm{m/s}\\)。地面に対する速さと向きを求めよ。",["成分：北\\(5\\)、東\\(5\\)","速さ：\\(v=\\sqrt{5^2+5^2}=5\\sqrt{2}\\approx7.07\\,\\mathrm{m/s}\\)","向き：\\(\\tan\\theta=\\frac{5}{5}=1\\) → \\(\\theta=45^\\circ\\)"]),
+Q("P19","P19 列車から見るランナー：相対速度","列車は東へ\\(20\\,\\mathrm{m/s}\\)で走る。地面に対して東へ\\(5\\,\\mathrm{m/s}\\)で走るランナーを、列車から見るとどう見えるか。",["相対速度：\\(v_{R/T}=v_R-v_T\\)","代入：\\(v_{R/T}=5-20=-15\\,\\mathrm{m/s}\\)","負→西向き\\(15\\,\\mathrm{m/s}\\)で後ろへ流れるように見える"]),
+Q("P20","P20 風向き：向かい風で移動時間","飛行機の対気速度は東へ\\(180\\,\\mathrm{km/h}\\)。向かい風が西へ\\(30\\,\\mathrm{km/h}\\)。東へ\\(300\\,\\mathrm{km}\\)進むのにかかる時間を求めよ。",["地上速度：\\(v_{地}=180-30=150\\,\\mathrm{km/h}\\)","時間：\\(t=\\frac{300}{150}=2\\,\\mathrm{h}\\)","分にすると\\(120\\,\\mathrm{min}\\)"])
+];
+/* =========================
+ 物理：絵解説データ
+ A = 等加速度
+ F = 落体
+ P = 相対速度・ベクトル
+========================= */
+
+const DIAGRAMS = {
+
+"A": `
+
+<div class="diagramTitle">
+等加速度運動：加速度があると、速度が時間とともに変化する
+</div>
+
+<svg class="physSvg" viewBox="0 0 900 320">
+
+<defs>
+<marker id="arrowA" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+<polygon points="0 0, 10 3, 0 6" fill="#cfc7ff"></polygon>
+</marker>
+</defs>
+
+<line x1="90" y1="230" x2="810" y2="230"
+stroke="rgba(255,255,255,.45)" stroke-width="3"></line>
+
+<text class="physText" x="450" y="270" text-anchor="middle">
+時間が進む
+</text>
+
+<circle cx="150" cy="230" r="22"
+fill="rgba(124,92,255,.22)" stroke="rgba(124,92,255,.8)" stroke-width="3"></circle>
+<text class="physText" x="150" y="236" text-anchor="middle">物体</text>
+
+<line x1="185" y1="230" x2="270" y2="230"
+stroke="#cfc7ff" stroke-width="4" marker-end="url(#arrowA)"></line>
+<text class="physText" x="225" y="212" text-anchor="middle">v</text>
+
+<circle cx="390" cy="230" r="22"
+fill="rgba(124,92,255,.22)" stroke="rgba(124,92,255,.8)" stroke-width="3"></circle>
+<text class="physText" x="390" y="236" text-anchor="middle">物体</text>
+
+<line x1="425" y1="230" x2="550" y2="230"
+stroke="#cfc7ff" stroke-width="4" marker-end="url(#arrowA)"></line>
+<text class="physText" x="490" y="212" text-anchor="middle">v が大きくなる</text>
+
+<circle cx="690" cy="230" r="22"
+fill="rgba(124,92,255,.22)" stroke="rgba(124,92,255,.8)" stroke-width="3"></circle>
+<text class="physText" x="690" y="236" text-anchor="middle">物体</text>
+
+<line x1="725" y1="230" x2="835" y2="230"
+stroke="#f59e0b" stroke-width="4" marker-end="url(#arrowA)"></line>
+<text class="physText" x="780" y="212" text-anchor="middle">加速度 a</text>
+
+<rect class="physNode" x="270" y="65" width="360" height="80" rx="18"></rect>
+<text class="physText" x="450" y="98" text-anchor="middle">
+v = v0 + at
+</text>
+<text class="physText" x="450" y="124" text-anchor="middle">
+速度・変位・時間のどれを求めるかで式を選ぶ
+</text>
+
+</svg>
+
+`,
+
+"F": `
+
+<div class="diagramTitle">
+落体：重力加速度 g が常に下向きにはたらく
+</div>
+
+<svg class="physSvg" viewBox="0 0 900 340">
+
+<defs>
+<marker id="arrowF" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+<polygon points="0 0, 10 3, 0 6" fill="#f59e0b"></polygon>
+</marker>
+</defs>
+
+<line x1="120" y1="285" x2="800" y2="285"
+stroke="rgba(255,255,255,.35)" stroke-width="4"></line>
+<text class="physText" x="760" y="310" text-anchor="middle">地面</text>
+
+<circle cx="250" cy="80" r="28"
+fill="rgba(124,92,255,.25)" stroke="rgba(124,92,255,.85)" stroke-width="3"></circle>
+<text class="physText" x="250" y="86" text-anchor="middle">球</text>
+
+<line x1="250" y1="115" x2="250" y2="215"
+stroke="#f59e0b" stroke-width="5" marker-end="url(#arrowF)"></line>
+<text class="physText" x="285" y="170" text-anchor="middle">g</text>
+
+<path d="M520 255 C520 180, 520 110, 520 55"
+fill="none" stroke="rgba(34,197,94,.8)" stroke-width="5" stroke-dasharray="10 10"></path>
+<line x1="520" y1="70" x2="520" y2="130"
+stroke="#f59e0b" stroke-width="5" marker-end="url(#arrowF)"></line>
+
+<circle cx="520" cy="60" r="24"
+fill="rgba(34,197,94,.22)" stroke="rgba(34,197,94,.85)" stroke-width="3"></circle>
+<text class="physText" x="520" y="66" text-anchor="middle">最高点</text>
+
+<text class="physText" x="520" y="34" text-anchor="middle">v = 0</text>
+
+<rect class="physNode" x="105" y="240" width="260" height="46" rx="14"></rect>
+<text class="physText" x="235" y="269" text-anchor="middle">
+自由落下：下向き正なら a = +g
+</text>
+
+<rect class="physNode" x="595" y="240" width="260" height="46" rx="14"></rect>
+<text class="physText" x="725" y="269" text-anchor="middle">
+投げ上げ：上向き正なら a = -g
+</text>
+
+</svg>
+
+`,
+
+"P": `
+
+<div class="diagramTitle">
+相対速度・合成速度：見る側の速度を引く／成分ごとに足す
+</div>
+
+<svg class="physSvg" viewBox="0 0 940 340">
+
+<defs>
+<marker id="arrowP1" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+<polygon points="0 0, 10 3, 0 6" fill="#cfc7ff"></polygon>
+</marker>
+<marker id="arrowP2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+<polygon points="0 0, 10 3, 0 6" fill="#bff3d1"></polygon>
+</marker>
+</defs>
+
+<line x1="90" y1="250" x2="850" y2="250"
+stroke="rgba(255,255,255,.35)" stroke-width="3"></line>
+
+<circle cx="200" cy="250" r="24"
+fill="rgba(124,92,255,.25)" stroke="rgba(124,92,255,.85)" stroke-width="3"></circle>
+<text class="physText" x="200" y="256" text-anchor="middle">A</text>
+
+<line x1="230" y1="250" x2="380" y2="250"
+stroke="#cfc7ff" stroke-width="5" marker-end="url(#arrowP1)"></line>
+<text class="physText" x="305" y="230" text-anchor="middle">vA</text>
+
+<circle cx="520" cy="250" r="24"
+fill="rgba(34,197,94,.25)" stroke="rgba(34,197,94,.85)" stroke-width="3"></circle>
+<text class="physText" x="520" y="256" text-anchor="middle">B</text>
+
+<line x1="550" y1="250" x2="650" y2="250"
+stroke="#bff3d1" stroke-width="5" marker-end="url(#arrowP2)"></line>
+<text class="physText" x="600" y="230" text-anchor="middle">vB</text>
+
+<rect class="physNode" x="190" y="65" width="560" height="90" rx="18"></rect>
+<text class="physText" x="470" y="100" text-anchor="middle">
+相対速度：vA/B = vA - vB
+</text>
+<text class="physText" x="470" y="128" text-anchor="middle">
+2次元では東西成分・南北成分に分けて足し引きする
+</text>
+
+<line x1="350" y1="185" x2="590" y2="185"
+stroke="#f59e0b" stroke-width="4" marker-end="url(#arrowP1)"></line>
+<text class="physText" x="470" y="175" text-anchor="middle">見る側を止めて考える</text>
+
+</svg>
+
+`
+
+};
+
+/* =======================
+   アプリ共通：化学基礎式ガイド分離版
+   g0 = 解法ガイド
+   s1以降 = 並べ替えカード
+======================= */
+
+let current=null;
+let poolCards=[];
+let answerCards=[];
+
+const $=id=>document.getElementById(id);
+const sel=$("problemSelect");
+const promptEl=$("prompt");
+const diagramWrap=$("diagramWrap");
+const poolEl=$("pool");
+const answerEl=$("answer");
+const checkBtn=$("checkBtn");
+const guideBtn=$("guideBtn");
+const resetBtn=$("resetBtn");
+const answerBtn=$("answerBtn");
+const pill=$("pill");
+const msg=$("msg");
+const poolZone=$("poolZone");
+const answerZone=$("answerZone");
+const guideWrap=$("guideWrap");
+const solutionWrap=$("solutionWrap");
+const nextWrap=$("nextWrap");
+
+function shuffle(arr){
+  const a=arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+function setStatus(type,text){
+  pill.className="pill"+(type?" "+type:"");
+  pill.textContent=
+    type==="ok"?"正解":
+    type==="ng"?"不正解":
+    type==="warn"?"途中":"未判定";
+  msg.textContent=text;
+}
+
+function typesetMath(){
+  if(window.MathJax&&MathJax.typesetPromise){
+    return MathJax.typesetPromise([
+      promptEl,
+      poolEl,
+      answerEl,
+      guideWrap,
+      solutionWrap
+    ]).catch(()=>{});
+  }
+  return Promise.resolve();
+}
+
+function hideNextButton(){
+  nextWrap.innerHTML="";
+}
+
+function hideGuide(){
+  guideWrap.style.display="none";
+  guideWrap.innerHTML="";
+}
+
+function hideSolution(){
+  solutionWrap.style.display="none";
+  solutionWrap.innerHTML="";
+}
+
+/* g0 を解法ガイドとして取り出す */
+function getGuideSteps(problem){
+  return (problem.steps||[]).filter(s=>String(s.id).startsWith("g"));
+}
+
+/* g0 以外を並べ替えカードとして使う */
+function getAnswerSteps(problem){
+  return (problem.steps||[]).filter(s=>!String(s.id).startsWith("g"));
+}
+
+/* g0 を除いた依存関係に整える */
+function normalizeStepsForCards(problem){
+  const answerSteps=getAnswerSteps(problem);
+  const answerIds=new Set(answerSteps.map(s=>s.id));
+
+  return answerSteps.map(s=>({
+    id:s.id,
+    text:s.text,
+    requires:(s.requires||[]).filter(r=>answerIds.has(r))
+  }));
+}
+
+function prefersReducedMotion(){
+  return window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+function getNextProblemId(){
+  const idx=PROBLEMS.findIndex(p=>p.id===current.id);
+  if(idx<0||idx===PROBLEMS.length-1)return null;
+  return PROBLEMS[idx+1].id;
+}
+
+function showNextButton(){
+  nextWrap.innerHTML="";
+  const nextId=getNextProblemId();
+  if(!nextId)return;
+
+  const a=document.createElement("a");
+  a.href="#";
+  a.className="nextBtn";
+  a.textContent="次の問題へ";
+
+  a.addEventListener("click",e=>{
+    e.preventDefault();
+    loadProblem(nextId);
+    window.scrollTo({
+      top:0,
+      behavior:prefersReducedMotion()?"auto":"smooth"
+    });
+  });
+
+  nextWrap.appendChild(a);
+}
+
+function createCardEl(card){
+  const div=document.createElement("div");
+  div.className="cardItem";
+  div.draggable=true;
+  div.dataset.cardId=card.id;
+  div.dataset.zone=card.zone;
+
+  const badge=document.createElement("div");
+  badge.className="badge";
+  badge.textContent=card.label;
+
+  const text=document.createElement("div");
+  text.className="cardText";
+  text.textContent=card.text;
+
+  div.appendChild(badge);
+  div.appendChild(text);
+
+  div.addEventListener("dragstart",e=>{
+    e.dataTransfer.setData("text/plain",JSON.stringify({
+      id:card.id,
+      from:card.zone
+    }));
+    e.dataTransfer.effectAllowed="move";
+  });
+
+  div.addEventListener("click",()=>{
+    moveCard(card.id,card.zone==="pool"?"answer":"pool");
+  });
+
+  return div;
+}
+
+function render(){
+  poolEl.innerHTML="";
+  answerEl.innerHTML="";
+
+  poolCards.forEach(c=>poolEl.appendChild(createCardEl(c)));
+  answerCards.forEach(c=>answerEl.appendChild(createCardEl(c)));
+
+  return typesetMath();
+}
+
+function moveCard(id,toZone){
+  let card=null;
+
+  const take=arr=>{
+    const idx=arr.findIndex(x=>x.id===id);
+    if(idx>=0){
+      card=arr[idx];
+      arr.splice(idx,1);
+      return true;
+    }
+    return false;
+  };
+
+  take(poolCards);
+  take(answerCards);
+
+  if(!card)return;
+
+  card.zone=toZone;
+  (toZone==="pool"?poolCards:answerCards).push(card);
+
+  clearMarking();
+  hideNextButton();
+  hideGuide();
+  hideSolution();
+
+  setStatus("","移動しました。並べ終えたら「判定する」。");
+  render();
+}
+
+function clearMarking(){
+  document.querySelectorAll(".cardItem").forEach(el=>{
+    el.classList.remove("invalid");
+    el.classList.remove("valid");
+  });
+}
+
+function markOrderFeedback(result){
+  const els=[...answerEl.querySelectorAll(".cardItem")];
+  const byId=new Map();
+
+  els.forEach(el=>byId.set(el.dataset.cardId,el));
+
+  result.orderChecks.forEach(ch=>{
+    const el=byId.get(ch.id);
+    if(!el)return;
+    el.classList.add(ch.ok?"valid":"invalid");
+  });
+}
+
+function buildGuideBox(){
+  const div=document.createElement("div");
+  div.className="guide";
+
+  const h=document.createElement("h3");
+  h.textContent="解法ガイド（答えを見る前の考え方）";
+
+  const ul=document.createElement("ul");
+  const guides=getGuideSteps(current);
+
+  if(guides.length){
+    guides.forEach(s=>{
+      const li=document.createElement("li");
+      li.textContent=String(s.text).replace(/^ガイド：/,"");
+      ul.appendChild(li);
+    });
+  }else{
+    const li=document.createElement("li");
+    li.textContent="まず、何を求める問題かを確認し、使う式・正の向き・単位を整理します。";
+    ul.appendChild(li);
+  }
+
+  const mini=document.createElement("div");
+  mini.className="mini";
+
+  if(current.id.startsWith("A")){
+    mini.textContent="ヒント：等加速度は、速度・変位・時間・加速度のどれが未知かで式を選びます。";
+  }else if(current.id.startsWith("F")){
+    mini.textContent="ヒント：落体は符号が大切です。上向き正なら加速度は −g、下向き正なら +g。";
+  }else{
+    mini.textContent="ヒント：相対速度は『誰から見たか』を確認し、見る側の速度を引きます。";
+  }
+
+  div.appendChild(h);
+  div.appendChild(ul);
+  div.appendChild(mini);
+
+  return div;
+}
+
+function buildSolutionBox(){
+  const div=document.createElement("div");
+  div.className="solution";
+
+  const h=document.createElement("h3");
+  h.textContent="解答（おすすめの並び）";
+
+  const note=document.createElement("div");
+  note.style.color="#aab2dd";
+  note.style.fontSize="12px";
+  note.textContent="参考：ガイドを除いた解答手順です。上から順に並べると流れが自然になります。";
+
+  const ol=document.createElement("ol");
+
+  getAnswerSteps(current).forEach(s=>{
+    const li=document.createElement("li");
+    li.textContent=s.text;
+    ol.appendChild(li);
+  });
+
+  div.appendChild(h);
+  div.appendChild(note);
+  div.appendChild(ol);
+
+  return div;
+}
+
+function evaluate(){
+  const steps=normalizeStepsForCards(current);
+  const stepIds=new Set(steps.map(s=>s.id));
+  const stepMap=new Map(steps.map(s=>[s.id,s]));
+  const ans=answerCards.map(c=>c.id);
+
+  const seen=new Set();
+  const dup=[];
+
+  for(const id of ans){
+    if(seen.has(id))dup.push(id);
+    seen.add(id);
+  }
+
+  const extras=ans.filter(id=>!stepIds.has(id));
+  const missing=[...stepIds].filter(id=>!ans.includes(id));
+
+  const orderChecks=[];
+  const placed=new Set();
+  let firstBad=null;
+
+  for(const id of ans){
+    if(!stepIds.has(id)){
+      orderChecks.push({id,ok:false,missingReq:[]});
+      if(!firstBad){
+        firstBad={id,reason:"不要カード（正答に含まれない）を入れています。"};
+      }
+      continue;
+    }
+
+    const step=stepMap.get(id);
+    const req=step.requires||[];
+    const missReq=req.filter(r=>!placed.has(r));
+    const ok=missReq.length===0;
+
+    orderChecks.push({id,ok,missingReq:missReq});
+
+    if(!ok&&!firstBad){
+      firstBad={
+        id,
+        reason:`このカードの前に必要：${missReq.join(", ")}`
+      };
+    }
+
+    placed.add(id);
+  }
+
+  const correctSet=extras.length===0&&missing.length===0&&dup.length===0;
+  const correctOrder=correctSet&&
+    orderChecks.filter(x=>stepIds.has(x.id)).every(x=>x.ok);
+
+  const total=steps.length;
+  const okCount=orderChecks.filter(x=>stepIds.has(x.id)&&x.ok).length;
+  const progress=total?Math.round((okCount/total)*100):0;
+
+  return {
+    correctSet,
+    correctOrder,
+    missing,
+    extras,
+    dup,
+    firstBad,
+    progress,
+    orderChecks
+  };
+}
+
+function enableDrop(zoneEl,toZone){
+  zoneEl.addEventListener("dragover",e=>{
+    e.preventDefault();
+    zoneEl.classList.add("dropHover");
+    e.dataTransfer.dropEffect="move";
+  });
+
+  zoneEl.addEventListener("dragleave",()=>{
+    zoneEl.classList.remove("dropHover");
+  });
+
+  zoneEl.addEventListener("drop",e=>{
+    e.preventDefault();
+    zoneEl.classList.remove("dropHover");
+
+    try{
+      const p=JSON.parse(e.dataTransfer.getData("text/plain"));
+      moveCard(p.id,toZone);
+    }catch(_){}
+  });
+}
+function renderDiagram(problem){
+ const key = problem.id.charAt(0);
+ const html = DIAGRAMS[problem.id] || DIAGRAMS[key];
+
+ if(!html){
+  diagramWrap.style.display="none";
+  diagramWrap.innerHTML="";
+  return;
+ }
+
+ diagramWrap.style.display="block";
+ diagramWrap.innerHTML=html;
+}
+``
+
+function loadProblem(problemId){
+  current=PROBLEMS.find(p=>p.id===problemId)||PROBLEMS[0];
+
+  sel.value=current.id;
+  promptEl.textContent=current.prompt;
+  renderDiagram(current);
+  const answerSteps=normalizeStepsForCards(current);
+
+  poolCards=shuffle(answerSteps.map((s,i)=>({
+    id:s.id,
+    kind:"step",
+    label:`S${i+1}`,
+    text:s.text,
+    requires:s.requires||[],
+    zone:"pool"
+  })));
+
+  answerCards=[];
+
+  clearMarking();
+  hideNextButton();
+  hideGuide();
+  hideSolution();
+
+  setStatus("","カードを並べて「判定する」を押してください。");
+  render();
+}
+
+function populateSelect(){
+  sel.innerHTML="";
+
+  PROBLEMS.forEach(p=>{
+    const opt=document.createElement("option");
+    opt.value=p.id;
+    opt.textContent=p.title;
+    sel.appendChild(opt);
+  });
+}
+
+sel.addEventListener("change",()=>loadProblem(sel.value));
+
+resetBtn.addEventListener("click",()=>{
+  loadProblem(sel.value);
+});
+
+guideBtn.addEventListener("click",()=>{
+  clearMarking();
+  hideNextButton();
+  hideSolution();
+
+  guideWrap.style.display="block";
+  guideWrap.innerHTML="";
+  guideWrap.appendChild(buildGuideBox());
+
+  setStatus("warn","解法ガイドを表示しました。答えを見る前に、方針だけ確認できます。");
+  typesetMath();
+});
+
+answerBtn.addEventListener("click",()=>{
+  clearMarking();
+  hideNextButton();
+  hideGuide();
+
+  solutionWrap.style.display="block";
+  solutionWrap.innerHTML="";
+  solutionWrap.appendChild(buildSolutionBox());
+
+  setStatus("warn","解答（おすすめの並び）を表示しました。自力で並べてから「判定する」で確認できます。");
+  typesetMath();
+});
+
+checkBtn.addEventListener("click",()=>{
+  clearMarking();
+
+  const r=evaluate();
+  markOrderFeedback(r);
+
+  if(r.correctOrder){
+    setStatus("ok","完璧！");
+    showNextButton();
+    hideGuide();
+
+    solutionWrap.style.display="block";
+    solutionWrap.innerHTML="";
+    solutionWrap.appendChild(buildSolutionBox());
+
+    typesetMath();
+  }else if(r.correctSet){
+    setStatus("warn",`カードはそろっています。順序を調整（進捗 ${r.progress}%）。`);
+    hideNextButton();
+    hideGuide();
+    hideSolution();
+
+    if(r.firstBad){
+      msg.textContent=`順序ヒント：${r.firstBad.reason}`;
+    }
+  }else{
+    hideNextButton();
+    hideGuide();
+    hideSolution();
+
+    if(r.extras.length>0){
+      setStatus("ng",`誤カードが混ざっています（${r.extras.length}枚）。`);
+    }else if(r.missing.length>0){
+      setStatus("ng",`正解カードが足りません（${r.missing.length}枚）。`);
+    }else{
+      setStatus("ng","まだ整っていません。");
+    }
+  }
+
+  const target=pill.closest(".status")||pill;
+  const reduce=window.matchMedia&&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  target.scrollIntoView({
+    behavior:reduce?"auto":"smooth",
+    block:"start"
+  });
+});
+
+enableDrop(poolZone,"pool");
+enableDrop(answerZone,"answer");
+
+populateSelect();
+loadProblem(PROBLEMS[0].id);
+</script>
+</body>
+</html>
