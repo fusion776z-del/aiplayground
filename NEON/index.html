@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>NEONSTRIKER</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+:root{--bg1:#020611;--bg2:#071226;--cyan:#72f7ff;--pink:#ff5db1;--orange:#ffb347;--green:#89ff9b;--red:#ff6262}*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;color:#fff;background:radial-gradient(circle at 15% 15%,rgba(0,180,255,.14),transparent 28%),radial-gradient(circle at 82% 24%,rgba(255,90,177,.12),transparent 26%),radial-gradient(circle at 60% 80%,rgba(137,255,155,.09),transparent 28%),linear-gradient(180deg,#010309,#070d1a 50%,#02040b 100%);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.frame{padding:16px;border-radius:24px;background:rgba(9,16,32,.72);backdrop-filter:blur(10px);border:1px solid rgba(114,247,255,.22);box-shadow:0 22px 70px rgba(0,0,0,.48),0 0 40px rgba(114,247,255,.08)}canvas{display:block;border-radius:16px;background:#020611;box-shadow:inset 0 0 0 1px rgba(255,255,255,.04),0 0 28px rgba(114,247,255,.08);outline:none}.caption{margin-top:10px;display:flex;justify-content:space-between;gap:12px;font-size:12px;letter-spacing:.08em;color:rgba(222,242,255,.8)}.pill{padding:5px 10px;border-radius:999px;border:1px solid rgba(114,247,255,.22);background:rgba(10,19,40,.54)}html,body{height:100%}body{touch-action:none;overscroll-behavior:none}.frame{position:relative;display:grid;place-items:center;padding:14px}#game{width:min(92vw,calc(92vh * 9 / 16));height:auto;aspect-ratio:9/16;max-width:520px;touch-action:none}.diag{position:absolute;right:10px;top:10px;max-width:70ch;padding:9px 10px;border-radius:14px;background:rgba(0,0,0,.60);border:1px solid rgba(255,98,98,.40);color:rgba(255,255,255,.92);font:12px ui-monospace,SFMono-Regular,Menlo,monospace;display:none;pointer-events:none;white-space:pre-wrap;z-index:40}#joystick{position:fixed;left:12px;bottom:110px;width:104px;height:104px;border-radius:999px;background:rgba(114,247,255,.10);border:1px solid rgba(114,247,255,.28);backdrop-filter:blur(6px);box-shadow:0 10px 26px rgba(0,0,0,.35);z-index:60;touch-action:none}#joystick .base{position:absolute;inset:0;border-radius:999px;background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.12),transparent 55%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}#joystick .stick{position:absolute;left:50%;top:50%;width:48px;height:48px;border-radius:999px;transform:translate(-50%,-50%);background:rgba(114,247,255,.88);box-shadow:0 8px 18px rgba(0,0,0,.33),0 0 18px rgba(114,247,255,.22)}#joystick .label{position:absolute;left:50%;top:-10px;transform:translateX(-50%);font-size:9px;letter-spacing:.12em;color:rgba(222,242,255,.70)}.actions{position:fixed;right:12px;bottom:88px;display:flex;flex-direction:column;gap:10px;align-items:flex-end;z-index:60}.actions .row{display:flex;gap:10px;justify-content:flex-end}.tbtn{width:56px;height:56px;border-radius:18px;border:1px solid rgba(114,247,255,.22);background:rgba(10,19,40,.38);backdrop-filter:blur(6px);box-shadow:0 8px 22px rgba(0,0,0,.35);display:grid;place-items:center;color:rgba(255,255,255,.92);font-weight:800;letter-spacing:.08em;user-select:none;-webkit-user-select:none;touch-action:none}.tbtn:active,.tbtn.active{transform:scale(0.96);background:rgba(114,247,255,.18)}.tbtn.small{width:48px;height:48px;border-radius:16px;font-size:12px}.tbtn.big{width:64px;height:64px;border-radius:20px;font-size:12px}.tbtn.wide{width:132px;height:54px;border-radius:18px;font-size:12px}.tbtn.warn{border-color:rgba(255,93,177,.28)}.tbtn.gold{border-color:rgba(255,216,77,.28)}.tbtn.green{border-color:rgba(137,255,155,.28)}@supports(padding:max(0px)){#joystick{bottom:calc(110px + env(safe-area-inset-bottom))}.actions{bottom:calc(88px + env(safe-area-inset-bottom))}}@media(pointer:fine){#joystick,.actions{display:none}}#mobileUI{position:fixed;right:12px;bottom:calc(14px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:10px;z-index:80}.btn{width:76px;height:64px;border-radius:18px;display:grid;place-items:center;background:rgba(10,19,40,.55);border:1px solid rgba(114,247,255,.25);backdrop-filter:blur(6px);box-shadow:0 10px 28px rgba(0,0,0,.45);color:#fff;font-weight:800;letter-spacing:.08em;touch-action:none;user-select:none}.btn.small{width:58px;height:52px;font-size:12px}.btn:active,.btn.active{background:rgba(114,247,255,.22);transform:scale(0.96)}@media(pointer:fine){#mobileUI{display:none}}#joystick{left:calc(0px + env(safe-area-inset-left));bottom:calc(0px + env(safe-area-inset-bottom))}#focusBtn{position:fixed;left:calc(0px + env(safe-area-inset-left));top:calc(0px + env(safe-area-inset-top));width:96px;height:46px;border-radius:16px;z-index:80;border:1px solid rgba(137,255,155,.30);background:rgba(10,19,40,.38);backdrop-filter:blur(6px);box-shadow:0 8px 22px rgba(0,0,0,.35);display:grid;place-items:center;color:rgba(255,255,255,.92);font-weight:900;letter-spacing:.10em;user-select:none;-webkit-user-select:none;touch-action:none}#focusBtn:active,#focusBtn.active{transform:scale(0.96);background:rgba(137,255,155,.16)}.actions{right:calc(0px + env(safe-area-inset-right));bottom:calc(0px + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:flex-end;gap:10px}.actions .row{display:flex;gap:10px;justify-content:flex-end}#mobileUI{display:none !important}:root{--fireSize:64px;--typeGap:10px}.tbtn.fireMR{width:var(--fireSize);height:var(--fireSize)}.tbtn.typeMR{position:fixed;right:calc(0px + env(safe-area-inset-right)+ var(--fireSize)+ var(--typeGap));top:50%;transform:translateY(-50%);z-index:95;width:var(--fireSize);height:var(--fireSize);border-radius:22px;font-size:12px;letter-spacing:.06em}.tbtn.typeMR.active{background:rgba(255,98,98,.18)!important;border-color:rgba(255,98,98,.28)!important}.tbtn.bombTR{position:fixed;right:calc(0px + env(safe-area-inset-right));top:calc(0px + env(safe-area-inset-top));z-index:95}.tbtn.fireMR{position:fixed;right:calc(0px + env(safe-area-inset-right));top:50%;transform:translateY(-50%);z-index:95}#focusBtn.focusRB{position:fixed;left:auto;top:auto;right:calc(0px + env(safe-area-inset-right));bottom:calc(0px + env(safe-area-inset-bottom));width:128px;height:72px;border-radius:22px;z-index:95}@media(min-width:430px){:root{--fireSize:92px}#focusBtn.focusRB{width:168px;height:88px;font-size:15px}.tbtn.bombTR{width:200px;height:92px;font-size:16px}.tbtn.fireMR{width:92px;height:92px;border-radius:26px;font-size:14px}.tbtn.typeMR{border-radius:26px;font-size:13px}}#joystick{position:fixed !important;left:calc(12px + env(safe-area-inset-left))!important;bottom:calc(12px + env(safe-area-inset-bottom))!important;right:auto !important;top:auto !important;width:136px !important;height:136px !important;transform:none !important;-webkit-user-drag:none;user-select:none;touch-action:none}:root{--uiGlass:rgba(10,19,40,.18);--uiBorder:rgba(114,247,255,.16)}#joystick{background:rgba(114,247,255,.04)!important;border:1px solid rgba(114,247,255,.14)!important;backdrop-filter:blur(8px)saturate(1.15);box-shadow:0 10px 24px rgba(0,0,0,.22)!important}#joystick .base{background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.06),transparent 58%)!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.04)!important}#joystick .stick{background:rgba(114,247,255,.62)!important;box-shadow:0 8px 16px rgba(0,0,0,.26),0 0 16px rgba(114,247,255,.16)!important}#joystick .label{color:rgba(222,242,255,.55)!important}.tbtn{background:rgba(10,19,40,.18)!important;border-color:rgba(114,247,255,.16)!important;box-shadow:0 8px 20px rgba(0,0,0,.24)!important}.tbtn.warn{border-color:rgba(255,93,177,.18)!important}.tbtn.gold{border-color:rgba(255,216,77,.18)!important}.tbtn.green{border-color:rgba(137,255,155,.18)!important}.tbtn:active,.tbtn.active{background:rgba(114,247,255,.14)!important}:root{--joyIdleOpacity:.32;--joyTouchOpacity:.08;--joyFade:120ms;--btnIdleOpacity:.28;--btnTouchOpacity:.10;--btnFade:120ms}#joystick{left:calc(-14px + env(safe-area-inset-left))!important;bottom:calc(-14px + env(safe-area-inset-bottom))!important;opacity:var(--joyIdleOpacity);transition:opacity var(--joyFade)ease}#joystick.ui-touch{opacity:var(--joyTouchOpacity)!important}#joystick .base{opacity:.55}#joystick .stick{opacity:.55}#joystick .label{opacity:.55}.tbtn,#focusBtn{opacity:var(--btnIdleOpacity)!important;transition:opacity var(--btnFade)ease,transform var(--btnFade)ease}.tbtn.ui-touch,#focusBtn.ui-touch{opacity:var(--btnTouchOpacity)!important}#pauseBtn.pauseAboveJoy{position:fixed;left:calc(12px + env(safe-area-inset-left));bottom:calc(12px + env(safe-area-inset-bottom)+ 136px + 10px);z-index:96;width:96px;height:44px;border-radius:16px;font-size:12px;letter-spacing:.10em}#pauseBtn{opacity:var(--btnIdleOpacity)!important;transition:opacity var(--btnFade)ease,transform var(--btnFade)ease}#pauseBtn.ui-touch{opacity:var(--btnTouchOpacity)!important}:root{--rBtn:72px;--rGap:12px}@media(min-width:430px){:root{--rBtn:92px;--rGap:14px}}.actions{position:fixed !important;right:calc(12px + env(safe-area-inset-right))!important;bottom:calc(12px + env(safe-area-inset-bottom))!important;top:auto !important;left:auto !important;display:flex !important;flex-direction:column !important;gap:var(--rGap)!important;align-items:flex-end !important;z-index:95 !important}.actions .tbtn{width:var(--rBtn)!important;height:var(--rBtn)!important;border-radius:22px !important;font-size:12px;letter-spacing:.06em}#typeBtn,#focusBtn,#bombBtn{position:static !important;transform:none !important}#focusBtn{font-weight:900}#typeBtn.active{background:rgba(255,98,98,.18)!important;border-color:rgba(255,98,98,.28)!important}#typeBtn.green{border-color:rgba(137,255,155,.28)!important;background:rgba(137,255,155,.12)!important}.wrap{display:grid;place-items:center}.wrap{transform:scale(0.9);transform-origin:top center}@media(pointer:coarse){.wrap{transform:translateY(10px)scale(0.9)}}
+
+
+.entrybarOnTitle{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  z-index:150;
+  pointer-events:auto;
+}
+/* === TOP TELOP (Stage1 only, Rainbow, 1 line) === */
+.telop{position:absolute;left:0;top:0;width:100%;height:72px;overflow:hidden;z-index:120;pointer-events:none;opacity:0;transition:opacity .25s ease;
+  background:linear-gradient(90deg,#ff4d4d,#ffb347,#ffd84d,#89ff9b,#72f7ff,#9f8cff,#ff5db1);
+  background-size:300% 100%;
+  animation:rainbowShift 6s linear infinite;
+  border-bottom:1px solid rgba(255,255,255,.18);
+  box-shadow:0 10px 30px rgba(0,0,0,.28);
+}
+.telop.show{opacity:1}
+.telop .track{display:inline-block;white-space:nowrap;padding-left:100%;
+  font:900 32px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  line-height:72px;
+  letter-spacing:.08em;color:rgba(255,255,255,.98);
+  text-shadow:0 0 18px rgba(0,0,0,.75),0 0 12px rgba(0,0,0,.55),0 0 20px rgba(255,255,255,.20);
+  animation:telopMove 18s linear infinite;
+  animation-play-state:paused;
+  padding-right:18px;
+}
+@keyframes telopMove{
+  0%{transform:translateX(0)}
+  100%{transform:translateX(-100%)}
+}
+@keyframes rainbowShift{
+  0%{background-position:0% 50%}
+  100%{background-position:100% 50%}
+}
+
+
+
+/* === Back to index button (added) === */
+#backIndexBtn{
+  position:fixed;
+  left:calc(12px + env(safe-area-inset-left));
+  top:calc(12px + env(safe-area-inset-top));
+  z-index:200;
+  width:150px;
+  height:54px;
+  border-radius:18px;
+  display:none; /* shown only on title */
+  place-items:center;
+  font-size:13px;
+  font-weight:900;
+  letter-spacing:.10em;
+}
+@media (min-width:430px){
+  #backIndexBtn{ width:190px; height:66px; font-size:15px; border-radius:20px; }
+}
+
+
+
+
+/* === ENTRY TABS (added, game body removed) === */
+.entrybar{margin-top:10px; display:flex; gap:12px; justify-content:center; align-items:center; flex-wrap:wrap;}
+.entrytab{
+  width:132px;
+  height:54px;
+  border-radius:18px;
+  display:grid;
+  place-items:center;
+  border:1px solid rgba(114,247,255,.22);
+  background:rgba(10,19,40,.18);
+  color:rgba(255,255,255,.92);
+  font-weight:900;
+  letter-spacing:.14em;
+  user-select:none;
+  -webkit-user-select:none;
+  cursor:pointer;
+  touch-action:manipulation;
+  box-shadow:0 10px 26px rgba(0,0,0,.35);
+}
+.entrytab:active{transform:scale(0.97); background:rgba(114,247,255,.14);} 
+@media(min-width:430px){
+  .entrytab{ width:180px; height:72px; border-radius:22px; font-size:15px; }
+}
+
+
+.entrycol{display:flex; flex-direction:column; align-items:center; gap:8px;}
+.entryhint{font-size:12px; letter-spacing:.06em; color:rgba(222,242,255,.72); line-height:1.2; text-shadow:0 0 12px rgba(0,0,0,.45); user-select:none; -webkit-user-select:none;}
+@media (max-width:380px){ .entryhint{font-size:11px;} }
+
+
+/* === ENTRY HINT emphasis (updated) === */
+.entryhint{
+  font-size:14px;
+  font-weight:900;
+  letter-spacing:.08em;
+  color:#ffd84d;
+  background:rgba(0,0,0,.35);
+  border:1px solid rgba(255,216,77,.40);
+  padding:6px 10px;
+  border-radius:999px;
+  box-shadow:0 0 18px rgba(255,216,77,.22), 0 10px 26px rgba(0,0,0,.35);
+  text-shadow:0 0 18px rgba(0,0,0,.65);
+}
+@media (max-width:380px){ .entryhint{ font-size:13px; } }
+
+
+/* === Adjust: lower only the 2nd (2へ) block === */
+.entrycol2{ margin-top: 20px; }
+@media (min-width:430px){ .entrycol2{ margin-top: 24px; } }
+
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="diag" id="diag"></div>
+
+  <!-- (telop is part of original UI; kept for visual parity, stays hidden) -->
+  <div id="telop" class="telop" aria-hidden="true">
+    <div class="track" id="telopTrack">リップルはパワーアップカプセルを吸収する　・　ショットはボスの部位を破壊する　・　ボスが虹色の弾を出し始めたらレーザーだ！</div>
+  </div>
+
+  <!-- Canvas (title screen rendered here). Game body removed. -->
+  <canvas id="game" width="360" height="640" tabindex="0"></canvas>
+
+  <!-- Entry tabs (centered on title) -->
+  <div class="entrybar entrybarOnTitle" aria-label="入口">
+  <div class="entrycol">
+    <button class="entrytab" type="button" data-entry="1">1へ</button>
+    <div class="entryhint">※横画面専用</div>
+  </div>
+  <div class="entrycol entrycol2">
+ <button class="entrytab" type="button" data-entry="2">2へ</button>
+    <div class="entryhint">※縦画面のままでOK</div>
+  </div>
+</div>
+
+</div>
+
+<script>
+"use strict";
+// =====================================================
+// Title screen only (ported from neon2.html). Game logic removed.
+// =====================================================
+const cvs = document.getElementById('game');
+const ctx = cvs.getContext('2d', { alpha:false, desynchronized:true });
+ctx.imageSmoothingEnabled = false;
+
+const VW = cvs.width, VH = cvs.height;
+// Original code uses a rotated landscape render space W=640,H=360.
+const W = 640, H = 360;
+
+const IS_MOBILE = (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) || ('ontouchstart' in window);
+const SE2_MODE = IS_MOBILE && Math.min(screen.width||9999, screen.height||9999) <= 375 && (window.devicePixelRatio||1) >= 2;
+let lowQuality = SE2_MODE || IS_MOBILE;
+
+const rand = (a,b)=>Math.random()*(b-a)+a;
+const clamp = (v,min,max)=>Math.max(min, Math.min(max, v));
+
+function glowText(text,x,y,size,align,color){
+  ctx.save();
+  ctx.font = '700 ' + size + 'px sans-serif';
+  ctx.textAlign = align;
+  ctx.fillStyle = color;
+  ctx.shadowBlur = 18;
+  ctx.shadowColor = color;
+  ctx.fillText(text,x,y);
+  ctx.restore();
+}
+
+const starsFar = Array.from({length:(SE2_MODE?28:(IS_MOBILE?42:90))}, ()=>({x:Math.random()*W,y:Math.random()*H,s:rand(.4,1.5),v:rand(.15,.5)}));
+const starsMid = Array.from({length:(SE2_MODE?18:(IS_MOBILE?26:52))}, ()=>({x:Math.random()*W,y:Math.random()*H,s:rand(1.0,2.2),v:rand(.8,2.3)}));
+const starsNear = Array.from({length:(SE2_MODE?10:(IS_MOBILE?16:30))}, ()=>({x:Math.random()*W,y:Math.random()*H,s:rand(1.5,3.0),v:rand(2.3,4.4)}));
+
+function scrollStars(arr){
+  for(const s of arr){
+    s.x -= s.v;
+    if(s.x < -6){ s.x = W + 6; s.y = Math.random()*H; }
+  }
+}
+function drawStars(arr,color,blur=0){
+  ctx.save();
+  ctx.fillStyle = color;
+  ctx.shadowBlur = blur;
+  ctx.shadowColor = color;
+  for(const s of arr) ctx.fillRect(s.x,s.y,s.s,s.s);
+  ctx.restore();
+}
+
+let stage = 1;
+let time = 0;
+
+function drawBackground(t){
+  if(lowQuality){
+    ctx.fillStyle = '#020611';
+    ctx.fillRect(0,0,W,H);
+    drawStars(starsFar,'rgba(180,220,255,.18)',0);
+    drawStars(starsMid,'rgba(114,247,255,.20)',0);
+    drawStars(starsNear,'rgba(255,93,177,.18)',0);
+    return;
+  }
+  const stagePal = {
+    1:{top:'#08111f',mid:'#12385e',bot:'#050811',a:'rgba(114,247,255,.22)',b:'rgba(255,93,177,.12)',c:'rgba(137,255,155,.10)', wave:'#72f7ff', grid:'rgba(114,247,255,.07)'},
+    2:{top:'#14061d',mid:'#43145e',bot:'#09020f',a:'rgba(255,93,177,.22)',b:'rgba(114,247,255,.10)',c:'rgba(255,179,71,.09)', wave:'#ff5db1', grid:'rgba(255,93,177,.06)'},
+    3:{top:'#07141a',mid:'#164a56',bot:'#041013',a:'rgba(137,255,155,.22)',b:'rgba(114,247,255,.12)',c:'rgba(255,216,77,.08)', wave:'#89ff9b', grid:'rgba(137,255,155,.06)'},
+    4:{top:'#120710',mid:'#4d1130',bot:'#0a0408',a:'rgba(255,98,98,.18)',b:'rgba(255,93,177,.10)',c:'rgba(255,179,71,.10)', wave:'#ff6262', grid:'rgba(255,98,98,.06)'},
+    5:{top:'#151012',mid:'#5c360f',bot:'#0a0604',a:'rgba(255,216,77,.18)',b:'rgba(255,179,71,.12)',c:'rgba(255,93,177,.08)', wave:'#ffd84d', grid:'rgba(255,216,77,.06)'},
+    6:{top:'#090717',mid:'#24144e',bot:'#04030b',a:'rgba(159,140,255,.22)',b:'rgba(114,247,255,.10)',c:'rgba(255,138,242,.10)', wave:'#9f8cff', grid:'rgba(159,140,255,.07)'},
+    7:{top:'#050814',mid:'#1a2d63',bot:'#03040d',a:'rgba(114,247,255,.22)',b:'rgba(255,120,245,.14)',c:'rgba(255,216,77,.10)', wave:'#7cf8ff', grid:'rgba(124,248,255,.08)'}
+  };
+  const pal = stagePal[stage] || stagePal[7];
+  const g = ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,pal.top);
+  g.addColorStop(.52,pal.mid);
+  g.addColorStop(1,pal.bot);
+  ctx.fillStyle = g;
+  ctx.fillRect(0,0,W,H);
+
+  // nebula glow
+  ctx.save();
+  const orbs = [
+    {x:W*(.18 + Math.sin(t*.006)*.03), y:H*(.22 + Math.cos(t*.004)*.03), r:190, c:pal.a},
+    {x:W*(.72 + Math.cos(t*.005)*.04), y:H*(.30 + Math.sin(t*.003)*.05), r:160, c:pal.b},
+    {x:W*(.58 + Math.sin(t*.004)*.05), y:H*(.78 + Math.cos(t*.006)*.03), r:210, c:pal.c},
+  ];
+  for(const o of orbs){
+    const rg = ctx.createRadialGradient(o.x,o.y,0,o.x,o.y,o.r);
+    rg.addColorStop(0,o.c);
+    rg.addColorStop(1,'transparent');
+    ctx.fillStyle=rg;
+    ctx.beginPath();
+    ctx.arc(o.x,o.y,o.r,0,Math.PI*2);
+    ctx.fill();
+  }
+  ctx.restore();
+
+  // stage-specific scenery (same as original neon2 drawBackground)
+  ctx.save();
+  if(stage===1){
+    ctx.globalAlpha=.18; ctx.strokeStyle='rgba(114,247,255,.35)'; ctx.lineWidth=2;
+    for(let x=-80; x<W+80; x+=80){
+      ctx.beginPath();
+      ctx.moveTo(x + (t*1.8)%80, H*.70);
+      ctx.lineTo(x+24 + (t*1.8)%80, H*.54);
+      ctx.lineTo(x+48 + (t*1.8)%80, H*.70);
+      ctx.stroke();
+    }
+    ctx.globalAlpha=.22; ctx.fillStyle='rgba(114,247,255,.08)';
+    for(let x=0;x<W;x+=70){
+      ctx.fillRect((x-(t*1.1)%70), H*.72 + Math.sin((x+t)*.02)*8, 26, H*.28);
+    }
+  } else if(stage===2){
+    ctx.globalAlpha=.22; ctx.strokeStyle='rgba(255,93,177,.28)'; ctx.lineWidth=3;
+    for(let i=0;i<5;i++){
+      const cy = 70 + i*95 + Math.sin(t*.02+i)*12;
+      ctx.beginPath();
+      for(let x=0;x<=W;x+=10){
+        const y = cy + Math.sin((x+t*2.4)*.017 + i)*18;
+        if(x===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      }
+      ctx.stroke();
+    }
+  } else if(stage===3){
+    ctx.globalAlpha=.24; ctx.strokeStyle='rgba(137,255,155,.26)'; ctx.lineWidth=2;
+    for(let x=0;x<W+90;x+=90){
+      const bx = x - (t*1.7)%90;
+      ctx.beginPath(); ctx.moveTo(bx,H*.78); ctx.lineTo(bx+18,H*.56); ctx.lineTo(bx+36,H*.78); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(bx+52,H*.78); ctx.lineTo(bx+70,H*.50); ctx.lineTo(bx+88,H*.78); ctx.stroke();
+    }
+    ctx.globalAlpha=.1; ctx.fillStyle='rgba(137,255,155,.22)'; ctx.fillRect(0,H*.80,W,H*.20);
+  } else if(stage===4){
+    ctx.globalAlpha=.18; ctx.strokeStyle='rgba(255,98,98,.28)'; ctx.lineWidth=2;
+    for(let i=0;i<8;i++){ const x=i*120 - (t*2.4)%120; ctx.beginPath(); ctx.moveTo(x,H); ctx.lineTo(x+60,0); ctx.stroke(); }
+    for(let i=0;i<8;i++){ const x=i*120 + (t*1.9)%120; ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x-60,H); ctx.stroke(); }
+  } else if(stage===5){
+    ctx.globalAlpha=.24; ctx.strokeStyle='rgba(255,216,77,.24)'; ctx.lineWidth=2;
+    for(let i=0;i<6;i++){
+      const y=70+i*82;
+      ctx.beginPath();
+      for(let x=0;x<=W;x+=12){
+        const yy=y + Math.sin((x+t*1.5)*.014 + i)*12 + Math.cos((x+t)*.027)*4;
+        if(x===0) ctx.moveTo(x,yy); else ctx.lineTo(x,yy);
+      }
+      ctx.stroke();
+    }
+    ctx.globalAlpha=.12; ctx.fillStyle='rgba(255,179,71,.10)';
+    for(let i=0;i<12;i++) ctx.fillRect((i*96 + (t*1.3)%96)%W, H*.76 + (i%2)*14, 34, 90);
+  } else if(stage===6){
+    ctx.globalAlpha=.25; ctx.strokeStyle='rgba(159,140,255,.28)'; ctx.lineWidth=2;
+    const ringX=W*.73, ringY=H*.26;
+    for(let i=0;i<4;i++){ ctx.beginPath(); ctx.ellipse(ringX, ringY, 120+i*42, 28+i*10, -.25+i*.03, 0, Math.PI*2); ctx.stroke(); }
+    ctx.globalAlpha=.16; ctx.fillStyle='rgba(114,247,255,.08)';
+    for(let i=0;i<9;i++){ const x=(i*110 - (t*1.4)%110); ctx.fillRect(x, H*.78 + Math.sin((i+t)*.5)*6, 42, 120); }
+  } else {
+    ctx.globalAlpha=.24; ctx.strokeStyle='rgba(124,248,255,.30)'; ctx.lineWidth=2;
+    const coreX=W*.72, coreY=H*.24;
+    for(let i=0;i<5;i++){
+      const size=46+i*32 + Math.sin(t*.01+i)*6;
+      ctx.beginPath();
+      ctx.moveTo(coreX, coreY-size);
+      ctx.lineTo(coreX+size*1.2, coreY);
+      ctx.lineTo(coreX, coreY+size);
+      ctx.lineTo(coreX-size*1.2, coreY);
+      ctx.closePath();
+      ctx.stroke();
+    }
+    ctx.globalAlpha=.18; ctx.fillStyle='rgba(255,120,245,.08)';
+    for(let i=0;i<8;i++){
+      const x=i*128 - (t*1.8)%128;
+      const h=84 + (i%3)*22;
+      ctx.fillRect(x, H*.74 + Math.sin((i+t*.08))*8, 34, h);
+      ctx.fillRect(x+54, H*.78 + Math.cos((i+t*.07))*6, 18, h-26);
+    }
+    ctx.globalAlpha=.16; ctx.strokeStyle='rgba(255,216,77,.18)';
+    for(let i=0;i<6;i++){
+      const yy=58+i*78;
+      ctx.beginPath();
+      for(let x=0;x<=W;x+=16){
+        const wave=yy + Math.sin((x+t*2.2)*.02 + i)*8;
+        if(x===0) ctx.moveTo(x,wave); else ctx.lineTo(x,wave);
+      }
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+
+  // moving grid
+  ctx.save();
+  ctx.strokeStyle = pal.grid;
+  for(let x=0;x<W;x+=48){ ctx.beginPath(); ctx.moveTo(x+((t*.3)%48),0); ctx.lineTo(x+((t*.3)%48),H); ctx.stroke(); }
+  for(let y=0;y<H;y+=48){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+  ctx.restore();
+
+  drawStars(starsFar,'rgba(180,220,255,.22)',0);
+  drawStars(starsMid, pal.a.replace('.22','.35'), 8);
+  drawStars(starsNear, pal.b.replace('.12','.26'), 12);
+
+  // horizon wave
+  ctx.save();
+  ctx.globalAlpha=.16;
+  ctx.strokeStyle = pal.wave;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for(let x=0;x<=W;x+=8){
+    const y = H*.77 + Math.sin((x+t*3)*0.016)*8 + Math.sin((x+t*1.7)*0.03)*4;
+    if(x===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+  ctx.restore();
+
+  // speed lines
+  ctx.save();
+  ctx.globalAlpha=.12;
+  ctx.strokeStyle='rgba(255,255,255,.08)';
+  ctx.lineWidth=1;
+  for(let i=0;i<20;i++){
+    const y=(i*32 + (t*(1.2 + stage*.1))%32);
+    ctx.beginPath();
+    ctx.moveTo(W*.55 + i*6, y);
+    ctx.lineTo(W, y - 14 - i*.6);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawScanline(){
+  ctx.save();
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.globalAlpha=.06;
+  for(let y=0;y<VH;y+=4){
+    ctx.fillStyle=(y%8===0)?'#fff':'#000';
+    ctx.fillRect(0,y,VW,1);
+  }
+  ctx.restore();
+}
+
+function drawTitle(){
+  const cx = VW/2;
+  glowText('NEONSTRIKER', cx, 150, 46, 'center', '#72f7ff');
+  glowText('NEON RAINBOW BOSS BULLETS', cx, 205, 20, 'center', '#ff5db1');
+  ctx.save();
+  ctx.textAlign='center';
+  ctx.fillStyle='rgba(255,255,255,.86)';
+  ctx.font='700 18px sans-serif';
+  // ctx.fillText('TAP / Z TO START', cx, 300); // removed
+  ctx.fillStyle='rgba(222,242,255,.70)';
+  ctx.font='600 12px sans-serif';
+   ctx.restore();
+}
+
+function render(){
+  // clear portrait canvas
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.fillStyle='#020611';
+  ctx.fillRect(0,0,VW,VH);
+
+  // draw background in rotated landscape space (same as original)
+  ctx.save();
+  ctx.setTransform(0,-1,1,0,0,W);
+  drawBackground(time);
+  ctx.restore();
+
+  // overlay title in portrait space
+  ctx.save();
+  ctx.setTransform(1,0,0,1,0,0);
+  drawTitle();
+  ctx.restore();
+
+  if(!IS_MOBILE && !lowQuality) drawScanline();
+}
+
+function loop(){
+  time++;
+  scrollStars(starsFar);
+  scrollStars(starsMid);
+  scrollStars(starsNear);
+  render();
+  requestAnimationFrame(loop);
+}
+loop();
+
+// Entry tabs -> default navigation to 1.html / 2.html
+for(const btn of document.querySelectorAll('[data-entry]')){
+  btn.addEventListener('pointerdown', (e)=>{
+    e.preventDefault();
+    const n = btn.getAttribute('data-entry');
+    location.href = (n === '1') ? 'neon1.html' : 'neon2.html';
+  }, {passive:false});
+}
+</script>
+</body>
+</html>
