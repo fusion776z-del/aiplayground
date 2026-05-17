@@ -202,534 +202,10 @@ bossDown(){ beep('sawtooth', 180, 55, 0.45, 0.06); },
 clear(){ beep('triangle', 262, 524, 0.15, 0.04); setTimeout(()=>beep('triangle', 330, 660, 0.15, 0.035), 110); setTimeout(()=>beep('triangle', 392, 784, 0.18, 0.035), 220); },
 lifeUp(){ beep('triangle', 392, 784, 0.10, 0.05); setTimeout(()=>beep('triangle', 523, 1046, 0.12, 0.04), 90); }
 };
-let bgmTimer = null;
-let bgmBus = null;
-let bgmNextTime = 0;
-let bgmBar = 0;
-let bgmStage = 1;
-let bgmBoss = false;
-let bgmNoiseBuffer = null;
-let bgmBaseLevel = 0.20;
-function midiHz(n){ return 440 * Math.pow(2, (n - 69) / 12); }
-function ensureBgmNoise(){
-if(bgmNoiseBuffer) return bgmNoiseBuffer;
-const len = Math.floor(audioCtx.sampleRate * 1.25);
-const buffer = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
-const data = buffer.getChannelData(0);
-let last = 0;
-for(let i=0;i<len;i++){
-const white = (Math.random()*2-1);
-last = (last*0.97) + (white*0.03);
-const t = i/len;
-data[i] = last * Math.pow(1 - t, 0.84);
-}
-bgmNoiseBuffer = buffer;
-return buffer;
-}
-function createBgmBus(level){
-const master = audioCtx.createGain();
-const drive = audioCtx.createWaveShaper();
-const hp = audioCtx.createBiquadFilter();
-const lp = audioCtx.createBiquadFilter();
-const delay = audioCtx.createDelay(0.45);
-const fb = audioCtx.createGain();
-const wet = audioCtx.createGain();
-const dry = audioCtx.createGain();
-const comp = audioCtx.createDynamicsCompressor();
-const curve = new Float32Array(2048);
-for(let i=0;i<curve.length;i++){
-const x = i/(curve.length-1)*2-1;
-curve[i] = Math.tanh(x*1.95);
-}
-drive.curve = curve;
-hp.type = 'highpass'; hp.frequency.value = 26; hp.Q.value = 0.75;
-lp.type = 'lowpass'; lp.frequency.value = 9000; lp.Q.value = 0.35;
-delay.delayTime.value = 0.165;
-fb.gain.value = 0.22;
-wet.gain.value = 0.18;
-  // METALCORE_V2: diffuse reverb (small, CPU-light)
-  const revIn = audioCtx.createGain();
-  const revOut = audioCtx.createGain();
-  revOut.gain.value = 0.10;
-  const rd1 = audioCtx.createDelay(0.12); rd1.delayTime.value = 0.029;
-  const rd2 = audioCtx.createDelay(0.12); rd2.delayTime.value = 0.041;
-  const rd3 = audioCtx.createDelay(0.12); rd3.delayTime.value = 0.053;
-  const rfb = audioCtx.createGain(); rfb.gain.value = 0.33;
 
-dry.gain.value = 1.0;
-comp.threshold.value = -24;
-comp.knee.value = 18;
-comp.ratio.value = 4.5;
-comp.attack.value = 0.003;
-comp.release.value = 0.14;
-master.gain.value = level;
-master.connect(drive);
-drive.connect(hp);
-hp.connect(lp);
-lp.connect(dry);
-lp.connect(delay);
-  lp.connect(revIn);
-delay.connect(wet);
-delay.connect(fb);
-fb.connect(delay);
-dry.connect(comp);
-wet.connect(comp);
-comp.connect(audioCtx.destination);
-return {master, drive, hp, lp, delay, wet, comp};
-}
-function stopBGM(){
-if(bgmTimer){ clearInterval(bgmTimer); bgmTimer = null; }
-if(bgmBus && bgmBus.master){ try{ bgmBus.master.disconnect(); }catch(_e){} }
-bgmBus = null;
-}
-function connectPanned(node, pan){
-if(!bgmBus) return;
-if(typeof audioCtx.createStereoPanner === 'function'){
-const sp = audioCtx.createStereoPanner();
-sp.pan.value = pan;
-node.connect(sp);
-sp.connect(bgmBus.master);
-} else node.connect(bgmBus.master);
-}
-function pump(when, amount){
-if(!bgmBus || !bgmBus.master) return;
-const g = bgmBus.master.gain;
-const dip = Math.max(0.0, Math.min(0.55, amount || 0.25));
-const base = bgmBaseLevel || 0.20;
-try{
-g.cancelScheduledValues(when);
-g.setValueAtTime(base, when);
-g.linearRampToValueAtTime(base * (1 - dip), when + 0.010);
-g.linearRampToValueAtTime(base, when + 0.095);
-}catch(_e){}
-}
-function subBass(note, when, dur, gain, pan){
-if(!bgmBus) return;
-const osc = audioCtx.createOscillator();
-const sat = audioCtx.createWaveShaper();
-const amp = audioCtx.createGain();
-const lp = audioCtx.createBiquadFilter();
-osc.type = 'sine';
-osc.frequency.setValueAtTime(midiHz(note), when);
-osc.frequency.exponentialRampToValueAtTime(midiHz(note-12), when + Math.min(0.03, dur*0.25));
-const c = new Float32Array(1024);
-for(let i=0;i<c.length;i++){
-const x=i/(c.length-1)*2-1;
-c[i]=Math.tanh(x*2.25);
-}
-sat.curve = c;
-lp.type='lowpass'; lp.frequency.setValueAtTime(220, when); lp.Q.value = 0.75;
-amp.gain.setValueAtTime(0.0001, when);
-amp.gain.linearRampToValueAtTime(gain, when + 0.006);
-amp.gain.exponentialRampToValueAtTime(0.0001, when + dur);
-osc.connect(sat); sat.connect(lp); lp.connect(amp);
-connectPanned(amp, pan==null? -0.02 : pan);
-osc.start(when); osc.stop(when + dur + 0.02);
-}
-function stab(note, when, dur, gain, pan, bright){
-if(!bgmBus) return;
-const osc = audioCtx.createOscillator();
-const lp = audioCtx.createBiquadFilter();
-const amp = audioCtx.createGain();
-osc.type = 'sawtooth';
-osc.frequency.setValueAtTime(midiHz(note), when);
-lp.type='lowpass';
-lp.frequency.setValueAtTime(bright? 3900: 2300, when);
-lp.Q.value = 0.75;
-amp.gain.setValueAtTime(0.0001, when);
-amp.gain.linearRampToValueAtTime(gain, when + 0.008);
-amp.gain.exponentialRampToValueAtTime(Math.max(0.0001, gain*0.16), when + Math.max(0.03, dur*0.55));
-amp.gain.exponentialRampToValueAtTime(0.0001, when + dur);
-osc.connect(lp); lp.connect(amp);
-connectPanned(amp, pan||0);
-osc.start(when); osc.stop(when + dur + 0.02);
-}
-function neonLead(note, when, dur, gain, pan, vib){
-if(!bgmBus) return;
-const o1 = audioCtx.createOscillator();
-const o2 = audioCtx.createOscillator();
-const lp = audioCtx.createBiquadFilter();
-const amp= audioCtx.createGain();
-const lfo= audioCtx.createOscillator();
-const lfg= audioCtx.createGain();
-o1.type='sawtooth'; o2.type='sawtooth';
-o1.frequency.setValueAtTime(midiHz(note), when);
-o2.frequency.setValueAtTime(midiHz(note), when);
-o2.detune.setValueAtTime(9.5, when);
-lp.type='lowpass'; lp.frequency.setValueAtTime(5400, when); lp.Q.value=0.95;
-amp.gain.setValueAtTime(0.0001, when);
-amp.gain.linearRampToValueAtTime(gain, when + 0.012);
-amp.gain.exponentialRampToValueAtTime(Math.max(0.0001, gain*0.22), when + Math.max(0.04, dur*0.65));
-amp.gain.exponentialRampToValueAtTime(0.0001, when + dur);
-lfo.type='sine';
-lfo.frequency.setValueAtTime(vib? 6.0 : 0.0, when);
-lfg.gain.setValueAtTime(vib? 9.0 : 0.0, when);
-lfo.connect(lfg);
-lfg.connect(o1.detune);
-lfg.connect(o2.detune);
-o1.connect(lp); o2.connect(lp);
-lp.connect(amp);
-connectPanned(amp, pan||0.16);
-o1.start(when); o2.start(when); lfo.start(when);
-o1.stop(when + dur + 0.03);
-o2.stop(when + dur + 0.03);
-lfo.stop(when + dur + 0.03);
-}
-function fmSparkle(note, when, dur, gain, pan){
-if(!bgmBus) return;
-const carrier = audioCtx.createOscillator();
-const mod = audioCtx.createOscillator();
-const mg = audioCtx.createGain();
-const hp = audioCtx.createBiquadFilter();
-const amp = audioCtx.createGain();
-carrier.type='sine'; mod.type='sine';
-carrier.frequency.setValueAtTime(midiHz(note), when);
-mod.frequency.setValueAtTime(62, when);
-mg.gain.setValueAtTime(110, when);
-hp.type='highpass'; hp.frequency.setValueAtTime(560, when);
-amp.gain.setValueAtTime(0.0001, when);
-amp.gain.linearRampToValueAtTime(gain, when + 0.006);
-amp.gain.exponentialRampToValueAtTime(0.0001, when + dur);
-mod.connect(mg); mg.connect(carrier.frequency);
-carrier.connect(hp); hp.connect(amp);
-connectPanned(amp, pan==null?0.08:pan);
-carrier.start(when); mod.start(when);
-carrier.stop(when+dur+0.02); mod.stop(when+dur+0.02);
-}
-function noiseDrum(when, dur, gain, kind){
-if(!bgmBus) return;
-const src = audioCtx.createBufferSource();
-const filter = audioCtx.createBiquadFilter();
-const amp = audioCtx.createGain();
-src.buffer = ensureBgmNoise();
-if(kind==='hat'){
-filter.type='highpass'; filter.frequency.setValueAtTime(7400, when);
-filter.Q.value = 0.85;
-} else if(kind==='snare'){
-filter.type='bandpass'; filter.frequency.setValueAtTime(2100, when);
-filter.Q.value = 0.85;
-} else {
-filter.type='lowpass'; filter.frequency.setValueAtTime(320, when);
-filter.Q.value = 0.7;
-}
-amp.gain.setValueAtTime(0.0001, when);
-amp.gain.linearRampToValueAtTime(gain, when + 0.002);
-amp.gain.exponentialRampToValueAtTime(0.0001, when + dur);
-src.connect(filter); filter.connect(amp);
-connectPanned(amp, 0.10);
-src.start(when); src.stop(when + dur + 0.02);
-}
-function kick(when, gain, pumpAmt){
-if(!bgmBus) return;
-pump(when, pumpAmt || 0.28);
-  // METALCORE_V2: kick click transient (adds attack without relying on sub)
-  try{
-    const ns = audioCtx.createBufferSource();
-    ns.buffer = ensureBgmNoise();
-    const nHp = audioCtx.createBiquadFilter();
-    nHp.type='highpass'; nHp.frequency.value = 6200;
-    const nAmp = audioCtx.createGain();
-    nAmp.gain.setValueAtTime(0.0001, when);
-    nAmp.gain.linearRampToValueAtTime(Math.max(0.0002, gain*0.10), when + 0.002);
-    nAmp.gain.exponentialRampToValueAtTime(0.0001, when + 0.018);
-    ns.connect(nHp); nHp.connect(nAmp);
-    connectPanned(nAmp, -0.02);
-    ns.start(when); ns.stop(when + 0.03);
-  }catch(_e){}
+function stopBGM(){}
+function startBGM(stage, isBoss){}
 
-const osc = audioCtx.createOscillator();
-const amp = audioCtx.createGain();
-osc.type='sine';
-osc.frequency.setValueAtTime(172, when);
-osc.frequency.exponentialRampToValueAtTime(50, when + 0.115);
-amp.gain.setValueAtTime(0.0001, when);
-amp.gain.linearRampToValueAtTime(gain, when + 0.004);
-amp.gain.exponentialRampToValueAtTime(0.0001, when + 0.22);
-osc.connect(amp);
-connectPanned(amp, -0.05);
-osc.start(when); osc.stop(when + 0.26);
-}
-
-// === METALCORE_BGM_TOOLS_V2: distorted guitar + mid-bass layer ===
-function guitarChord(note, when, dur, gain, pan){
-  if(!bgmBus) return;
-
-  // pick transient
-  try{
-    const ns = audioCtx.createBufferSource();
-    ns.buffer = ensureBgmNoise();
-    const hpN = audioCtx.createBiquadFilter();
-    hpN.type='highpass'; hpN.frequency.setValueAtTime(7000, when);
-    const nAmp = audioCtx.createGain();
-    nAmp.gain.setValueAtTime(0.0001, when);
-    nAmp.gain.linearRampToValueAtTime(Math.max(0.0002, gain*0.08), when + 0.002);
-    nAmp.gain.exponentialRampToValueAtTime(0.0001, when + 0.016);
-    ns.connect(hpN); hpN.connect(nAmp);
-    connectPanned(nAmp, (pan==null?0:pan));
-    ns.start(when); ns.stop(when + 0.03);
-  }catch(_e){}
-
-  const o1 = audioCtx.createOscillator();
-  const o2 = audioCtx.createOscillator();
-  const o3 = audioCtx.createOscillator();
-  o1.type='sawtooth';
-  o2.type='square';
-  o3.type='sawtooth';
-  o1.frequency.setValueAtTime(midiHz(note), when);
-  o2.frequency.setValueAtTime(midiHz(note), when);
-  o3.frequency.setValueAtTime(midiHz(note), when);
-  o2.detune.setValueAtTime(-9, when);
-  o3.detune.setValueAtTime(9, when);
-
-  const hp = audioCtx.createBiquadFilter();
-  hp.type='highpass'; hp.frequency.setValueAtTime(150, when);
-
-  const mid = audioCtx.createBiquadFilter();
-  mid.type='peaking';
-  mid.frequency.setValueAtTime(1350, when);
-  mid.Q.setValueAtTime(0.95, when);
-  mid.gain.setValueAtTime(7.0, when);
-
-  const sh = audioCtx.createWaveShaper();
-  const curve = new Float32Array(2048);
-  const drive = 2.45;
-  for(let i=0;i<curve.length;i++){
-    const x = i/(curve.length-1)*2-1;
-    curve[i] = Math.tanh(x*drive);
-  }
-  sh.curve = curve;
-
-  const cabLP = audioCtx.createBiquadFilter();
-  cabLP.type='lowpass'; cabLP.frequency.setValueAtTime(4000, when); cabLP.Q.setValueAtTime(0.7, when);
-
-  const cabNotch = audioCtx.createBiquadFilter();
-  cabNotch.type='peaking';
-  cabNotch.frequency.setValueAtTime(3200, when);
-  cabNotch.Q.setValueAtTime(1.2, when);
-  cabNotch.gain.setValueAtTime(-4.5, when);
-
-  const amp = audioCtx.createGain();
-  amp.gain.setValueAtTime(0.0001, when);
-  amp.gain.linearRampToValueAtTime(gain, when + 0.012);
-  amp.gain.exponentialRampToValueAtTime(Math.max(0.0001, gain*0.28), when + dur*0.35);
-  amp.gain.exponentialRampToValueAtTime(0.0001, when + dur);
-
-  o1.connect(hp); o2.connect(hp); o3.connect(hp);
-  hp.connect(mid);
-  mid.connect(sh);
-  sh.connect(cabLP);
-  cabLP.connect(cabNotch);
-  cabNotch.connect(amp);
-  connectPanned(amp, (pan==null?0:pan));
-
-  o1.start(when); o2.start(when); o3.start(when);
-  o1.stop(when + dur + 0.03);
-  o2.stop(when + dur + 0.03);
-  o3.stop(when + dur + 0.03);
-}
-
-function midBass(note, when, dur, gain, pan){
-  if(!bgmBus) return;
-  const osc = audioCtx.createOscillator();
-  const amp = audioCtx.createGain();
-  const hp = audioCtx.createBiquadFilter();
-  const lp = audioCtx.createBiquadFilter();
-  const sh = audioCtx.createWaveShaper();
-
-  osc.type='sawtooth';
-  osc.frequency.setValueAtTime(midiHz(note), when);
-
-  hp.type='highpass'; hp.frequency.setValueAtTime(120, when);
-  lp.type='lowpass';  lp.frequency.setValueAtTime(1200, when);
-
-  const curve = new Float32Array(1024);
-  for(let i=0;i<curve.length;i++){
-    const x=i/(curve.length-1)*2-1;
-    curve[i]=Math.tanh(x*1.35);
-  }
-  sh.curve = curve;
-
-  amp.gain.setValueAtTime(0.0001, when);
-  amp.gain.linearRampToValueAtTime(gain, when + 0.010);
-  amp.gain.exponentialRampToValueAtTime(0.0001, when + dur);
-
-  osc.connect(hp); hp.connect(sh); sh.connect(lp); lp.connect(amp);
-  connectPanned(amp, (pan==null?0:pan));
-
-  osc.start(when); osc.stop(when + dur + 0.03);
-}
-const CHORDS = { m:[0,3,7], M:[0,4,7], sus2:[0,2,7], dom7:[0,4,7,10] };
-function chordTones(tonicMidi, chord){ const ivs = CHORDS[chord.t] || CHORDS.m; return ivs.map(iv => tonicMidi + chord.r + iv); }
-function stageTranspose(st){ const map=[0,0,2,3,5,7,8,10]; return map[Math.max(1, Math.min(7, st))]; }
-const SONGS = {
-1:{ bpm:150,
-prog:[{r:0,t:'m'},{r:8,t:'M'},{r:3,t:'M'},{r:10,t:'M'}],
-kick:[1,0,0,0, 0,0,1,0, 1,0,0,0, 0,1,0,0],
-snare:[0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
-hat :[1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1],
-bass:[0,-1,0,-1, 0, 7,-1, 7, 0,-1, 0, 3, 0, 7,-1,10],
-lead:[12,-1,15,17, 19,-1,17,15, 12,-1,15,17, 22,-1,19,17]
-},
-2:{ bpm:158,
-prog:[{r:0,t:'m'},{r:1,t:'M'},{r:10,t:'M'},{r:8,t:'M'}],
-kick:[1,0,0,0, 0,1,0,0, 1,0,0,0, 0,1,0,0],
-snare:[0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
-hat :[1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1],
-bass:[0,-1,0, 1, 0,-1,10,-1, 0, 1,-1, 8, 0,10,-1, 8],
-lead:[14,15,-1,17, 19,-1,20,19, 17,-1,15,14, 12,-1,14,15]
-},
-3:{ bpm:146,
-prog:[{r:0,t:'m'},{r:5,t:'m'},{r:10,t:'M'},{r:3,t:'M'}],
-kick:[1,0,0,0, 0,0,1,0, 0,0,1,0, 1,0,0,0],
-snare:[0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
-hat :[1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0],
-bass:[0,-1,5,-1, 0,-1,10,-1, 3,-1,10,-1, 5,-1,3,-1],
-lead:[12,-1,14,-1, 17,-1,19,-1, 22,-1,19,-1, 17,-1,14,-1]
-},
-4:{ bpm:162,
-prog:[{r:0,t:'m'},{r:8,t:'M'},{r:5,t:'m'},{r:10,t:'M'}],
-kick:[1,0,0,0, 0,1,0,0, 1,0,0,0, 0,1,0,1],
-snare:[0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
-hat :[1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1],
-bass:[0,-1,0, 3, 0,-1, 5,-1, 0, 3,-1,10, 0, 5,-1, 8],
-lead:[17,-1,15,14, 12,-1,10,12, 14,-1,12,10, 8,-1,10,12]
-},
-5:{ bpm:136,
-prog:[{r:0,t:'m'},{r:3,t:'M'},{r:8,t:'M'},{r:10,t:'M'}],
-kick:[1,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0],
-snare:[0,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0],
-hat :[1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0],
-bass:[0,-1,0,-1, 0,-1, 3,-1, 0,-1, 8,-1, 0,-1,10,-1],
-lead:[12,-1,-1,12, 15,-1,-1,15, 17,-1,-1,17, 19,-1,-1,19]
-},
-6:{ bpm:174,
-prog:[{r:0,t:'m'},{r:10,t:'M'},{r:8,t:'M'},{r:5,t:'m'}],
-kick:[1,0,0,0, 0,0,0,0, 0,0,1,0, 0,0,0,0],
-snare:[0,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0],
-hat :[1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1],
-bass:[0, 7,-1,10, 0,-1, 7,-1, 0, 5,-1, 3, 0,-1,10,-1],
-lead:[24,22,-1,19, 22,-1,24,27, 24,-1,22,19, 17,-1,19,22]
-},
-7:{ bpm:178,
-prog:[{r:0,t:'m'},{r:1,t:'M'},{r:8,t:'M'},{r:10,t:'M'}],
-kick:[1,0,0,0, 0,1,0,0, 1,0,0,0, 0,1,0,1],
-snare:[0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
-hat :[1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1],
-bass:[0, 1,-1, 8, 0,-1,10,-1, 0, 3,-1, 8, 0,10,-1, 1],
-lead:[24,27,24,22, 19,-1,22,24, 27,-1,29,27, 24,-1,22,19]
-}
-};
-function songFor(stage, isBoss){
-const s = SONGS[Math.max(1, Math.min(7, stage||1))] || SONGS[1];
-if(!isBoss) return s;
-return Object.assign({}, s, { bpm: s.bpm + 18, boss: true });
-}
-function playBar(barIndex, when, step, stage, isBoss){
-const tr = stageTranspose(stage);
-const song = songFor(stage, isBoss);
-const tonicChord = 57 + tr;
-const tonicBass = 33 + tr;
-const tonicLead = 69 + tr;
-const chord = song.prog[barIndex % song.prog.length];
-const tones = chordTones(tonicChord, chord);
-const hatGain = (song.boss ? 0.036 : 0.028);
-const snGain = (song.boss ? 0.096 : 0.082);
-const kdGain = (song.boss ? 0.128 : 0.110);
-const bassGain= (song.boss ? 0.160 : 0.142);
-for(let i=0;i<16;i++){
-const t = when + i*step;
-if(song.kick[i]){
-      kick(t, kdGain, song.boss?0.34:0.28);
-      // METALCORE_V2: tight chug on kick (root power)
-      const root = (tonicBass + chord.r);
-      guitarChord(root+24, t + step*0.01, step*0.55, song.boss?0.018:0.014, -0.12);
-      guitarChord(root+24+7, t + step*0.01, step*0.55, song.boss?0.016:0.012,  0.12);
-    }
-if(song.snare[i]){
-      noiseDrum(t, 0.110, snGain, 'snare');
-      stab(tonicLead-12, t, 0.06, song.boss?0.012:0.010, 0.02, false);
-      // METALCORE_V2: snare body thump
-      try{
-        const body = audioCtx.createOscillator();
-        const ba = audioCtx.createGain();
-        body.type='triangle';
-        body.frequency.setValueAtTime(210, t);
-        ba.gain.setValueAtTime(0.0001, t);
-        ba.gain.linearRampToValueAtTime(Math.max(0.0002, snGain*0.55), t+0.004);
-        ba.gain.exponentialRampToValueAtTime(0.0001, t+0.12);
-        body.connect(ba);
-        connectPanned(ba, 0.02);
-        body.start(t); body.stop(t+0.14);
-      }catch(_e){}
-    }
-if(song.hat[i]){
-const open = song.boss && (i===15);
-noiseDrum(t + (i%2?0.004:0), open?0.080:0.042, open?hatGain*1.18:hatGain, 'hat');
-}
-if(i===0 || i===6 || i===8 || i===14){
-const dur = step * (song.boss? 2.8 : 3.1);
-const g = (song.boss?0.015:0.012);
-for(let k=0;k<Math.min(3, tones.length);k++){
-const n = tones[k] + 12 + (k===2?12:0);
-const pan = (-0.18 + k*0.18);
-stab(n, t + step*0.02, dur, g, pan, song.boss);
-}
-
-    // METALCORE_V2: sustained power-chord wall (in chord-hit)
-    const pr = tones[0]-12;
-    guitarChord(pr, t + step*0.02, dur*0.95, song.boss?0.020:0.016, -0.18);
-    guitarChord(pr+7, t + step*0.02, dur*0.95, song.boss?0.018:0.014,  0.18);
-  }
-const b = song.bass[i];
-if(b != null && b !== -1){
-const note = tonicBass + chord.r + b;
-subBass(note, t, step*1.45, bassGain, -0.03);
-    // METALCORE_V2: add mid-bass for punch/definition
-    midBass(note+12, t, step*1.10, song.boss?0.040:0.030, 0.00);
-}
-const m = song.lead[i];
-if(m != null && m !== -1){
-const note = tonicLead + chord.r + m;
-const g = song.boss ? 0.055 : 0.044;
-const d = step * (song.boss? 1.05 : 0.90);
-neonLead(note, t + step*0.01, d, g, 0.18, !song.boss);
-if(song.boss && (i%4===0)) fmSparkle(note+12, t + step*0.02, step*0.85, 0.012, 0.08);
-}
-if(song.boss && i===15){
-noiseDrum(t + step*0.06, 0.13, 0.032, 'hat');
-fmSparkle(tonicLead+24, t + step*0.04, 0.11, 0.013, 0.0);
-}
-}
-}
-function startBGM(stage, isBoss){
-stopBGM();
-if(!audioUnlocked || audioCtx.state !== 'running'){
-pendingBGM = {stage: stage || 1, isBoss: !!isBoss};
-return;
-}
-if(audioCtx.state !== 'running') return;
-bgmStage = stage || 1;
-bgmBoss = !!isBoss;
-const LOOP_BARS = 8;
-const st = Math.max(1, Math.min(7, bgmStage));
-const base = (bgmBoss ? 0.30 : 0.19);
-const stBoost = Math.min(0.09, (st-1)*0.013);
-bgmBaseLevel = base + stBoost;
-bgmBus = createBgmBus(bgmBaseLevel);
-const song = songFor(bgmStage, bgmBoss);
-const bpm = song.bpm;
-bgmNextTime = audioCtx.currentTime + 0.07;
-bgmBar = 0;
-bgmTimer = setInterval(() => {
-if(audioCtx.state !== 'running' || !bgmBus) return;
-const step = 60 / bpm / 4;
-while(bgmNextTime < audioCtx.currentTime + 0.42){
-playBar(bgmBar % LOOP_BARS, bgmNextTime, step, bgmStage, bgmBoss);
-bgmNextTime += step * 16;
-bgmBar = (bgmBar + 1) % LOOP_BARS;
-}
-}, 25);
-}
 const rand = (a,b)=>Math.random()*(b-a)+a;
 const clamp = (v,min,max)=>Math.max(min, Math.min(max, v));
 const hit = (a,b,aw,ah,bw,bh)=>a.x < b.x + bw && a.x + aw > b.x && a.y < b.y + bh && a.y + ah > b.y;
@@ -2413,4 +1889,95 @@ if(e.code==='Space'){ e.preventDefault(); if(state==='play' && clearTimer<=0){ p
 });
 addEventListener('keyup', e=>{ if(e.key==='ArrowUp') input.up=0; if(e.key==='ArrowDown') input.down=0; if(e.key==='ArrowLeft') input.left=0; if(e.key==='ArrowRight') input.right=0; if(e.key==='Shift') input.focus=0; if(e.key==='z' || e.key==='Z') input.shot=0; if(e.key==='x' || e.key==='X') input.alt=0; if(e.key==='c' || e.key==='C') input.bomb=0; });
 syncTypeUI();
-loop();</script><div id="mobileUI" aria-hidden="true"><div id="btnFire" class="btn">FIRE</div><div id="btnFocus" class="btn small">FOCUS+FIRE</div><div id="btnBomb" class="btn small">BOMB</div></div></body></html>
+loop();</script><div id="mobileUI" aria-hidden="true"><div id="btnFire" class="btn">FIRE</div><div id="btnFocus" class="btn small">FOCUS+FIRE</div><div id="btnBomb" class="btn small">BOMB</div></div>
+<!-- 🟢 BGM iframe -->
+<iframe
+    id="bgmFrame"
+    src="BGM.html"
+    style="
+        position:absolute;
+        width:0;
+        height:0;
+        border:0;
+        opacity:0;
+        pointer-events:none;
+    ">
+</iframe>
+<script>
+/* =========================================================
+   BGM LINK BRIDGE (paste-only / overwrite by re-declaration)
+   - neon2.html 側に貼るだけで、既存 startBGM/stopBGM を上書き
+   - iframe(#bgmFrame) 内の BGM.html に START/STOP を飛ばします
+   ========================================================= */
+
+(function(){
+  // --- iframe を安全に取得 ---
+  function getBgmFrame(){
+    return document.getElementById('bgmFrame');
+  }
+  function getBgmWin(){
+    const f = getBgmFrame();
+    return (f && f.contentWindow) ? f.contentWindow : null;
+  }
+
+  // --- postMessage で START/STOP を送る（BGM.html 側が受信して start/stop する） ---
+  function postBGM(type){
+    const w = getBgmWin();
+    if(!w) return false;
+    try{
+      w.postMessage({ type }, "*");
+      return true;
+    }catch(e){
+      return false;
+    }
+  }
+
+  // --- まだ iframe が読み込み前でも、load 後に送る ---
+  function postBGMWhenReady(type){
+    const f = getBgmFrame();
+    if(!f) return;
+    if(getBgmWin()){
+      postBGM(type);
+    }else{
+      f.addEventListener("load", () => postBGM(type), { once:true });
+    }
+  }
+
+  // =========================================================
+  // ここが「上書き本体」：同名で function 宣言し直して置き換え
+  // =========================================================
+
+  // neon2 内で呼ばれている stopBGM() を実装（元は空）【1-4d0675】
+  window.stopBGM = function stopBGM(){
+    postBGMWhenReady("STOP_BGM");
+  };
+
+  // neon2 内で呼ばれている startBGM(stage,isBoss) を実装（元は空）【1-4d0675】
+  window.startBGM = function startBGM(stage, isBoss){
+    // ここでは stage / isBoss は使わず、BGMを鳴らすだけ（必要なら後で拡張可）
+    postBGMWhenReady("START_BGM");
+  };
+
+  // =========================================================
+  // 自動再生規制対策：最初のユーザー操作でBGM開始シグナルを送る
+  // =========================================================
+  function unlockOnce(){
+    // 1回だけ送る。ゲーム開始前でもOK（BGM側で resume/start する）
+    postBGMWhenReady("START_BGM");
+  }
+
+  // pointerdown / keydown で1回だけ実行
+  window.addEventListener("pointerdown", unlockOnce, { once:true, passive:true });
+  window.addEventListener("keydown", unlockOnce, { once:true });
+
+  // ついでに可視状態へ戻った時も軽く促す（iOS対策）
+  document.addEventListener("visibilitychange", () => {
+    if(document.visibilityState === "visible"){
+      postBGMWhenReady("START_BGM");
+    }
+  });
+
+})();
+</script>
+
+</body></html>
