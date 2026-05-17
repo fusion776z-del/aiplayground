@@ -203,8 +203,6 @@ clear(){ beep('triangle', 262, 524, 0.15, 0.04); setTimeout(()=>beep('triangle',
 lifeUp(){ beep('triangle', 392, 784, 0.10, 0.05); setTimeout(()=>beep('triangle', 523, 1046, 0.12, 0.04), 90); }
 };
 
-function stopBGM(){}
-function startBGM(stage, isBoss){}
 
 const rand = (a,b)=>Math.random()*(b-a)+a;
 const clamp = (v,min,max)=>Math.max(min, Math.min(max, v));
@@ -1890,92 +1888,83 @@ if(e.code==='Space'){ e.preventDefault(); if(state==='play' && clearTimer<=0){ p
 addEventListener('keyup', e=>{ if(e.key==='ArrowUp') input.up=0; if(e.key==='ArrowDown') input.down=0; if(e.key==='ArrowLeft') input.left=0; if(e.key==='ArrowRight') input.right=0; if(e.key==='Shift') input.focus=0; if(e.key==='z' || e.key==='Z') input.shot=0; if(e.key==='x' || e.key==='X') input.alt=0; if(e.key==='c' || e.key==='C') input.bomb=0; });
 syncTypeUI();
 loop();</script><div id="mobileUI" aria-hidden="true"><div id="btnFire" class="btn">FIRE</div><div id="btnFocus" class="btn small">FOCUS+FIRE</div><div id="btnBomb" class="btn small">BOMB</div></div>
-<!-- 🟢 BGM iframe -->
-<iframe
-    id="bgmFrame"
-    src="BGM.html"
-    style="
-        position:absolute;
-        width:0;
-        height:0;
-        border:0;
-        opacity:0;
-        pointer-events:none;
-    ">
-</iframe>
+
+<!-- 🟢 BGM iframes（通常＋ボス） -->
+<iframe id="bgmFrame" src="BGM.html" style="position:absolute;width:0;height:0;border:0;opacity:0;pointer-events:none;"></iframe>
+<iframe id="bossBgmFrame" src="BOSS-BGM.html" style="position:absolute;width:0;height:0;border:0;opacity:0;pointer-events:none;"></iframe>
+
 <script>
 /* =========================================================
-   BGM LINK BRIDGE (paste-only / overwrite by re-declaration)
-   - neon2.html 側に貼るだけで、既存 startBGM/stopBGM を上書き
-   - iframe(#bgmFrame) 内の BGM.html に START/STOP を飛ばします
-   ========================================================= */
-
+  BGM LINK BRIDGE（最終安定版）
+  - stage1〜6 : 道中開始のみ通常BGM（ボス出現startBGMは無視）
+  - stage7    : 道中開始でボスBGM（ボス出現startBGMは無視＝鳴らし直さない）
+  - stopBGM() : いつでも両方停止
+========================================================= */
 (function(){
-  // --- iframe を安全に取得 ---
-  function getBgmFrame(){
-    return document.getElementById('bgmFrame');
-  }
-  function getBgmWin(){
-    const f = getBgmFrame();
+  "use strict";
+
+  function getFrame(id){ return document.getElementById(id); }
+  function getWin(id){
+    const f = getFrame(id);
     return (f && f.contentWindow) ? f.contentWindow : null;
   }
-
-  // --- postMessage で START/STOP を送る（BGM.html 側が受信して start/stop する） ---
-  function postBGM(type){
-    const w = getBgmWin();
+  function post(id, type){
+    const w = getWin(id);
     if(!w) return false;
-    try{
-      w.postMessage({ type }, "*");
-      return true;
-    }catch(e){
-      return false;
-    }
+    try{ w.postMessage({ type }, "*"); return true; }catch(e){ return false; }
   }
-
-  // --- まだ iframe が読み込み前でも、load 後に送る ---
-  function postBGMWhenReady(type){
-    const f = getBgmFrame();
+  function postWhenReady(id, type){
+    const f = getFrame(id);
     if(!f) return;
-    if(getBgmWin()){
-      postBGM(type);
-    }else{
-      f.addEventListener("load", () => postBGM(type), { once:true });
-    }
+    if(getWin(id)) post(id, type);
+    else f.addEventListener("load", ()=>post(id, type), { once:true });
   }
 
-  // =========================================================
-  // ここが「上書き本体」：同名で function 宣言し直して置き換え
-  // =========================================================
+  // いま鳴ってる状態（鳴り直し・重ねを防ぐ）
+  let current = "none"; // 'none' | 'normal' | 'boss'
 
-  // neon2 内で呼ばれている stopBGM() を実装（元は空）【1-4d0675】
-  window.stopBGM = function stopBGM(){
-    postBGMWhenReady("STOP_BGM");
-  };
-
-  // neon2 内で呼ばれている startBGM(stage,isBoss) を実装（元は空）【1-4d0675】
-  window.startBGM = function startBGM(stage, isBoss){
-    // ここでは stage / isBoss は使わず、BGMを鳴らすだけ（必要なら後で拡張可）
-    postBGMWhenReady("START_BGM");
-  };
-
-  // =========================================================
-  // 自動再生規制対策：最初のユーザー操作でBGM開始シグナルを送る
-  // =========================================================
-  function unlockOnce(){
-    // 1回だけ送る。ゲーム開始前でもOK（BGM側で resume/start する）
-    postBGMWhenReady("START_BGM");
+  function startNormal(){
+    if(current === "normal") return;
+    postWhenReady("bossBgmFrame", "STOP_BGM");
+    postWhenReady("bgmFrame", "START_BGM");
+    current = "normal";
   }
 
-  // pointerdown / keydown で1回だけ実行
-  window.addEventListener("pointerdown", unlockOnce, { once:true, passive:true });
-  window.addEventListener("keydown", unlockOnce, { once:true });
+  function startBoss(){
+    if(current === "boss") return;
+    postWhenReady("bgmFrame", "STOP_BGM");
+    postWhenReady("bossBgmFrame", "START_BGM");
+    current = "boss";
+  }
 
-  // ついでに可視状態へ戻った時も軽く促す（iOS対策）
-  document.addEventListener("visibilitychange", () => {
-    if(document.visibilityState === "visible"){
-      postBGMWhenReady("START_BGM");
+  window.stopBGM = function(){
+    postWhenReady("bgmFrame", "STOP_BGM");
+    postWhenReady("bossBgmFrame", "STOP_BGM");
+    current = "none";
+  };
+
+  // ★重要：beginStage と boss出現 の二重startBGMを抑止
+  window.startBGM = function(stage, isBoss){
+    stage = (stage|0);
+    isBoss = !!isBoss;
+
+    if(stage >= 7){
+      // ステージ7：道中開始(isBoss=false)でボスBGM。ボス出現(isBoss=true)は無視。
+      if(!isBoss) startBoss();
+      return;
     }
-  });
+
+    // ステージ1〜6：道中開始(isBoss=false)で通常BGM。ボス出現(isBoss=true)は無視。
+    if(!isBoss) startNormal();
+  };
+
+  // タイトルで鳴らさずAudioだけ起こす（必要なら）
+  function unlockAudioOnly(){
+    postWhenReady("bgmFrame", "UNLOCK_AUDIO");
+    postWhenReady("bossBgmFrame", "UNLOCK_AUDIO");
+  }
+  window.addEventListener("pointerdown", unlockAudioOnly, { once:true, passive:true });
+  window.addEventListener("keydown", unlockAudioOnly, { once:true });
 
 })();
 </script>

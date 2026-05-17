@@ -5,51 +5,50 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>BGM_linked</title>
   <style>
-    :root{
-      --bg:#050816; --fg:#e8f8ff; --muted:rgba(232,248,255,.72);
-      --cyan:#72f7ff; --pink:#ff5db1; --warn:#ffd84d; --danger:#ff6262;
-      --card:rgba(10,16,32,.72); --border:rgba(114,247,255,.18);
-    }
-    html,body{margin:0;height:100%;background:radial-gradient(circle at 15% 15%,rgba(0,180,255,.14),transparent 28%),
-      radial-gradient(circle at 82% 24%,rgba(255,90,177,.12),transparent 26%),
-      linear-gradient(180deg,#010309,#070d1a 50%,#02040b 100%); color:var(--fg); font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
-    .wrap{min-height:100%;display:grid;place-items:center;padding:18px;}
-    .card{width:min(720px,92vw);border-radius:22px;background:var(--card);border:1px solid var(--border);
-      box-shadow:0 22px 70px rgba(0,0,0,.48),0 0 40px rgba(114,247,255,.08);padding:16px 16px 14px;}
-    h1{margin:0 0 10px;font-size:18px;letter-spacing:.08em}
-    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    button{
-      padding:14px 18px;border:none;border-radius:16px;
-      background:linear-gradient(180deg,#23467a,#12284a);
-      color:var(--fg); font-size:14px; font-weight:900; letter-spacing:.08em;
-      cursor:pointer; border:1px solid rgba(255,255,255,.12);
-      box-shadow:0 0 26px rgba(114,247,255,.14);
-      user-select:none;
-    }
-    button:hover{filter:brightness(1.08)}
-    button:active{transform:scale(.99)}
-    button.secondary{background:rgba(10,19,40,.38);border-color:rgba(114,247,255,.16)}
-    button.warn{background:rgba(255,216,77,.12);border-color:rgba(255,216,77,.28)}
-    button.danger{background:rgba(255,98,98,.12);border-color:rgba(255,98,98,.28)}
-    .pill{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:999px;
-      border:1px solid rgba(114,247,255,.16);background:rgba(10,19,40,.32);font-size:12px;color:var(--muted)}
-    .dot{width:10px;height:10px;border-radius:99px;background:#666;box-shadow:0 0 12px rgba(0,0,0,.4)}
-    .dot.ok{background:var(--cyan);box-shadow:0 0 16px rgba(114,247,255,.35)}
-    .dot.warn{background:var(--warn);box-shadow:0 0 16px rgba(255,216,77,.28)}
-    .dot.bad{background:var(--danger);box-shadow:0 0 16px rgba(255,98,98,.28)}
-    .grid{display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px}
-    .mono{font:12px ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;line-height:1.35;
-      padding:10px;border-radius:14px;border:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.35);color:rgba(255,255,255,.86)}
-    .small{font-size:11px;color:rgba(232,248,255,.62);line-height:1.4}
-    .hint{margin-top:10px;font-size:12px;color:rgba(232,248,255,.72)}
-    a{color:var(--cyan)}
+  :root{
+    --bg:#050816; --fg:#e8f8ff; --muted:rgba(232,248,255,.72);
+    --cyan:#72f7ff; --pink:#ff5db1; --warn:#ffd84d; --danger:#ff6262;
+    --card:rgba(10,16,32,.72); --border:rgba(114,247,255,.18);
+  }
+  html,body{margin:0;height:100%;background:radial-gradient(circle at 15% 15%,rgba(0,180,255,.14),transparent 28%),
+  radial-gradient(circle at 82% 24%,rgba(255,90,177,.12),transparent 26%),
+  linear-gradient(180deg,#010309,#070d1a 50%,#02040b 100%); color:var(--fg); font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
+  .wrap{min-height:100%;display:grid;place-items:center;padding:18px;}
+  .card{width:min(720px,92vw);border-radius:22px;background:var(--card);border:1px solid var(--border);
+  box-shadow:0 22px 70px rgba(0,0,0,.48),0 0 40px rgba(114,247,255,.08);padding:16px 16px 14px;}
+  h1{margin:0 0 10px;font-size:18px;letter-spacing:.08em}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  button{
+    padding:14px 18px;border:none;border-radius:16px;
+    background:linear-gradient(180deg,#23467a,#12284a);
+    color:var(--fg); font-size:14px; font-weight:900; letter-spacing:.08em;
+    cursor:pointer; border:1px solid rgba(255,255,255,.12);
+    box-shadow:0 0 26px rgba(114,247,255,.14);
+    user-select:none;
+  }
+  button:hover{filter:brightness(1.08)}
+  button:active{transform:scale(.99)}
+  button.secondary{background:rgba(10,19,40,.38);border-color:rgba(114,247,255,.16)}
+  button.warn{background:rgba(255,216,77,.12);border-color:rgba(255,216,77,.28)}
+  button.danger{background:rgba(255,98,98,.12);border-color:rgba(255,98,98,.28)}
+  .pill{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:999px;
+  border:1px solid rgba(114,247,255,.16);background:rgba(10,19,40,.32);font-size:12px;color:var(--muted)}
+  .dot{width:10px;height:10px;border-radius:99px;background:#666;box-shadow:0 0 12px rgba(0,0,0,.4)}
+  .dot.ok{background:var(--cyan);box-shadow:0 0 16px rgba(114,247,255,.35)}
+  .dot.warn{background:var(--warn);box-shadow:0 0 16px rgba(255,216,77,.28)}
+  .dot.bad{background:var(--danger);box-shadow:0 0 16px rgba(255,98,98,.28)}
+  .grid{display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px}
+  .mono{font:12px ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;line-height:1.35;
+  padding:10px;border-radius:14px;border:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.35);color:rgba(255,255,255,.86)}
+  .small{font-size:11px;color:rgba(232,248,255,.62);line-height:1.4}
+  .hint{margin-top:10px;font-size:12px;color:rgba(232,248,255,.72)}
+  a{color:var(--cyan)}
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="card">
       <h1>BGM_linked（WebAudio / START・STOP・TEST）</h1>
-
       <div class="row" style="margin-bottom:10px">
         <button id="btnStart">▶ START</button>
         <button id="btnStop" class="danger">■ STOP</button>
@@ -57,20 +56,19 @@
         <span class="pill"><span id="dot" class="dot"></span><span id="status">ready</span></span>
         <span class="pill">ctx: <span id="ctxState">-</span></span>
       </div>
-
       <div class="grid">
         <div class="mono" id="log">log:
 - ページ上の START / TEST を押して、音が出るか確認できます。
-- 外部（親ページ）からは postMessage {type:'START_BGM'} / {type:'STOP_BGM'} で操作できます。</div>
+- 外部（親ページ）からは postMessage {type:'START_BGM'} / {type:'STOP_BGM'} / {type:'UNLOCK_AUDIO'} で操作できます。</div>
         <div class="small">
           注意:
-          <br>・ブラウザは「ユーザー操作後でないと WebAudio を鳴らせない」制限があります。【3-4455ff】【4-4487d6】
-          <br>・iPhone/iPad はサイレントスイッチONだと WebAudio が無音になる報告があります。【5-00f5be】
+          <br>・ブラウザは「ユーザー操作後でないと WebAudio を鳴らせない」制限があります。
+          <br>・iPhone/iPad はサイレントスイッチONだと WebAudio が無音になる報告があります。
         </div>
       </div>
-
       <div class="hint">
         親ページからの制御（iframe想定）:
+        <span class="pill">UNLOCK_AUDIO</span>
         <span class="pill">START_BGM</span>
         <span class="pill">STOP_BGM</span>
       </div>
@@ -79,7 +77,6 @@
 
 <script>
 "use strict";
-
 /* ========= UI ========= */
 const $ = (id)=>document.getElementById(id);
 const logEl = $("log");
@@ -101,35 +98,28 @@ function setState(kind, msg){
 const AudioContextClass = window.AudioContext || window.webkitAudioContext;
 let audioCtx = null;
 let started = false;
-
 const MASTER_VOLUME = 0.70;
 let masterGain = null;
 let masterComp = null;
-
 let loopTimeoutId = null;
 
 function initAudioContext(){
   if(audioCtx) return;
   audioCtx = new AudioContextClass();
-
   masterGain = audioCtx.createGain();
   masterGain.gain.value = MASTER_VOLUME;
-
   masterComp = audioCtx.createDynamicsCompressor();
   masterComp.threshold.value = -12;
   masterComp.knee.value = 20;
   masterComp.ratio.value = 6;
   masterComp.attack.value = 0.003;
   masterComp.release.value = 0.25;
-
   masterComp.connect(masterGain);
   masterGain.connect(audioCtx.destination);
-
   audioCtx.onstatechange = ()=> {
     ctxStateEl.textContent = audioCtx.state;
     log(`AudioContext.state -> ${audioCtx.state}`);
   };
-
   log("AudioContext created");
 }
 
@@ -145,33 +135,25 @@ async function ensureRunning(){
 }
 
 function midi(n){ return 440 * Math.pow(2, (n - 69) / 12); }
-
 function voice(type, freq, start, dur, vol, cutoff){
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
   const filter = audioCtx.createBiquadFilter();
-
   osc.type = type;
   osc.frequency.setValueAtTime(freq, start);
-
   filter.type = "lowpass";
   filter.frequency.value = cutoff || 1800;
   filter.Q.value = 0.5;
-
   gain.gain.setValueAtTime(0.00001, start);
   gain.gain.linearRampToValueAtTime(vol, start + 0.02);
   gain.gain.linearRampToValueAtTime(0.00001, start + dur);
-
   osc.connect(filter);
   filter.connect(gain);
   gain.connect(masterComp);
-
   osc.start(start);
   osc.stop(start + dur + 0.02);
 }
-
 function kick(t){ voice("sine", 120, t, 0.22, 0.18, 500); }
-
 function snare(t){
   const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.15, audioCtx.sampleRate);
   const data = buffer.getChannelData(0);
@@ -180,23 +162,18 @@ function snare(t){
   }
   const src = audioCtx.createBufferSource();
   src.buffer = buffer;
-
   const hp = audioCtx.createBiquadFilter();
   hp.type = "highpass";
   hp.frequency.value = 1200;
-
   const g = audioCtx.createGain();
   g.gain.setValueAtTime(0.035, t);
   g.gain.linearRampToValueAtTime(0.00001, t + 0.12);
-
   src.connect(hp);
   hp.connect(g);
   g.connect(masterComp);
   src.start(t);
 }
-
 function timpani(t){ voice("sine", 80, t, 0.30, 0.08, 400); }
-
 function strings(note, t){
   voice("sine", midi(note), t, 0.90, 0.018, 1200);
   voice("triangle", midi(note+12), t, 0.90, 0.006, 1800);
@@ -213,7 +190,6 @@ function playSong(){
   const bpm = 148;
   const step = 60 / bpm / 4;
   const start = audioCtx.currentTime + 0.05;
-
   const prog = [
     [52,55,59],
     [50,54,57],
@@ -221,14 +197,11 @@ function playSong(){
     [47,50,54]
   ];
   const bars = 24;
-
   for(let bar=0; bar<bars; bar++){
     const base = start + bar * 16 * step;
     const chord = prog[bar % 4];
-
     for(let i=0;i<16;i++){
       const t = base + i * step;
-
       if(bar < 4){
         if(i===0){ strings(chord[0], t); choir(chord[1], t); }
         if(i===6){ harp(chord[2], t); }
@@ -262,7 +235,6 @@ function playSong(){
       }
     }
   }
-
   return bars * 16 * step;
 }
 
@@ -274,28 +246,50 @@ function startLoop(){
 /* ========= Public API ========= */
 window.startBGM = async function(){
   log("startBGM()");
+
+  // ★ 毎回 ensureRunning で ctx を作る（stopでcloseするため）
   const ok = await ensureRunning();
   setState(ok ? "ok" : "warn", ok ? "running" : "not running");
   if(!ok){
     log("AudioContext is not running. (autoplay restriction / device mute may be involved)");
     return;
   }
+
+  // ★ started が true のときは何もしない（重複防止）
   if(started) { log("already started"); return; }
+
   started = true;
   startLoop();
   setState("ok", "playing");
 };
 
-window.stopBGM = async function(){
-  log("stopBGM()");
-  if(loopTimeoutId){ clearTimeout(loopTimeoutId); loopTimeoutId = null; }
-  started = false;
-  try{
-    if(audioCtx && audioCtx.state === "running") await audioCtx.suspend();
-  }catch(e){
-    log("suspend failed: " + (e && e.message ? e.message : String(e)));
+window.stopBGM = function(){
+  log("HARD STOP");
+
+  // ★ループ停止
+  if (loopTimeoutId){
+    clearTimeout(loopTimeoutId);
+    loopTimeoutId = null;
   }
-  setState("", "stopped");
+
+  started = false;
+
+  // ★音を全部強制停止（ここが重要）
+  try{
+    if (audioCtx){
+      audioCtx.suspend(); // 一応止める
+
+      // ★destを切断（残り音防止）
+      audioCtx.destination.disconnect?.();
+    }
+  }catch(e){}
+
+  // ★完全リセット
+  audioCtx = null;
+  masterGain = null;
+  masterComp = null;
+
+  setState("", "STOPPED");
 };
 
 /* ========= TEST BEEP ========= */
@@ -304,7 +298,6 @@ async function testBeep(){
   const ok = await ensureRunning();
   setState(ok ? "ok" : "warn", ok ? "beep" : "not running");
   if(!ok) return;
-
   const t = audioCtx.currentTime + 0.02;
   voice("sine", 880, t, 0.12, 0.10, 6000);
   voice("triangle", 440, t, 0.12, 0.06, 6000);
@@ -318,6 +311,11 @@ $("btnTest").addEventListener("click", ()=>testBeep());
 /* ========= postMessage receive ========= */
 window.addEventListener("message", async (ev)=>{
   const data = ev && ev.data ? ev.data : {};
+  if(data.type === "UNLOCK_AUDIO"){
+    // 鳴らさずAudioContextだけ起こす（タイトルで鳴らさない用）
+    const ok = await ensureRunning();
+    setState(ok ? "ok" : "warn", "unlocked");
+  }
   if(data.type === "START_BGM"){ await window.startBGM(); }
   if(data.type === "STOP_BGM"){ await window.stopBGM(); }
 });

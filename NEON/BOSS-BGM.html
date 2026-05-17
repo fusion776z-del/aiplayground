@@ -1,0 +1,652 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport <title>Mystic Cave BGM - Intro10 / Melody25 / Chorus40</title> <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <style>
+  :root{
+    --bg:#05080d;
+    --card:#0d1522;
+    --text:#e9f0ff;
+    --muted:#9fb0cf;
+    --a:#7aa2ff;
+    --b:#89ffd9;
+  }
+  body{
+    margin:0;
+    font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+    background:
+      radial-gradient(900px 600px at 20% 0%, #10284a 0%, transparent 48%),
+      radial-gradient(700px 500px at 90% 20%, #09221d 0%, transparent 42%),
+      var(--bg);
+    color:var(--text);
+  }
+  .wrap{max-width:980px;margin:0 auto;padding:26px 16px 40px;}
+  h1{margin:0 0 8px;font-size:22px;}
+  p{margin:0 0 16px;color:var(--muted);line-height:1.6;}
+  .grid{display:grid;grid-template-columns:1.1fr 1fr;gap:14px;}
+  @media(max-width:860px){.grid{grid-template-columns:1fr;}}
+  .card{
+    background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.025));
+    border:1px solid rgba(255,255,255,.09);
+    border-radius:18px;
+    padding:16px;
+    box-shadow:0 12px 40px rgba(0,0,0,.38);
+  }
+  .row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+  button{
+    border:0;
+    border-radius:14px;
+    padding:10px 14px;
+    color:var(--text);
+    cursor:pointer;
+    font-weight:800;
+    background:linear-gradient(135deg,rgba(82,132,255,.95),rgba(89,255,210,.75));
+    box-shadow:0 10px 30px rgba(122,162,255,.18);
+  }
+  button.secondary{
+    background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.11);
+    box-shadow:none;
+    font-weight:700;
+  }
+  .pill{
+    padding:8px 10px;
+    border:1px solid rgba(255,255,255,.10);
+    border-radius:999px;
+    color:var(--muted);
+    font-size:12px;
+  }
+  label{
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    align-items:center;
+    font-size:13px;
+    color:var(--muted);
+    margin:12px 0 8px;
+  }
+  input[type="range"]{width:100%;}
+  select{
+    width:100%;
+    padding:10px;
+    border-radius:14px;
+    border:1px solid rgba(255,255,255,.12);
+    background:rgba(0,0,0,.25);
+    color:var(--text);
+  }
+  pre{
+    margin:0;
+    white-space:pre-wrap;
+    word-break:break-word;
+    color:#cfe2ff;
+    background:rgba(0,0,0,.25);
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:14px;
+    padding:12px;
+    font-size:13px;
+    line-height:1.5;
+  }
+  .small{font-size:12px;color:var(--muted);margin-top:10px;}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#ff6b6b;margin-right:8px;}
+  .dot.on{background:#39e58f;}
+  .time{font-variant-numeric:tabular-nums;letter-spacing:.2px;}
+  .err{
+    margin-top:10px;
+    padding:10px 12px;
+    border-radius:14px;
+    border:1px solid rgba(255,255,255,.10);
+    background:rgba(0,0,0,.20);
+    color:#ffd6d6;
+    font-size:12px;
+    display:none;
+    white-space:pre-wrap;
+  }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>神秘的な洞窟BGM：Intro 10s / Melody 25s / Chorus 40s</h1>
+  <p>
+    長い反響、水滴、低いドローン、淡いクワイアで「洞窟の奥にいる」感じに寄せた版です。<br/>
+    外部読み込み・iframe・自己読み込みは使わず、このHTMLだけで鳴ります。
+  </p>
+  <div class="grid">
+    <div class="card">
+      <div class="row">
+        <div class="row" style="gap:8px">
+          <span id="dot" class="dot"></span>
+          <span class="pill" id="status">Stopped</span>
+          <span class="pill">AudioState: <span id="aState">-</span></span>
+        </div>
+        <div class="row">
+          <button id="play">▶ Play</button>
+          <button id="stop" class="secondary">■ Stop</button>
+          <button id="test" class="secondary">♪ TEST</button>
+        </div>
+      </div>
+
+      <label>
+        <span>再生位置（0–75s）</span>
+        <span class="time"><b id="secName">INTRO</b> <span id="timeTxt">00:00</span> / 01:15</span>
+      </label>
+      <input id="seek" type="range" min="0" max="75" step="0.01" value="0"/>
+
+      <label><span>BPM（洞窟テンポ）</span><span id="bpmV">86</span></label>
+      <input id="bpm" type="range" min="58" max="130" value="86"/>
+
+      <label><span>Key（移調）</span><span id="keyV">C</span></label>
+      <select id="key">
+        <option value="0">C</option>
+        <option value="1">C# / Db</option>
+        <option value="2">D</option>
+        <option value="3">D# / Eb</option>
+        <option value="4">E</option>
+        <option value="5">F</option>
+        <option value="6">F# / Gb</option>
+        <option value="7">G</option>
+        <option value="8">G# / Ab</option>
+        <option value="9">A</option>
+        <option value="10">A# / Bb</option>
+        <option value="11">B</option>
+      </select>
+
+      <label><span>Cave Depth（洞窟反響）</span><span id="caveV">0.82</span></label>
+      <input id="cave" type="range" min="0" max="1" step="0.01" value="0.82"/>
+
+      <label><span>Drip（水滴量）</span><span id="dripV">0.55</span></label>
+      <input id="drip" type="range" min="0" max="1" step="0.01" value="0.55"/>
+
+      <label><span>Drone（低音の深さ）</span><span id="droneV">0.70</span></label>
+      <input id="drone" type="range" min="0" max="1" step="0.01" value="0.70"/>
+
+      <label><span>Mix（全体音量）</span><span id="mixV">0.85</span></label>
+      <input id="mix" type="range" min="0.10" max="1.00" step="0.01" value="0.85"/>
+
+      <div class="small">
+        セクション：<b>Intro 10s</b> → <b>Melody 25s</b> → <b>Chorus 40s</b>。サビはクワイアと水滴が少し増えます。
+      </div>
+      <div id="err" class="err"></div>
+    </div>
+
+    <div class="card">
+      <div class="pill" style="display:inline-block;margin-bottom:10px">洞窟用コード進行</div>
+      <pre id="prog"></pre>
+      <p class="small">
+        マイナー寄りのコード＋低音ドローン＋長い反響で、暗く広い空間にしています。
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = (id)=>document.getElementById(id);
+  const playBtn=$("play"), stopBtn=$("stop"), testBtn=$("test");
+  const bpm=$("bpm"), bpmV=$("bpmV");
+  const key=$("key"), keyV=$("keyV");
+  const cave=$("cave"), caveV=$("caveV");
+  const drip=$("drip"), dripV=$("dripV");
+  const drone=$("drone"), droneV=$("droneV");
+  const mix=$("mix"), mixV=$("mixV");
+  const status=$("status"), dot=$("dot"), aState=$("aState");
+  const seek=$("seek"), timeTxt=$("timeTxt"), secName=$("secName");
+  const errBox=$("err"), prog=$("prog");
+  const keyNames=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+
+  bpm.addEventListener("input",()=>bpmV.textContent=bpm.value);
+  key.addEventListener("input",()=>keyV.textContent=keyNames[+key.value]);
+  cave.addEventListener("input",()=>caveV.textContent=(+cave.value).toFixed(2));
+  drip.addEventListener("input",()=>dripV.textContent=(+drip.value).toFixed(2));
+  drone.addEventListener("input",()=>droneV.textContent=(+drone.value).toFixed(2));
+  mix.addEventListener("input",()=>mixV.textContent=(+mix.value).toFixed(2));
+
+  const SONG_LEN=75;
+  const INTRO_LEN=10;
+  const MELODY_LEN=25;
+  function whichSection(sec){
+    if(sec < INTRO_LEN) return "INTRO";
+    if(sec < INTRO_LEN + MELODY_LEN) return "MELODY";
+    return "CHORUS";
+  }
+  function fmt(sec){
+    sec=Math.max(0,Math.min(SONG_LEN,sec));
+    const m=Math.floor(sec/60), s=Math.floor(sec%60);
+    return String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
+  }
+
+  // 洞窟用：C minor系。relative semitone from C
+  const PROG=[
+    {name:"Cm(add9)", chord:[0,3,7,10,14], bass:0, beats:4},
+    {name:"Abmaj7", chord:[-4,0,3,7], bass:-4, beats:4},
+    {name:"Eb/G", chord:[-5,-2,3,7], bass:-5, beats:4},
+    {name:"Bbsus4", chord:[-2,3,5,10], bass:-2, beats:4},
+    {name:"Fm9", chord:[-7,-4,0,3,7], bass:-7, beats:4},
+    {name:"Abm6", chord:[-4,-1,3,5], bass:-4, beats:4},
+    {name:"Eb/G", chord:[-5,-2,3,7], bass:-5, beats:4},
+    {name:"Gsus4", chord:[-5,0,2,7], bass:-5, beats:2},
+    {name:"G7(b9)", chord:[-5,-1,2,5,8], bass:-5, beats:2}
+  ];
+  const TOTAL_BEATS=PROG.reduce((s,e)=>s+e.beats,0);
+  prog.textContent =
+`Cm(add9)
+Abmaj7
+Eb/G
+Bbsus4
+Fm9
+Abm6
+Eb/G
+Gsus4 → G7(b9)`;
+
+  let ctx=null, master=null, music=null;
+  let dry=null, wet=null, delay=null, feedback=null, tone=null;
+  let isPlaying=false;
+  let lookTimer=null, uiRaf=null;
+  let isSeeking=false;
+  let baseCtxTime=0;
+  let offsetSec=0;
+  let nextSchedTime=0;
+
+  function showErr(e){
+    errBox.style.display="block";
+    errBox.textContent=String(e && (e.stack||e.message||e) || "Unknown error");
+    console.error(e);
+  }
+  function clearErr(){
+    errBox.style.display="none";
+    errBox.textContent="";
+  }
+  function setStatus(on){
+    dot.classList.toggle("on",on);
+    status.textContent=on ? "Playing" : "Stopped";
+  }
+
+  function ensureCtx(){
+    if(ctx) return;
+    ctx=new (window.AudioContext||window.webkitAudioContext)();
+    master=ctx.createGain();
+    master.gain.value=0.9;
+    master.connect(ctx.destination);
+
+    music=ctx.createGain();
+    music.gain.value=+mix.value;
+
+    dry=ctx.createGain();
+    wet=ctx.createGain();
+
+    tone=ctx.createBiquadFilter();
+    tone.type="lowpass";
+    tone.frequency.value=1800;
+    tone.Q.value=0.55;
+
+    delay=ctx.createDelay(2.5);
+    feedback=ctx.createGain();
+    delay.delayTime.value=0.62;
+    feedback.gain.value=0.55;
+
+    music.connect(dry);
+    music.connect(delay);
+    delay.connect(feedback);
+    feedback.connect(delay);
+    delay.connect(wet);
+
+    dry.connect(tone);
+    wet.connect(tone);
+    tone.connect(master);
+
+    ctx.onstatechange=()=>aState.textContent=ctx.state;
+    aState.textContent=ctx.state;
+  }
+
+  async function unlockAudio(){
+    ensureCtx();
+    try{
+      await ctx.resume();
+      const buffer=ctx.createBuffer(1,1,ctx.sampleRate);
+      const src=ctx.createBufferSource();
+      src.buffer=buffer;
+      src.connect(master);
+      src.start();
+      src.stop(ctx.currentTime+0.01);
+    }catch(e){
+      showErr(e);
+    }
+  }
+
+  function updateCaveParams(){
+    if(!ctx) return;
+    const c=+cave.value;
+    music.gain.value=+mix.value;
+    dry.gain.value=1 - c*0.45;
+    wet.gain.value=0.25 + c*0.95;
+    delay.delayTime.value=0.35 + c*0.75;
+    feedback.gain.value=0.25 + c*0.55;
+    tone.frequency.value=900 + (1-c)*1500;
+  }
+
+  function midiHz(m){ return 440*Math.pow(2,(m-69)/12); }
+  function beatDur(){ return 60/(+bpm.value); }
+  function transpose(){ return +key.value; }
+
+  function chordAtBeat(beatPos){
+    let b=((beatPos%TOTAL_BEATS)+TOTAL_BEATS)%TOTAL_BEATS;
+    for(const ev of PROG){
+      if(b < ev.beats) return ev;
+      b-=ev.beats;
+    }
+    return PROG[0];
+  }
+
+  function oscNote(time,hz,dur,type,gain,opts={}){
+    const a=opts.a ?? 0.02;
+    const d=opts.d ?? 0.20;
+    const s=opts.s ?? 0.45;
+    const r=opts.r ?? 0.25;
+    const cutoff=opts.cutoff ?? 1800;
+    const pan=opts.pan ?? 0;
+    const detune=opts.detune ?? 0;
+
+    const o=ctx.createOscillator();
+    const g=ctx.createGain();
+    const f=ctx.createBiquadFilter();
+    const p=ctx.createStereoPanner();
+
+    o.type=type;
+    o.frequency.setValueAtTime(hz,time);
+    o.detune.value=detune;
+
+    f.type="lowpass";
+    f.frequency.value=cutoff;
+    f.Q.value=0.7;
+
+    p.pan.value=pan;
+
+    g.gain.setValueAtTime(0.0001,time);
+    g.gain.exponentialRampToValueAtTime(gain,time+a);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0002,gain*s),time+a+d);
+    g.gain.exponentialRampToValueAtTime(0.0001,time+a+d+r);
+
+    o.connect(f);
+    f.connect(g);
+    g.connect(p);
+    p.connect(music);
+
+    o.start(time);
+    o.stop(time+dur+r+0.05);
+  }
+
+  function noiseBuffer(seconds){
+    const len=Math.floor(ctx.sampleRate*seconds);
+    const b=ctx.createBuffer(1,len,ctx.sampleRate);
+    const data=b.getChannelData(0);
+    for(let i=0;i<len;i++){
+      const x=i/len;
+      data[i]=(Math.random()*2-1)*Math.pow(1-x,1.4);
+    }
+    return b;
+  }
+
+  function caveAir(time,dur,gain){
+    const src=ctx.createBufferSource();
+    src.buffer=noiseBuffer(dur);
+    const bp=ctx.createBiquadFilter();
+    bp.type="bandpass";
+    bp.frequency.value=180 + Math.random()*120;
+    bp.Q.value=0.55;
+    const g=ctx.createGain();
+    g.gain.setValueAtTime(0.0001,time);
+    g.gain.exponentialRampToValueAtTime(gain,time+0.45);
+    g.gain.exponentialRampToValueAtTime(gain*0.55,time+dur*0.75);
+    g.gain.exponentialRampToValueAtTime(0.0001,time+dur);
+    src.connect(bp);
+    bp.connect(g);
+    g.connect(music);
+    src.start(time);
+    src.stop(time+dur+0.05);
+  }
+
+  function waterDrip(time,gain){
+    const base=1200 + Math.random()*1800;
+    oscNote(time,base,0.18,"sine",gain,{
+      a:0.003,d:0.05,s:0.18,r:0.35,cutoff:5000,
+      pan:(Math.random()*2-1)*0.75
+    });
+    oscNote(time+0.015,base*1.51,0.11,"triangle",gain*0.35,{
+      a:0.002,d:0.04,s:0.12,r:0.22,cutoff:5500,
+      pan:(Math.random()*2-1)*0.75
+    });
+  }
+
+  function scheduleAtTime(tAudio){
+    updateCaveParams();
+    const bd=beatDur();
+    const lineSec=((tAudio-baseCtxTime)+offsetSec);
+    const sec=((lineSec%SONG_LEN)+SONG_LEN)%SONG_LEN;
+    const section=whichSection(sec);
+    const beatPos=lineSec/bd;
+    const ev=chordAtBeat(beatPos);
+    const baseMidi=60+transpose();
+    const chord=ev.chord.map(x=>baseMidi+x);
+    const bass=baseMidi+ev.bass-12;
+
+    const beatIndex=Math.floor(beatPos);
+    const beatInBar=((beatIndex%4)+4)%4;
+    const nearBeat=Math.abs(beatPos-Math.round(beatPos))<0.0001;
+    const nearHalf=Math.abs((beatPos*2)-Math.round(beatPos*2))<0.0001;
+
+    const isIntro=section==="INTRO";
+    const isMelody=section==="MELODY";
+    const isChorus=section==="CHORUS";
+
+    const c=+cave.value;
+    const dr=+drip.value;
+    const dn=+drone.value;
+
+    let step=bd;
+    if(isMelody) step=bd/2;
+    if(isChorus) step=bd/2;
+
+    // ドローン
+    if(nearBeat && beatInBar===0){
+      oscNote(tAudio,midiHz(bass),bd*4.2,"sine",0.035*dn,{a:0.45,d:0.6,s:0.85,r:1.0,cutoff:600,pan:-0.05});
+      oscNote(tAudio,midiHz(bass+12),bd*4.0,"triangle",0.018*dn,{a:0.55,d:0.6,s:0.75,r:1.0,cutoff:850,pan:0.08});
+      caveAir(tAudio,Math.min(bd*4,4.8),0.010+0.025*c);
+    }
+
+    // パッド
+    if(nearBeat && beatInBar===0){
+      const voicing=[ chord[0], chord[Math.min(2,chord.length-1)], chord[chord.length-1]+12 ];
+      const padGain=isIntro?0.018:(isMelody?0.024:0.030);
+      voicing.forEach((m,i)=>{
+        oscNote(tAudio,midiHz(m),bd*3.7,"sawtooth",padGain,{
+          a:0.65,d:0.7,s:0.72,r:1.1,
+          cutoff:900+350*i,
+          pan:-0.18+i*0.18,
+          detune:(i-1)*5
+        });
+      });
+    }
+
+    // 水滴
+    if(Math.random() < dr*(isChorus?0.34:isMelody?0.26:0.18)){
+      waterDrip(tAudio + Math.random()*step*0.6,0.025 + dr*0.035);
+    }
+
+    // Melody断片
+    if(isMelody && nearHalf){
+      const top=chord[chord.length-1]+24;
+      const motif=[0,-2,-5,-2,3,0];
+      const idx=Math.floor(beatPos*2)%motif.length;
+      oscNote(tAudio,midiHz(top+motif[idx]),step*0.85,"triangle",0.020,{a:0.02,d:0.10,s:0.35,r:0.45,cutoff:4200,pan:0.25});
+    }
+
+    // Chorus
+    if(isChorus){
+      if(nearBeat && beatInBar===0){
+        const choir=[ chord[0]+12, chord[Math.min(2,chord.length-1)]+12, chord[chord.length-1]+12 ];
+        choir.forEach((m,i)=>{
+          oscNote(tAudio,midiHz(m),bd*3.5,"sawtooth",0.018+0.006*i,{
+            a:0.75,d:0.65,s:0.85,r:1.2,
+            cutoff:650+i*320,
+            pan:-0.15+i*0.15,
+            detune:(i-1)*4
+          });
+        });
+      }
+      if(nearHalf && Math.random()<0.55){
+        const shimmer=chord[chord.length-1]+36;
+        oscNote(tAudio,midiHz(shimmer),step*0.35,"sine",0.014,{a:0.01,d:0.06,s:0.20,r:0.45,cutoff:5500,pan:(Math.random()*2-1)*0.65});
+      }
+    }
+
+    return step;
+  }
+
+  function clearTimers(){
+    if(lookTimer){clearInterval(lookTimer);lookTimer=null;}
+    if(uiRaf){cancelAnimationFrame(uiRaf);uiRaf=null;}
+  }
+
+  function startScheduler(){
+    const lookahead=0.45;
+    const interval=35;
+    nextSchedTime=ctx.currentTime+0.05;
+    lookTimer=setInterval(()=>{
+      try{
+        const now=ctx.currentTime;
+        while(nextSchedTime < now+lookahead){
+          const step=scheduleAtTime(nextSchedTime);
+          nextSchedTime+=step;
+        }
+      }catch(e){
+        showErr(e);
+        stop();
+      }
+    },interval);
+  }
+
+  function updateUI(){
+    try{
+      if(isPlaying && !isSeeking && ctx){
+        const now=ctx.currentTime;
+        let elapsed=(now-baseCtxTime+offsetSec)%SONG_LEN;
+        if(elapsed<0) elapsed+=SONG_LEN;
+        seek.value=elapsed.toFixed(2);
+        timeTxt.textContent=fmt(elapsed);
+        secName.textContent=whichSection(elapsed);
+      }else{
+        const v=+seek.value;
+        timeTxt.textContent=fmt(v);
+        secName.textContent=whichSection(v);
+      }
+      if(ctx) aState.textContent=ctx.state;
+    }catch(e){
+      showErr(e);
+    }
+    uiRaf=requestAnimationFrame(updateUI);
+  }
+
+  async function play(fromSec){
+    clearErr();
+    await unlockAudio();
+    ensureCtx();
+    master.gain.cancelScheduledValues(ctx.currentTime);
+    master.gain.setValueAtTime(0.9,ctx.currentTime);
+    music.gain.setValueAtTime(+mix.value,ctx.currentTime);
+    updateCaveParams();
+    isPlaying=true;
+    setStatus(true);
+    offsetSec=fromSec||0;
+    baseCtxTime=ctx.currentTime+0.05;
+    clearTimers();
+    startScheduler();
+    updateUI();
+  }
+
+  function stop(){
+    if(!ctx) return;
+    isPlaying=false;
+    setStatus(false);
+    clearTimers();
+    const t=ctx.currentTime;
+    master.gain.cancelScheduledValues(t);
+    master.gain.setValueAtTime(master.gain.value,t);
+    master.gain.linearRampToValueAtTime(0.0001,t+0.18);
+    setTimeout(()=>{
+      try{ master.gain.setValueAtTime(0.9,ctx.currentTime); }catch(e){}
+    },240);
+  }
+
+  async function testBeep(){
+    clearErr();
+    await unlockAudio();
+    ensureCtx();
+    master.gain.cancelScheduledValues(ctx.currentTime);
+    master.gain.setValueAtTime(0.9,ctx.currentTime);
+    const t=ctx.currentTime+0.02;
+    oscNote(t,880,0.16,"sine",0.22,{a:0.002,d:0.05,s:0.25,r:0.06,cutoff:6000});
+  }
+
+  seek.addEventListener("pointerdown",()=>{isSeeking=true;});
+  seek.addEventListener("pointerup",()=>{
+    isSeeking=false;
+    if(isPlaying) play(+seek.value);
+  });
+  seek.addEventListener("input",()=>{
+    const v=+seek.value;
+    timeTxt.textContent=fmt(v);
+    secName.textContent=whichSection(v);
+  });
+
+  playBtn.addEventListener("click",()=>play(+seek.value||0));
+  stopBtn.addEventListener("click",stop);
+  testBtn.addEventListener("click",testBeep);
+
+  bpmV.textContent=bpm.value;
+  keyV.textContent="C";
+  caveV.textContent=(+cave.value).toFixed(2);
+  dripV.textContent=(+drip.value).toFixed(2);
+  droneV.textContent=(+drone.value).toFixed(2);
+  mixV.textContent=(+mix.value).toFixed(2);
+
+  timeTxt.textContent="00:00";
+  secName.textContent="INTRO";
+  setStatus(false);
+  updateUI();
+
+  // ===== 外部制御用APIを公開（iframe + postMessage用）=====
+  window.__bossBgmApi = {
+    play: (sec)=>play(sec == null ? (+seek.value || 0) : sec),
+    stop: ()=>stop(),
+    unlock: ()=>unlockAudio()
+  };
+
+})();
+</script>
+
+<!-- ★追加：postMessage受信口（neon2から START/STOP/UNLOCK を受ける） -->
+<script>
+"use strict";
+window.addEventListener("message", async (ev)=>{
+  const data = ev && ev.data ? ev.data : {};
+  const api = window.__bossBgmApi;
+  if(!api) return;
+
+  if(data.type === "UNLOCK_AUDIO"){
+    await api.unlock();   // 鳴らさず AudioContext だけ起こす（タイトル用）
+    return;
+  }
+  if(data.type === "START_BGM"){
+    await api.unlock();
+    api.play(0);          // 0秒から再生（必要なら変更可）
+    return;
+  }
+  if(data.type === "STOP_BGM"){
+    api.stop();
+    return;
+  }
+});
+</script>
+
+</body>
+</html>
