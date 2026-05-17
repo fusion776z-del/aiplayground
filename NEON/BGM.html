@@ -5,44 +5,44 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>BGM_linked</title>
   <style>
-  :root{
-    --bg:#050816; --fg:#e8f8ff; --muted:rgba(232,248,255,.72);
-    --cyan:#72f7ff; --pink:#ff5db1; --warn:#ffd84d; --danger:#ff6262;
-    --card:rgba(10,16,32,.72); --border:rgba(114,247,255,.18);
-  }
-  html,body{margin:0;height:100%;background:radial-gradient(circle at 15% 15%,rgba(0,180,255,.14),transparent 28%),
-  radial-gradient(circle at 82% 24%,rgba(255,90,177,.12),transparent 26%),
-  linear-gradient(180deg,#010309,#070d1a 50%,#02040b 100%); color:var(--fg); font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
-  .wrap{min-height:100%;display:grid;place-items:center;padding:18px;}
-  .card{width:min(720px,92vw);border-radius:22px;background:var(--card);border:1px solid var(--border);
-  box-shadow:0 22px 70px rgba(0,0,0,.48),0 0 40px rgba(114,247,255,.08);padding:16px 16px 14px;}
-  h1{margin:0 0 10px;font-size:18px;letter-spacing:.08em}
-  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-  button{
-    padding:14px 18px;border:none;border-radius:16px;
-    background:linear-gradient(180deg,#23467a,#12284a);
-    color:var(--fg); font-size:14px; font-weight:900; letter-spacing:.08em;
-    cursor:pointer; border:1px solid rgba(255,255,255,.12);
-    box-shadow:0 0 26px rgba(114,247,255,.14);
-    user-select:none;
-  }
-  button:hover{filter:brightness(1.08)}
-  button:active{transform:scale(.99)}
-  button.secondary{background:rgba(10,19,40,.38);border-color:rgba(114,247,255,.16)}
-  button.warn{background:rgba(255,216,77,.12);border-color:rgba(255,216,77,.28)}
-  button.danger{background:rgba(255,98,98,.12);border-color:rgba(255,98,98,.28)}
-  .pill{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:999px;
-  border:1px solid rgba(114,247,255,.16);background:rgba(10,19,40,.32);font-size:12px;color:var(--muted)}
-  .dot{width:10px;height:10px;border-radius:99px;background:#666;box-shadow:0 0 12px rgba(0,0,0,.4)}
-  .dot.ok{background:var(--cyan);box-shadow:0 0 16px rgba(114,247,255,.35)}
-  .dot.warn{background:var(--warn);box-shadow:0 0 16px rgba(255,216,77,.28)}
-  .dot.bad{background:var(--danger);box-shadow:0 0 16px rgba(255,98,98,.28)}
-  .grid{display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px}
-  .mono{font:12px ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;line-height:1.35;
-  padding:10px;border-radius:14px;border:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.35);color:rgba(255,255,255,.86)}
-  .small{font-size:11px;color:rgba(232,248,255,.62);line-height:1.4}
-  .hint{margin-top:10px;font-size:12px;color:rgba(232,248,255,.72)}
-  a{color:var(--cyan)}
+    :root{
+      --bg:#050816; --fg:#e8f8ff; --muted:rgba(232,248,255,.72);
+      --cyan:#72f7ff; --pink:#ff5db1; --warn:#ffd84d; --danger:#ff6262;
+      --card:rgba(10,16,32,.72); --border:rgba(114,247,255,.18);
+    }
+    html,body{margin:0;height:100%;background:radial-gradient(circle at 15% 15%,rgba(0,180,255,.14),transparent 28%),
+      radial-gradient(circle at 82% 24%,rgba(255,90,177,.12),transparent 26%),
+      linear-gradient(180deg,#010309,#070d1a 50%,#02040b 100%); color:var(--fg); font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
+    .wrap{min-height:100%;display:grid;place-items:center;padding:18px;}
+    .card{width:min(720px,92vw);border-radius:22px;background:var(--card);border:1px solid var(--border);
+      box-shadow:0 22px 70px rgba(0,0,0,.48),0 0 40px rgba(114,247,255,.08);padding:16px 16px 14px;}
+    h1{margin:0 0 10px;font-size:18px;letter-spacing:.08em}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    button{
+      padding:14px 18px;border:none;border-radius:16px;
+      background:linear-gradient(180deg,#23467a,#12284a);
+      color:var(--fg); font-size:14px; font-weight:900; letter-spacing:.08em;
+      cursor:pointer; border:1px solid rgba(255,255,255,.12);
+      box-shadow:0 0 26px rgba(114,247,255,.14);
+      user-select:none;
+    }
+    button:hover{filter:brightness(1.08)}
+    button:active{transform:scale(.99)}
+    button.secondary{background:rgba(10,19,40,.38);border-color:rgba(114,247,255,.16)}
+    button.warn{background:rgba(255,216,77,.12);border-color:rgba(255,216,77,.28)}
+    button.danger{background:rgba(255,98,98,.12);border-color:rgba(255,98,98,.28)}
+    .pill{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:999px;
+      border:1px solid rgba(114,247,255,.16);background:rgba(10,19,40,.32);font-size:12px;color:var(--muted)}
+    .dot{width:10px;height:10px;border-radius:99px;background:#666;box-shadow:0 0 12px rgba(0,0,0,.4)}
+    .dot.ok{background:var(--cyan);box-shadow:0 0 16px rgba(114,247,255,.35)}
+    .dot.warn{background:var(--warn);box-shadow:0 0 16px rgba(255,216,77,.28)}
+    .dot.bad{background:var(--danger);box-shadow:0 0 16px rgba(255,98,98,.28)}
+    .grid{display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px}
+    .mono{font:12px ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;line-height:1.35;
+      padding:10px;border-radius:14px;border:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.35);color:rgba(255,255,255,.86)}
+    .small{font-size:11px;color:rgba(232,248,255,.62);line-height:1.4}
+    .hint{margin-top:10px;font-size:12px;color:rgba(232,248,255,.72)}
+    a{color:var(--cyan)}
   </style>
 </head>
 <body>
@@ -95,7 +95,8 @@ function setState(kind, msg){
 }
 
 /* ========= WebAudio core ========= */
-const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+const AudioContextClass = window.AudioContext ||
+  window.webkitAudioContext;
 let audioCtx = null;
 let started = false;
 const MASTER_VOLUME = 0.70;
@@ -108,15 +109,18 @@ function initAudioContext(){
   audioCtx = new AudioContextClass();
   masterGain = audioCtx.createGain();
   masterGain.gain.value = MASTER_VOLUME;
+
   masterComp = audioCtx.createDynamicsCompressor();
   masterComp.threshold.value = -12;
   masterComp.knee.value = 20;
   masterComp.ratio.value = 6;
   masterComp.attack.value = 0.003;
   masterComp.release.value = 0.25;
+
   masterComp.connect(masterGain);
   masterGain.connect(audioCtx.destination);
-  audioCtx.onstatechange = ()=> {
+
+  audioCtx.onstatechange = ()=>{
     ctxStateEl.textContent = audioCtx.state;
     log(`AudioContext.state -> ${audioCtx.state}`);
   };
@@ -135,106 +139,248 @@ async function ensureRunning(){
 }
 
 function midi(n){ return 440 * Math.pow(2, (n - 69) / 12); }
+
+/* ========= Voice ========= */
 function voice(type, freq, start, dur, vol, cutoff){
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
   const filter = audioCtx.createBiquadFilter();
+
   osc.type = type;
   osc.frequency.setValueAtTime(freq, start);
+
   filter.type = "lowpass";
   filter.frequency.value = cutoff || 1800;
-  filter.Q.value = 0.5;
+  filter.Q.value = 0.55;
+
   gain.gain.setValueAtTime(0.00001, start);
   gain.gain.linearRampToValueAtTime(vol, start + 0.02);
   gain.gain.linearRampToValueAtTime(0.00001, start + dur);
+
   osc.connect(filter);
   filter.connect(gain);
   gain.connect(masterComp);
+
   osc.start(start);
-  osc.stop(start + dur + 0.02);
+  osc.stop(start + dur + 0.03);
 }
-function kick(t){ voice("sine", 120, t, 0.22, 0.18, 500); }
-function snare(t){
-  const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.15, audioCtx.sampleRate);
-  const data = buffer.getChannelData(0);
-  for(let i=0;i<data.length;i++){
-    data[i] = (Math.random()*2-1) * Math.pow(1 - i/data.length, 2);
-  }
-  const src = audioCtx.createBufferSource();
-  src.buffer = buffer;
-  const hp = audioCtx.createBiquadFilter();
-  hp.type = "highpass";
-  hp.frequency.value = 1200;
-  const g = audioCtx.createGain();
-  g.gain.setValueAtTime(0.035, t);
-  g.gain.linearRampToValueAtTime(0.00001, t + 0.12);
-  src.connect(hp);
-  hp.connect(g);
-  g.connect(masterComp);
-  src.start(t);
+
+/* ========= Music: 洞窟（ノイズゼロ）+ 高音耳障り対策 + イントロジャリ対策 =========
+  - ノイズ生成（Math.random等）なし
+  - 洞窟感：低音ドローン / 湿ったパッド / 水滴 / 反響（高域を抑えた疑似残響）
+  - 高音対策：ベル/水滴のカットオフを抑え、FXにもローパス
+  - イントロジャリ対策：
+      (1) playSong()の初回だけ masterGain を0→MASTERへ0.22秒フェード
+      (2) イントロ和音を数十msずらして分散発音
+*/
+
+let caveFxIn=null, caveDelay=null, caveFb=null, caveLP=null, caveWet=null;
+function initCaveFx(){
+  if(caveFxIn) return;
+  caveFxIn = audioCtx.createGain();
+  caveDelay = audioCtx.createDelay(1.0);
+  caveFb = audioCtx.createGain();
+  caveLP = audioCtx.createBiquadFilter();
+  caveWet = audioCtx.createGain();
+
+  // 洞窟の“長い反響”っぽさ（ただし耳障りな高域は削る）
+  caveDelay.delayTime.value = 0.26;
+  caveFb.gain.value = 0.33;
+  caveLP.type = "lowpass";
+  caveLP.frequency.value = 1600;      // ★高域を湿らせる
+  caveLP.Q.value = 0.7;
+  caveWet.gain.value = 0.18;
+
+  caveFxIn.connect(caveDelay);
+  caveDelay.connect(caveLP);
+  caveLP.connect(caveWet);
+  caveWet.connect(masterComp);
+
+  // feedback（ローパス後の信号を戻すと耳に痛い成分が増えにくい）
+  caveLP.connect(caveFb);
+  caveFb.connect(caveDelay);
 }
-function timpani(t){ voice("sine", 80, t, 0.30, 0.08, 400); }
-function strings(note, t){
-  voice("sine", midi(note), t, 0.90, 0.018, 1200);
-  voice("triangle", midi(note+12), t, 0.90, 0.006, 1800);
+
+function voiceTo(type, freq, start, dur, vol, cutoff, outNode){
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  const filter = audioCtx.createBiquadFilter();
+
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, start);
+
+  filter.type = "lowpass";
+  filter.frequency.value = cutoff || 1800;
+  filter.Q.value = 0.65;
+
+  gain.gain.setValueAtTime(0.00001, start);
+  gain.gain.linearRampToValueAtTime(vol, start + 0.02);
+  gain.gain.linearRampToValueAtTime(0.00001, start + dur);
+
+  osc.connect(filter);
+  filter.connect(gain);
+  gain.connect(outNode);
+
+  osc.start(start);
+  osc.stop(start + dur + 0.03);
 }
-function brass(note, t){
-  voice("triangle", midi(note), t, 0.28, 0.045, 1200);
-  voice("sine", midi(note+7), t, 0.28, 0.012, 1500);
+
+/* --- 洞窟楽器 --- */
+function drone(note, t, dur=3.2){
+  // 洞窟の床：超低域は出しすぎると割れの原因なので控えめ
+  voice("sine", midi(note-24), t, dur, 0.032, 260);
+  voice("triangle", midi(note-12), t, dur, 0.010, 320);
 }
-function choir(note, t){ voice("sine", midi(note), t, 0.80, 0.012, 1000); }
-function harp(note, t){ voice("triangle", midi(note+12), t, 0.22, 0.012, 2200); }
-function melody(note, t){ voice("triangle", midi(note+12), t, 0.35, 0.035, 2400); }
+
+function cavePad(note, t, dur=2.6){
+  initCaveFx();
+  // 湿ったパッド：FXへ多め、dryは薄め
+  voiceTo("sine", midi(note), t, dur, 0.010, 900, caveFxIn);
+  voiceTo("triangle", midi(note+7), t, dur, 0.006, 1100, caveFxIn);
+  voice("sine", midi(note), t, dur, 0.0035, 900);
+}
+
+function caveChoir(note, t, dur=2.2){
+  initCaveFx();
+  voiceTo("sine", midi(note), t, dur, 0.007, 950, caveFxIn);
+  voice("sine", midi(note), t, dur, 0.0025, 950);
+}
+
+function caveStrings(note, t, dur=2.0){
+  initCaveFx();
+  voiceTo("triangle", midi(note), t, dur, 0.008, 1200, caveFxIn);
+  voiceTo("sine", midi(note+12), t, dur, 0.004, 1500, caveFxIn);
+}
+
+function drip(note, t){
+  // 水滴：高域を抑えて耳障り回避（カットオフ低め）
+  initCaveFx();
+  voiceTo("sine", midi(note+24), t, 0.22, 0.0048, 1800, caveFxIn);
+  voice("sine", midi(note+24), t, 0.16, 0.0018, 1800);
+}
+
+function caveBell(note, t){
+  // 金属キラキラではなく“石に当たる響き”：高域を抑えて丸く
+  initCaveFx();
+  voiceTo("sine", midi(note+12), t, 0.45, 0.0048, 2000, caveFxIn);
+  voiceTo("triangle", midi(note+24), t, 0.28, 0.0018, 2400, caveFxIn);
+  voice("sine", midi(note+12), t, 0.35, 0.0014, 2000);
+}
+
+function caveLead(note, t, strong=false){
+  // 洞窟の笛：明るすぎないようローパス低め
+  initCaveFx();
+  voiceTo("sine", midi(note+12), t, strong ? 0.52 : 0.40, strong ? 0.010 : 0.0075, 1700, caveFxIn);
+  voice("sine", midi(note+12), t, strong ? 0.42 : 0.32, strong ? 0.0025 : 0.0018, 1700);
+}
+
+function stoneHit(t){
+  // ノイズ無しの“コツン”：耳に刺さらないようカットオフ低め
+  voice("triangle", 180, t, 0.10, 0.010, 1200);
+  voice("sine", 120, t, 0.12, 0.004, 900);
+}
+
+/* --- イントロジャリ対策：初回だけフェード --- */
+let fadeCtx = null;
+function applyIntroFade(){
+  if(!masterGain) return;
+  if(fadeCtx === audioCtx) return; // 同一AudioContextでは一回だけ
+  fadeCtx = audioCtx;
+  const now = audioCtx.currentTime;
+  masterGain.gain.cancelScheduledValues(now);
+  masterGain.gain.setValueAtTime(0.00001, now);
+  masterGain.gain.linearRampToValueAtTime(MASTER_VOLUME, now + 0.22);
+}
 
 function playSong(){
-  const bpm = 148;
+  // 洞窟テンポ
+  const bpm = 88;
   const step = 60 / bpm / 4;
-  const start = audioCtx.currentTime + 0.05;
+  const start = audioCtx.currentTime + 0.08;
+
+  applyIntroFade();
+
+  // 洞窟進行（暗め・広め）
   const prog = [
-    [52,55,59],
-    [50,54,57],
-    [48,52,55],
-    [47,50,54]
+    [52,55,59], // Em
+    [48,52,55], // C
+    [43,47,50], // G
+    [50,54,57]  // D
   ];
+
+  // 短いフレーズ（“迷い”っぽく）
+  const leadA = [71,69,67,64, 67,69,71,72];
+
   const bars = 24;
+
   for(let bar=0; bar<bars; bar++){
     const base = start + bar * 16 * step;
-    const chord = prog[bar % 4];
+    const chord = prog[bar % prog.length];
+
     for(let i=0;i<16;i++){
       const t = base + i * step;
-      if(bar < 4){
-        if(i===0){ strings(chord[0], t); choir(chord[1], t); }
-        if(i===6){ harp(chord[2], t); }
-      }
-      if(bar >= 4){
-        if(i===0 || i===8){
-          kick(t);
-          if(bar % 2 === 0) timpani(t);
+
+      /* Intro 0-6: 環境（ドローン＋パッド）＋水滴 */
+      if(bar < 6){
+        if(i === 0){
+          // ★同時発音をずらしてジャリ回避
+          drone(chord[0], t + 0.00, 3.0);
+          cavePad(chord[0], t + 0.05, 2.7);
+          cavePad(chord[1], t + 0.10, 2.7);
+          caveChoir(chord[2], t + 0.14, 2.3);
+          caveStrings(chord[1], t + 0.18, 2.1);
         }
-        if(i===4 || i===12) snare(t);
-        if(i%4===0){
-          if(Math.random() > 0.25) brass(chord[0], t);
+        // 水滴（規則配置・ノイズなし）
+        if(i === 5 || i === 11){
+          drip(chord[2], t);
         }
-        if(i===0) strings(chord[1], t);
-      }
-      if(bar >= 8){
-        const lead = [64,67,69,71,72,71,69,67];
-        if(i < 8) melody(lead[i], t);
-      }
-      if(bar >= 16){
-        if(i%2===0){
-          if(Math.random() > 0.4) brass(chord[0]+12, t);
+        // たまに石の響き
+        if(i === 14 && bar % 2 === 0){
+          caveBell(chord[1], t);
         }
-        if(i===0) choir(chord[2], t);
       }
-      if(bar >= 20){
-        if(i===0){
-          strings(chord[0]+12, t);
-          choir(chord[1]+12, t);
+
+      /* Mid 6-14: 低い打音と滴で“洞窟の奥へ” */
+      if(bar >= 6 && bar < 14){
+        if(i === 0){
+          drone(chord[0], t, 3.0);
+          cavePad(chord[0], t, 2.8);
+          caveStrings(chord[1], t + 0.08, 2.2);
+        }
+        if(i === 0 || i === 8){
+          stoneHit(t);
+        }
+        if(i === 6 || i === 12){
+          drip(chord[2], t);
+        }
+        if(i === 14 && bar % 2 === 1){
+          caveBell(chord[2], t);
+        }
+      }
+
+      /* Lead 14-24: 笛の旋律＋反響、でも高音は丸い */
+      if(bar >= 14){
+        if(i === 0){
+          drone(chord[0], t, 3.2);
+          cavePad(chord[0], t, 3.0);
+          cavePad(chord[1], t + 0.06, 3.0);
+          caveChoir(chord[2], t + 0.10, 2.6);
+        }
+        // ゆっくりした旋律（前半8ステップ）
+        if(i < 8){
+          caveLead(leadA[i], t, (i===0 || i===4));
+        }
+        // 滴とベルで空間を演出
+        if(i === 10){
+          drip(chord[1], t);
+        }
+        if(i === 12){
+          caveBell(chord[2], t);
         }
       }
     }
   }
+
   return bars * 16 * step;
 }
 
@@ -246,7 +392,6 @@ function startLoop(){
 /* ========= Public API ========= */
 window.startBGM = async function(){
   log("startBGM()");
-
   // ★ 毎回 ensureRunning で ctx を作る（stopでcloseするため）
   const ok = await ensureRunning();
   setState(ok ? "ok" : "warn", ok ? "running" : "not running");
@@ -254,10 +399,8 @@ window.startBGM = async function(){
     log("AudioContext is not running. (autoplay restriction / device mute may be involved)");
     return;
   }
-
   // ★ started が true のときは何もしない（重複防止）
   if(started) { log("already started"); return; }
-
   started = true;
   startLoop();
   setState("ok", "playing");
@@ -265,29 +408,28 @@ window.startBGM = async function(){
 
 window.stopBGM = function(){
   log("HARD STOP");
-
   // ★ループ停止
   if (loopTimeoutId){
     clearTimeout(loopTimeoutId);
     loopTimeoutId = null;
   }
-
   started = false;
-
   // ★音を全部強制停止（ここが重要）
   try{
     if (audioCtx){
       audioCtx.suspend(); // 一応止める
-
       // ★destを切断（残り音防止）
       audioCtx.destination.disconnect?.();
     }
   }catch(e){}
-
   // ★完全リセット
   audioCtx = null;
   masterGain = null;
   masterComp = null;
+
+  // FX参照も初期化（音楽セクション内）
+  caveFxIn = caveDelay = caveFb = caveLP = caveWet = null;
+  fadeCtx = null;
 
   setState("", "STOPPED");
 };
