@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>EIKEN 並べ替えトレーニング 5級・4級（80問）</title>
   <style>
     :root {
@@ -15,9 +15,19 @@
       --accent: #facc15;
       --btn: #1f2937;
       --btn2: #312e81;
+      --ok: #22c55e;
+      --ng: #ef4444;
+      --info: #3b82f6;
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      min-height: 100%;
+      -webkit-text-size-adjust: 100%;
+    }
 
     body {
       margin: 0;
@@ -31,6 +41,13 @@
       display: flex;
       justify-content: center;
       padding: 28px 14px;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+
+    body.drag-lock {
+      overflow: hidden;
+      touch-action: none;
     }
 
     .app {
@@ -73,10 +90,17 @@
       font-size: 14px;
     }
 
-    main { padding: 22px; }
+    main {
+      padding: 22px;
+    }
 
-    .screen { display: none; }
-    .screen.active { display: block; }
+    .screen {
+      display: none;
+    }
+
+    .screen.active {
+      display: block;
+    }
 
     .grade-list {
       display: grid;
@@ -108,6 +132,7 @@
 
     button {
       appearance: none;
+      -webkit-appearance: none;
       border: 1px solid var(--line);
       background: var(--btn);
       color: var(--text);
@@ -116,14 +141,23 @@
       font-size: 15px;
       font-weight: 800;
       cursor: pointer;
-      transition: transform 0.08s ease, border-color 0.15s ease, background 0.15s ease;
+      transition: transform 0.08s ease, border-color 0.15s ease, background 0.15s ease, opacity 0.15s ease;
       touch-action: manipulation;
+      font-family: inherit;
     }
 
-    button:hover { border-color: rgba(250, 204, 21, 0.55); }
-    button:active { transform: scale(0.98); }
+    button:hover {
+      border-color: rgba(250, 204, 21, 0.55);
+    }
 
-    .enter-btn { background: var(--btn2); min-width: 96px; }
+    button:active {
+      transform: scale(0.98);
+    }
+
+    .enter-btn {
+      background: var(--btn2);
+      min-width: 96px;
+    }
 
     .top-actions {
       display: flex;
@@ -133,7 +167,10 @@
       margin-bottom: 18px;
     }
 
-    .back-index { border-radius: 999px; background: transparent; }
+    .back-index {
+      border-radius: 999px;
+      background: transparent;
+    }
 
     .grade-badge {
       color: var(--accent);
@@ -142,6 +179,7 @@
       padding: 9px 16px;
       font-weight: 900;
       letter-spacing: 0.1em;
+      white-space: nowrap;
     }
 
     .shelf {
@@ -200,6 +238,7 @@
       align-content: flex-start;
       margin-bottom: 14px;
       background: rgba(2, 6, 23, 0.35);
+      touch-action: none;
     }
 
     .word-bank {
@@ -210,6 +249,7 @@
       flex-wrap: wrap;
       gap: 9px;
       margin-bottom: 15px;
+      touch-action: none;
     }
 
     .word {
@@ -219,10 +259,58 @@
       border: 1px solid #334155;
       font-weight: 900;
       min-height: 42px;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      touch-action: none;
+      cursor: grab;
     }
 
-    .word.used { opacity: 0.35; pointer-events: none; }
-    .answer-area .word { background: #1e293b; }
+    .word:active {
+      cursor: grabbing;
+    }
+
+    .word.used {
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    .answer-area .word {
+      background: #1e293b;
+    }
+
+    .dragging-origin {
+      opacity: 0.35;
+    }
+
+    .drag-ghost {
+      position: fixed;
+      left: 0;
+      top: 0;
+      z-index: 9999;
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+      margin: 0;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+      opacity: 0.96;
+      cursor: grabbing;
+    }
+
+    .placeholder {
+      border: 1px dashed rgba(250, 204, 21, 0.8);
+      background: rgba(250, 204, 21, 0.12);
+      color: var(--accent);
+      border-radius: 999px;
+      padding: 10px 14px;
+      min-height: 42px;
+      display: inline-flex;
+      align-items: center;
+      font-size: 13px;
+      font-weight: 900;
+      user-select: none;
+      -webkit-user-select: none;
+      pointer-events: none;
+    }
 
     .buttons {
       display: grid;
@@ -230,7 +318,9 @@
       gap: 10px;
     }
 
-    .buttons .wide { grid-column: 1 / -1; }
+    .buttons .wide {
+      grid-column: 1 / -1;
+    }
 
     .check {
       background: rgba(34, 197, 94, 0.18);
@@ -251,7 +341,9 @@
       display: none;
     }
 
-    .message.show { display: block; }
+    .message.show {
+      display: block;
+    }
 
     .message.ok {
       background: rgba(34, 197, 94, 0.14);
@@ -283,15 +375,46 @@
     }
 
     @media (max-width: 420px) {
-      h1 { font-size: 20px; }
-      .grade-card { align-items: stretch; flex-direction: column; }
-      .enter-btn { width: 100%; }
-      .buttons { grid-template-columns: 1fr; }
-      .buttons .wide { grid-column: auto; }
+      body {
+        padding: 16px 10px;
+      }
+
+      header {
+        padding: 22px 18px 16px;
+      }
+
+      main {
+        padding: 18px;
+      }
+
+      h1 {
+        font-size: 20px;
+      }
+
+      .grade-card {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .enter-btn {
+        width: 100%;
+      }
+
+      .buttons {
+        grid-template-columns: 1fr;
+      }
+
+      .buttons .wide {
+        grid-column: auto;
+      }
+
+      .word {
+        padding: 11px 15px;
+        min-height: 44px;
+      }
     }
   </style>
 </head>
-
 <body>
   <div class="app">
     <header>
@@ -300,12 +423,11 @@
       <p class="lead">
         日本語に合うように英単語を並べ替えよう。<br>
         ピリオド「.」を入れ忘れても、単語の順番が合っていれば正解。<br>
-        別解があるときは、正答・別解を表示します。単語ブロックは毎回ランダム表示（ただし同じ問題中は固定）。
+        単語はタップでもドラッグでも動かせます。
       </p>
     </header>
 
     <main>
-      <!-- INDEX -->
       <section id="indexScreen" class="screen active">
         <div class="grade-list">
           <div class="grade-card">
@@ -313,7 +435,7 @@
               <strong>5級（40問）</strong>
               <span>be動詞・一般動詞・疑問文・命令文など。</span>
             </div>
-            <button class="enter-btn" onclick="startGrade('grade5')">ENTER</button>
+            <button type="button" class="enter-btn" onclick="startGrade('grade5')">ENTER</button>
           </div>
 
           <div class="grade-card">
@@ -321,20 +443,19 @@
               <strong>4級（40問）</strong>
               <span>過去形・未来表現・比較・不定詞・助動詞など。</span>
             </div>
-            <button class="enter-btn" onclick="startGrade('grade4')">ENTER</button>
+            <button type="button" class="enter-btn" onclick="startGrade('grade4')">ENTER</button>
           </div>
         </div>
 
         <p class="small">
           ※ 文型問題はありません。英文の並べ替えのみです。<br>
-          ※ 80問（5級40＋4級40）に戻しています。
+          ※ 80問（5級40＋4級40）です。
         </p>
       </section>
 
-      <!-- QUIZ -->
       <section id="quizScreen" class="screen">
         <div class="top-actions">
-          <button class="back-index" onclick="goIndex()">← INDEX に戻る</button>
+          <button type="button" class="back-index" onclick="goIndex()">← INDEX に戻る</button>
           <div id="gradeTitle" class="grade-badge">GRADE</div>
         </div>
 
@@ -355,11 +476,11 @@
           <div id="wordBank" class="word-bank" aria-label="word bank"></div>
 
           <div class="buttons">
-            <button class="check" onclick="checkAnswer()">CHECK</button>
-            <button class="hint" onclick="showHint()">HINT</button>
-            <button onclick="clearAnswer()">CLEAR</button>
-            <button onclick="prevQuestion()">BACK</button>
-            <button class="wide" onclick="nextQuestion()">NEXT</button>
+            <button type="button" class="check" onclick="checkAnswer()">CHECK</button>
+            <button type="button" class="hint" onclick="showHint()">HINT</button>
+            <button type="button" onclick="clearAnswer()">CLEAR</button>
+            <button type="button" onclick="prevQuestion()">BACK</button>
+            <button type="button" class="wide" onclick="nextQuestion()">NEXT</button>
           </div>
 
           <div id="message" class="message"></div>
@@ -371,14 +492,6 @@
   </div>
 
   <script>
-    // =========================================================
-    // 80問：grade5=40問、grade4=40問
-    // - 文型なし
-    // - 判定はピリオド無視（. / 。 を除去）
-    // - 別解表示
-    // - ワードバンクは問題ごとにシャッフル（同一問題内では固定）
-    // =========================================================
-
     const questions = {
       grade5: [
         { jp:"私はサッカーが好きです。", answers:["I like soccer.","I like football."], words:["I","like","soccer","football","."] },
@@ -391,7 +504,6 @@
         { jp:"私は東京出身です。", answers:["I am from Tokyo.","I'm from Tokyo."], words:["I","am","I'm","from","Tokyo","."] },
         { jp:"これは何ですか。", answers:["What is this?"], words:["What","is","this","?"] },
         { jp:"私は毎日朝食を食べます。", answers:["I eat breakfast every day."], words:["I","eat","breakfast","every","day","."] },
-
         { jp:"彼は野球が好きです。", answers:["He likes baseball."], words:["He","likes","baseball","."] },
         { jp:"私は水を飲みます。", answers:["I drink water."], words:["I","drink","water","."] },
         { jp:"私たちは学校へ行きます。", answers:["We go to school."], words:["We","go","to","school","."] },
@@ -402,7 +514,6 @@
         { jp:"これは私のペンではありません。", answers:["This is not my pen."], words:["This","is","not","my","pen","."] },
         { jp:"私は走るのが速いです。", answers:["I run fast."], words:["I","run","fast","."] },
         { jp:"窓を開けてください。", answers:["Please open the window."], words:["Please","open","the","window","."] },
-
         { jp:"彼は毎日バスで来ます。", answers:["He comes by bus every day."], words:["He","comes","by","bus","every","day","."] },
         { jp:"私はその歌を知っています。", answers:["I know the song."], words:["I","know","the","song","."] },
         { jp:"あなたはここに住んでいますか。", answers:["Do you live here?"], words:["Do","you","live","here","?"] },
@@ -413,7 +524,6 @@
         { jp:"私は兄がいます。", answers:["I have a brother."], words:["I","have","a","brother","."] },
         { jp:"彼女は毎朝7時に起きます。", answers:["She gets up at seven every morning."], words:["She","gets","up","at","seven","every","morning","."] },
         { jp:"あなたはどこへ行きますか。", answers:["Where do you go?"], words:["Where","do","you","go","?"] },
-
         { jp:"私は英語が少し分かります。", answers:["I understand a little English."], words:["I","understand","a","little","English","."] },
         { jp:"彼らは昼食を食べます。", answers:["They eat lunch."], words:["They","eat","lunch","."] },
         { jp:"私は写真を撮ります。", answers:["I take pictures.","I take photos."], words:["I","take","pictures","photos","."] },
@@ -425,7 +535,6 @@
         { jp:"彼は泳ぐことができます。", answers:["He can swim."], words:["He","can","swim","."] },
         { jp:"明日また来てください。", answers:["Please come again tomorrow."], words:["Please","come","again","tomorrow","."] }
       ],
-
       grade4: [
         { jp:"私は昨日サッカーをしました。", answers:["I played soccer yesterday.","I played football yesterday."], words:["I","played","soccer","football","yesterday","."] },
         { jp:"彼女は明日図書館へ行くつもりです。", answers:["She will go to the library tomorrow.","She is going to go to the library tomorrow."], words:["She","will","is","going","to","go","to","the","library","tomorrow","."] },
@@ -437,7 +546,6 @@
         { jp:"このかばんはあのかばんより大きいです。", answers:["This bag is bigger than that one.","This bag is larger than that one."], words:["This","bag","is","bigger","larger","than","that","one","."] },
         { jp:"私は英語を話すことができます。", answers:["I can speak English."], words:["I","can","speak","English","."] },
         { jp:"彼は先週京都を訪れました。", answers:["He visited Kyoto last week."], words:["He","visited","Kyoto","last","week","."] },
-
         { jp:"彼女は先週映画を見ました。", answers:["She watched a movie last week.","She saw a movie last week."], words:["She","watched","saw","a","movie","last","week","."] },
         { jp:"私は先週その店で買い物をしました。", answers:["I shopped at the store last week."], words:["I","shopped","at","the","store","last","week","."] },
         { jp:"彼らは昨夜遅くまで勉強しました。", answers:["They studied until late last night."], words:["They","studied","until","late","last","night","."] },
@@ -448,7 +556,6 @@
         { jp:"私は毎朝ジョギングします。", answers:["I jog every morning.","I go jogging every morning."], words:["I","jog","go","jogging","every","morning","."] },
         { jp:"私の兄は私より早く起きます。", answers:["My brother gets up earlier than I do."], words:["My","brother","gets","up","earlier","than","I","do","."] },
         { jp:"彼はその歌手を知っていますか。", answers:["Does he know the singer?"], words:["Does","he","know","the","singer","?"] },
-
         { jp:"私はその写真を撮りました。", answers:["I took the picture.","I took the photo."], words:["I","took","the","picture","photo","."] },
         { jp:"彼女はもう一度それを説明しました。", answers:["She explained it again."], words:["She","explained","it","again","."] },
         { jp:"私は昨日早く寝ました。", answers:["I went to bed early yesterday."], words:["I","went","to","bed","early","yesterday","."] },
@@ -459,7 +566,6 @@
         { jp:"彼女は私にその話をしてくれました。", answers:["She told me the story."], words:["She","told","me","the","story","."] },
         { jp:"私は毎週テニスをします。", answers:["I play tennis every week."], words:["I","play","tennis","every","week","."] },
         { jp:"彼らは今、公園で遊んでいます。", answers:["They are playing in the park now.","They're playing in the park now."], words:["They","are","They're","playing","in","the","park","now","."] },
-
         { jp:"私はこの問題の答えを知りません。", answers:["I do not know the answer to this question.","I don't know the answer to this question."], words:["I","do","not","don't","know","the","answer","to","this","question","."] },
         { jp:"彼は私に手紙を書きました。", answers:["He wrote a letter to me."], words:["He","wrote","a","letter","to","me","."] },
         { jp:"私はその映画が好きでした。", answers:["I liked the movie."], words:["I","liked","the","movie","."] },
@@ -474,477 +580,539 @@
     };
 
     let currentGrade = "grade5";
-let currentIndex = 0;
-let score = 0;
-let answeredCorrect = new Set();
-let selectedWords = [];
+    let currentIndex = 0;
+    let score = 0;
+    let answeredCorrect = new Set();
+    let selectedWords = [];
 
-// 問題ごとにシャッフルした並びを固定するキャッシュ
-const wordOrderCache = new Map();
+    const wordOrderCache = new Map();
 
-const indexScreen = document.getElementById("indexScreen");
-const quizScreen  = document.getElementById("quizScreen");
-const gradeTitle  = document.getElementById("gradeTitle");
-const questionCount = document.getElementById("questionCount");
-const jpSentence  = document.getElementById("jpSentence");
-const answerArea  = document.getElementById("answerArea");
-const wordBank    = document.getElementById("wordBank");
-const message     = document.getElementById("message");
-const scoreEl     = document.getElementById("score");
+    const indexScreen = document.getElementById("indexScreen");
+    const quizScreen = document.getElementById("quizScreen");
+    const gradeTitle = document.getElementById("gradeTitle");
+    const questionCount = document.getElementById("questionCount");
+    const jpSentence = document.getElementById("jpSentence");
+    const answerArea = document.getElementById("answerArea");
+    const wordBank = document.getElementById("wordBank");
+    const message = document.getElementById("message");
+    const scoreEl = document.getElementById("score");
 
-// ====== 追加：ドラッグ状態 ======
-const dragState = {
-  active: false,
-  from: null,            // "bank" | "answer"
-  wordIndex: null,       // q.words の index（トークンの同一性）
-  answerPos: null,       // selectedWords 内の位置（answerからドラッグ時）
-  pointerId: null,
-  startX: 0, startY: 0,
-  moved: false,
-  ghost: null,
-  placeholder: null,
-};
+    const TAP_THRESHOLD = 8;
 
-const TAP_THRESHOLD = 8; // px：これ未満はタップ扱い
+    const dragState = {
+      active: false,
+      from: null,
+      wordIndex: null,
+      answerPos: null,
+      pointerId: null,
+      startX: 0,
+      startY: 0,
+      moved: false,
+      ghost: null,
+      placeholder: null,
+      originEl: null
+    };
 
-function startGrade(grade) {
-  currentGrade = grade;
-  currentIndex = 0;
-  score = 0;
-  answeredCorrect = new Set();
-  selectedWords = [];
-  wordOrderCache.clear();
+    function startGrade(grade) {
+      currentGrade = grade;
+      currentIndex = 0;
+      score = 0;
+      answeredCorrect = new Set();
+      selectedWords = [];
+      wordOrderCache.clear();
 
-  indexScreen.classList.remove("active");
-  quizScreen.classList.add("active");
+      indexScreen.classList.remove("active");
+      quizScreen.classList.add("active");
 
-  renderQuestion();
-}
-
-function goIndex() {
-  quizScreen.classList.remove("active");
-  indexScreen.classList.add("active");
-  clearMessage();
-}
-
-function getCurrentQuestion() {
-  return questions[currentGrade][currentIndex];
-}
-
-function ensureWordOrderForCurrentQuestion() {
-  const key = `${currentGrade}-${currentIndex}`;
-  if (wordOrderCache.has(key)) return;
-
-  const q = getCurrentQuestion();
-  const arr = q.words.map((w, idx) => ({ word: w, index: idx }));
-
-  // Fisher–Yates shuffle
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  wordOrderCache.set(key, arr);
-}
-
-function renderQuestion() {
-  const q = getCurrentQuestion();
-  selectedWords = [];
-
-  gradeTitle.textContent = currentGrade === "grade5" ? "GRADE5" : "GRADE4";
-  questionCount.textContent = `Q${currentIndex + 1}/${questions[currentGrade].length}`;
-  jpSentence.textContent = q.jp;
-
-  ensureWordOrderForCurrentQuestion();
-
-  renderAnswerArea();
-  renderWordBank();
-  updateScore();
-  clearMessage();
-}
-
-/* ===== 描画 ===== */
-function renderAnswerArea() {
-  answerArea.innerHTML = "";
-
-  selectedWords.forEach((item, answerPos) => {
-    const btn = document.createElement("button");
-    btn.className = "word";
-    btn.textContent = item.word;
-
-    // どのトークンか、回答内のどこか
-    btn.dataset.zone = "answer";
-    btn.dataset.wordindex = String(item.index);
-    btn.dataset.answerpos = String(answerPos);
-
-    // タップで削除（ドラッグと区別するので click は使わず pointerup で判定）
-    btn.addEventListener("pointerdown", onPointerDownChip);
-
-    answerArea.appendChild(btn);
-  });
-}
-
-function renderWordBank() {
-  const key = `${currentGrade}-${currentIndex}`;
-  const order = wordOrderCache.get(key) || [];
-  wordBank.innerHTML = "";
-
-  order.forEach(({ word, index }) => {
-    const btn = document.createElement("button");
-    btn.className = "word";
-    btn.textContent = word;
-
-    btn.dataset.zone = "bank";
-    btn.dataset.wordindex = String(index);
-
-    const used = selectedWords.some(it => it.index === index);
-    if (used) btn.classList.add("used");
-
-    btn.addEventListener("pointerdown", onPointerDownChip);
-
-    wordBank.appendChild(btn);
-  });
-}
-
-/* ===== タップ操作（従来互換） ===== */
-function addWordFromBank(wordIndex, insertAt = null) {
-  const q = getCurrentQuestion();
-  if (selectedWords.some(it => it.index === wordIndex)) return; // 既に使ってる
-
-  const word = q.words[wordIndex];
-  const obj = { word, index: wordIndex };
-
-  if (insertAt === null || insertAt === undefined) {
-    selectedWords.push(obj);
-  } else {
-    selectedWords.splice(insertAt, 0, obj);
-  }
-  renderAnswerArea();
-  renderWordBank();
-  clearMessage();
-}
-
-function removeWordFromAnswer(answerPos) {
-  selectedWords.splice(answerPos, 1);
-  renderAnswerArea();
-  renderWordBank();
-  clearMessage();
-}
-
-/* ===== ドラッグ&ドロップ（Pointer Events） ===== */
-function onPointerDownChip(e) {
-  // used の bank はドラッグ/タップ無効
-  const el = e.currentTarget;
-  if (el.classList.contains("used") && el.dataset.zone === "bank") return;
-
-  dragState.active = true;
-  dragState.pointerId = e.pointerId;
-  dragState.startX = e.clientX;
-  dragState.startY = e.clientY;
-  dragState.moved = false;
-
-  dragState.from = el.dataset.zone; // bank or answer
-  dragState.wordIndex = Number(el.dataset.wordindex);
-  dragState.answerPos = el.dataset.answerpos != null ? Number(el.dataset.answerpos) : null;
-
-  el.setPointerCapture(e.pointerId);
-
-  // ゴースト作成（指についてくる見た目）
-  dragState.ghost = createGhost(el, e.clientX, e.clientY);
-
-  // プレースホルダー（挿入位置）
-  dragState.placeholder = document.createElement("div");
-  dragState.placeholder.className = "placeholder";
-  dragState.placeholder.textContent = "ここに入る";
-
-  // ドラッグ開始時点で answer なら、いったん origin を薄く
-  el.classList.add("dragging-origin");
-
-  document.addEventListener("pointermove", onPointerMove, { passive: false });
-  document.addEventListener("pointerup", onPointerUp, { passive: false });
-  document.addEventListener("pointercancel", onPointerCancel, { passive: false });
-
-  e.preventDefault();
-}
-
-function onPointerMove(e) {
-  if (!dragState.active || e.pointerId !== dragState.pointerId) return;
-
-  const dx = e.clientX - dragState.startX;
-  const dy = e.clientY - dragState.startY;
-  if (!dragState.moved && Math.hypot(dx, dy) > TAP_THRESHOLD) {
-    dragState.moved = true;
-  }
-
-  moveGhost(e.clientX, e.clientY);
-
-  // どこにドロップしそうか判定
-  const overAnswer = isPointInEl(answerArea, e.clientX, e.clientY);
-  const overBank   = isPointInEl(wordBank, e.clientX, e.clientY);
-
-  // answer の上ならプレースホルダーを挿入位置に移動
-  if (overAnswer) {
-    const insertIndex = getInsertIndexInAnswer(e.clientX, e.clientY);
-    placePlaceholder(insertIndex);
-  } else {
-    // answer 外ならプレースホルダーを消す
-    removePlaceholder();
-  }
-
-  e.preventDefault();
-}
-
-function onPointerUp(e) {
-  if (!dragState.active || e.pointerId !== dragState.pointerId) return;
-
-  // origin の薄化解除
-  cleanupOriginClass();
-
-  const wasTap = !dragState.moved;
-
-  // タップ扱いなら：bank→追加、answer→削除
-  if (wasTap) {
-    if (dragState.from === "bank") {
-      addWordFromBank(dragState.wordIndex);
-    } else if (dragState.from === "answer") {
-      removeWordFromAnswer(dragState.answerPos);
+      renderQuestion();
     }
-    finishDrag();
-    return;
-  }
 
-  // ドロップ判定
-  const overAnswer = isPointInEl(answerArea, e.clientX, e.clientY);
-  const overBank   = isPointInEl(wordBank, e.clientX, e.clientY);
+    function goIndex() {
+      quizScreen.classList.remove("active");
+      indexScreen.classList.add("active");
+      clearMessage();
+      finishDrag();
+    }
 
-  if (overAnswer) {
-    // プレースホルダー位置を index にする
-    const dropIndex = getPlaceholderIndex();
+    function getCurrentQuestion() {
+      return questions[currentGrade][currentIndex];
+    }
 
-    if (dragState.from === "bank") {
-      addWordFromBank(dragState.wordIndex, dropIndex);
-    } else {
-      // answer内の並べ替え
-      moveAnswerWord(dragState.answerPos, dropIndex);
+    function ensureWordOrderForCurrentQuestion() {
+      const key = `${currentGrade}-${currentIndex}`;
+      if (wordOrderCache.has(key)) return;
+
+      const q = getCurrentQuestion();
+      const arr = q.words.map((word, index) => ({ word, index }));
+
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+
+      wordOrderCache.set(key, arr);
+    }
+
+    function renderQuestion() {
+      const q = getCurrentQuestion();
+
+      selectedWords = [];
+      gradeTitle.textContent = currentGrade === "grade5" ? "GRADE5" : "GRADE4";
+      questionCount.textContent = `Q${currentIndex + 1}/${questions[currentGrade].length}`;
+      jpSentence.textContent = q.jp;
+
+      ensureWordOrderForCurrentQuestion();
+      renderAnswerArea();
+      renderWordBank();
+      updateScore();
+      clearMessage();
+    }
+
+    function renderAnswerArea() {
+      answerArea.innerHTML = "";
+
+      selectedWords.forEach((item, answerPos) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "word";
+        btn.textContent = item.word;
+        btn.dataset.zone = "answer";
+        btn.dataset.wordindex = String(item.index);
+        btn.dataset.answerpos = String(answerPos);
+        btn.addEventListener("pointerdown", onPointerDownChip, { passive: false });
+        answerArea.appendChild(btn);
+      });
+    }
+
+    function renderWordBank() {
+      const key = `${currentGrade}-${currentIndex}`;
+      const order = wordOrderCache.get(key) || [];
+
+      wordBank.innerHTML = "";
+
+      order.forEach(({ word, index }) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "word";
+        btn.textContent = word;
+        btn.dataset.zone = "bank";
+        btn.dataset.wordindex = String(index);
+
+        const used = selectedWords.some(item => item.index === index);
+        if (used) btn.classList.add("used");
+
+        btn.addEventListener("pointerdown", onPointerDownChip, { passive: false });
+        wordBank.appendChild(btn);
+      });
+    }
+
+    function addWordFromBank(wordIndex, insertAt = null) {
+      const q = getCurrentQuestion();
+
+      if (selectedWords.some(item => item.index === wordIndex)) return;
+
+      const obj = {
+        word: q.words[wordIndex],
+        index: wordIndex
+      };
+
+      if (insertAt === null || insertAt === undefined) {
+        selectedWords.push(obj);
+      } else {
+        selectedWords.splice(insertAt, 0, obj);
+      }
+
       renderAnswerArea();
       renderWordBank();
       clearMessage();
     }
-  } else if (overBank) {
-    // answer から bank へ戻す = 削除
-    if (dragState.from === "answer") {
-      removeWordFromAnswer(dragState.answerPos);
+
+    function removeWordFromAnswer(answerPos) {
+      if (answerPos == null) return;
+
+      selectedWords.splice(answerPos, 1);
+      renderAnswerArea();
+      renderWordBank();
+      clearMessage();
     }
-    // bank→bank は何もしない
-  } else {
-    // どこでもない場所：何もしない（元に戻る）
-    // （answer→どこでもない は並び維持）
-    // 画面は再描画で元に戻る
-    renderAnswerArea();
-    renderWordBank();
-  }
 
-  finishDrag();
-}
+    function moveAnswerWord(fromIndex, toIndex) {
+      if (fromIndex == null || toIndex == null) return;
+      if (fromIndex < 0 || fromIndex >= selectedWords.length) return;
 
-function onPointerCancel(e) {
-  if (!dragState.active || e.pointerId !== dragState.pointerId) return;
-  cleanupOriginClass();
-  renderAnswerArea();
-  renderWordBank();
-  finishDrag();
-}
+      const item = selectedWords[fromIndex];
+      selectedWords.splice(fromIndex, 1);
 
-function finishDrag() {
-  removePlaceholder();
-  removeGhost();
+      let target = toIndex;
+      if (toIndex > fromIndex) target = toIndex - 1;
+      if (target < 0) target = 0;
+      if (target > selectedWords.length) target = selectedWords.length;
 
-  document.removeEventListener("pointermove", onPointerMove);
-  document.removeEventListener("pointerup", onPointerUp);
-  document.removeEventListener("pointercancel", onPointerCancel);
-
-  dragState.active = false;
-  dragState.from = null;
-  dragState.wordIndex = null;
-  dragState.answerPos = null;
-  dragState.pointerId = null;
-  dragState.startX = dragState.startY = 0;
-  dragState.moved = false;
-}
-
-function createGhost(originEl, x, y) {
-  const ghost = originEl.cloneNode(true);
-  ghost.classList.add("drag-ghost");
-  ghost.style.width = `${originEl.getBoundingClientRect().width}px`;
-  document.body.appendChild(ghost);
-  moveGhost(x, y);
-  return ghost;
-}
-
-function moveGhost(x, y) {
-  if (!dragState.ghost) return;
-  dragState.ghost.style.left = `${x}px`;
-  dragState.ghost.style.top  = `${y}px`;
-}
-
-function removeGhost() {
-  if (dragState.ghost && dragState.ghost.parentNode) {
-    dragState.ghost.parentNode.removeChild(dragState.ghost);
-  }
-  dragState.ghost = null;
-}
-
-function isPointInEl(el, x, y) {
-  const r = el.getBoundingClientRect();
-  return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
-}
-
-function getInsertIndexInAnswer(x, y) {
-  const chips = [...answerArea.querySelectorAll(".word")];
-  if (chips.length === 0) return 0;
-
-  // 指の下にあるチップを優先
-  const under = document.elementFromPoint(x, y);
-  const chip = under && under.closest ? under.closest("#answerArea .word") : null;
-
-  if (chip) {
-    const rect = chip.getBoundingClientRect();
-    const midX = rect.left + rect.width / 2;
-    const chipIndex = chips.indexOf(chip);
-    return (x < midX) ? chipIndex : chipIndex + 1;
-  }
-
-  // 何もないなら末尾
-  return chips.length;
-}
-
-function placePlaceholder(insertIndex) {
-  const chips = [...answerArea.querySelectorAll(".word")];
-  // placeholder がまだ無ければ追加
-  if (!dragState.placeholder) return;
-
-  // 既に入ってるなら移動
-  if (dragState.placeholder.parentNode === answerArea) {
-    // remove and re-insert
-    answerArea.removeChild(dragState.placeholder);
-  }
-
-  if (insertIndex >= chips.length) {
-    answerArea.appendChild(dragState.placeholder);
-  } else {
-    answerArea.insertBefore(dragState.placeholder, chips[insertIndex]);
-  }
-}
-
-function removePlaceholder() {
-  if (dragState.placeholder && dragState.placeholder.parentNode) {
-    dragState.placeholder.parentNode.removeChild(dragState.placeholder);
-  }
-}
-
-function getPlaceholderIndex() {
-  if (!dragState.placeholder || dragState.placeholder.parentNode !== answerArea) {
-    return selectedWords.length;
-  }
-  const nodes = [...answerArea.children];
-  return nodes.indexOf(dragState.placeholder);
-}
-
-function moveAnswerWord(fromIndex, toIndex) {
-  if (fromIndex == null) return;
-  if (toIndex == null) return;
-
-  // placeholder が from を跨ぐときのズレ補正
-  // 例：後ろに動かす場合、取り出した後に index が1減る
-  const item = selectedWords[fromIndex];
-  selectedWords.splice(fromIndex, 1);
-
-  let target = toIndex;
-  if (toIndex > fromIndex) target = toIndex - 1;
-
-  if (target < 0) target = 0;
-  if (target > selectedWords.length) target = selectedWords.length;
-
-  selectedWords.splice(target, 0, item);
-}
-
-function cleanupOriginClass() {
-  document.querySelectorAll(".dragging-origin").forEach(el => el.classList.remove("dragging-origin"));
-}
-
-/* ===== 既存のチェック機能（そのまま） ===== */
-function normalizeSentence(sentence) {
-  return sentence
-    .toLowerCase()
-    .replace(/[.。]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function getUserSentence() {
-  return selectedWords.map(item => item.word).join(" ");
-}
-
-function checkAnswer() {
-  const q = getCurrentQuestion();
-  const user = normalizeSentence(getUserSentence());
-  const normalizedAnswers = q.answers.map(ans => normalizeSentence(ans));
-  const isCorrect = normalizedAnswers.includes(user);
-
-  if (isCorrect) {
-    const key = `${currentGrade}-${currentIndex}`;
-    if (!answeredCorrect.has(key)) {
-      answeredCorrect.add(key);
-      score++;
+      selectedWords.splice(target, 0, item);
     }
-    showMessage("ok", `正解！<br>${formatAnswers(q.answers)}`);
-  } else {
-    showMessage("ng", `もう一度！<br>正答・別解はこちら：<br>${formatAnswers(q.answers)}`);
-  }
-  updateScore();
-}
 
-function formatAnswers(answers) {
-  if (answers.length === 1) return `正答：<strong>${answers[0]}</strong>`;
-  return answers.map((ans, i) => i === 0
-      ? `正答：<strong>${ans}</strong>`
-      : `別解${i}：<strong>${ans}</strong>`
-    ).join("<br>");
-}
+    function onPointerDownChip(e) {
+      const el = e.currentTarget;
 
-function showHint() {
-  const q = getCurrentQuestion();
-  const firstAnswer = q.answers[0];
-  const hintWords = firstAnswer.replace(/[.?!]/g, "").split(/\s+/).slice(0, 2).join(" ");
-  showMessage("info", `HINT：最初は <strong>${hintWords}</strong> ...`);
-}
+      if (el.classList.contains("used") && el.dataset.zone === "bank") return;
+      if (!e.isPrimary) return;
 
-function nextQuestion() {
-  const total = questions[currentGrade].length;
-  currentIndex = (currentIndex + 1) % total;
-  ensureWordOrderForCurrentQuestion();
-  renderQuestion();
-}
+      dragState.active = true;
+      dragState.from = el.dataset.zone;
+      dragState.wordIndex = Number(el.dataset.wordindex);
+      dragState.answerPos = el.dataset.answerpos != null ? Number(el.dataset.answerpos) : null;
+      dragState.pointerId = e.pointerId;
+      dragState.startX = e.clientX;
+      dragState.startY = e.clientY;
+      dragState.moved = false;
+      dragState.originEl = el;
 
-function prevQuestion() {
-  const total = questions[currentGrade].length;
-  currentIndex = (currentIndex - 1 + total) % total;
-  ensureWordOrderForCurrentQuestion();
-  renderQuestion();
-}
+      try {
+        el.setPointerCapture(e.pointerId);
+      } catch (_) {}
 
-function showMessage(type, html) {
-  message.className = `message show ${type}`;
-  message.innerHTML = html;
-}
+      el.classList.add("dragging-origin");
 
-function clearMessage() {
-  message.className = "message";
-  message.innerHTML = "";
-}
+      dragState.ghost = createGhost(el, e.clientX, e.clientY);
+      dragState.placeholder = document.createElement("div");
+      dragState.placeholder.className = "placeholder";
+      dragState.placeholder.textContent = "ここに入る";
 
-function updateScore() {
-  scoreEl.textContent = `SCORE: ${score}`;
-}
+      document.body.classList.add("drag-lock");
+
+      window.addEventListener("pointermove", onPointerMove, { passive: false });
+      window.addEventListener("pointerup", onPointerUp, { passive: false });
+      window.addEventListener("pointercancel", onPointerCancel, { passive: false });
+      window.addEventListener("blur", onWindowBlur);
+
+      e.preventDefault();
+    }
+
+    function onPointerMove(e) {
+      if (!dragState.active || e.pointerId !== dragState.pointerId) return;
+
+      const dx = e.clientX - dragState.startX;
+      const dy = e.clientY - dragState.startY;
+
+      if (!dragState.moved && Math.hypot(dx, dy) > TAP_THRESHOLD) {
+        dragState.moved = true;
+      }
+
+      moveGhost(e.clientX, e.clientY);
+
+      const overAnswer = isPointInEl(answerArea, e.clientX, e.clientY);
+
+      if (overAnswer) {
+        const insertIndex = getInsertIndexInAnswer(e.clientX, e.clientY);
+        placePlaceholder(insertIndex);
+      } else {
+        removePlaceholder();
+      }
+
+      e.preventDefault();
+    }
+
+    function onPointerUp(e) {
+      if (!dragState.active || e.pointerId !== dragState.pointerId) return;
+
+      cleanupOriginClass();
+
+      const wasTap = !dragState.moved;
+
+      if (wasTap) {
+        if (dragState.from === "bank") {
+          addWordFromBank(dragState.wordIndex);
+        } else if (dragState.from === "answer") {
+          removeWordFromAnswer(dragState.answerPos);
+        }
+
+        finishDrag();
+        e.preventDefault();
+        return;
+      }
+
+      const overAnswer = isPointInEl(answerArea, e.clientX, e.clientY);
+      const overBank = isPointInEl(wordBank, e.clientX, e.clientY);
+
+      if (overAnswer) {
+        const dropIndex = getPlaceholderIndex();
+
+        if (dragState.from === "bank") {
+          addWordFromBank(dragState.wordIndex, dropIndex);
+        } else if (dragState.from === "answer") {
+          moveAnswerWord(dragState.answerPos, dropIndex);
+          renderAnswerArea();
+          renderWordBank();
+          clearMessage();
+        }
+      } else if (overBank) {
+        if (dragState.from === "answer") {
+          removeWordFromAnswer(dragState.answerPos);
+        }
+      } else {
+        renderAnswerArea();
+        renderWordBank();
+      }
+
+      finishDrag();
+      e.preventDefault();
+    }
+
+    function onPointerCancel(e) {
+      if (!dragState.active || e.pointerId !== dragState.pointerId) return;
+
+      cleanupOriginClass();
+      renderAnswerArea();
+      renderWordBank();
+      finishDrag();
+      e.preventDefault();
+    }
+
+    function onWindowBlur() {
+      cleanupOriginClass();
+      renderAnswerArea();
+      renderWordBank();
+      finishDrag();
+    }
+
+    function finishDrag() {
+      removePlaceholder();
+      removeGhost();
+      cleanupOriginClass();
+
+      if (dragState.originEl && dragState.pointerId != null) {
+        try {
+          dragState.originEl.releasePointerCapture(dragState.pointerId);
+        } catch (_) {}
+      }
+
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("pointercancel", onPointerCancel);
+      window.removeEventListener("blur", onWindowBlur);
+
+      document.body.classList.remove("drag-lock");
+
+      dragState.active = false;
+      dragState.from = null;
+      dragState.wordIndex = null;
+      dragState.answerPos = null;
+      dragState.pointerId = null;
+      dragState.startX = 0;
+      dragState.startY = 0;
+      dragState.moved = false;
+      dragState.placeholder = null;
+      dragState.originEl = null;
+    }
+
+    function createGhost(originEl, x, y) {
+      const ghost = originEl.cloneNode(true);
+      const rect = originEl.getBoundingClientRect();
+
+      ghost.classList.add("drag-ghost");
+      ghost.style.width = `${rect.width}px`;
+      ghost.style.height = `${rect.height}px`;
+
+      document.body.appendChild(ghost);
+      moveGhost(x, y);
+
+      return ghost;
+    }
+
+    function moveGhost(x, y) {
+      if (!dragState.ghost) return;
+
+      dragState.ghost.style.left = `${x}px`;
+      dragState.ghost.style.top = `${y}px`;
+    }
+
+    function removeGhost() {
+      if (dragState.ghost && dragState.ghost.parentNode) {
+        dragState.ghost.parentNode.removeChild(dragState.ghost);
+      }
+
+      dragState.ghost = null;
+    }
+
+    function isPointInEl(el, x, y) {
+      const rect = el.getBoundingClientRect();
+
+      return (
+        x >= rect.left &&
+        x <= rect.right &&
+        y >= rect.top &&
+        y <= rect.bottom
+      );
+    }
+
+    function getInsertIndexInAnswer(x, y) {
+      const chips = [...answerArea.querySelectorAll(".word")];
+
+      if (chips.length === 0) return 0;
+
+      const element = document.elementFromPoint(x, y);
+      const chip = element && element.closest
+        ? element.closest("#answerArea .word")
+        : null;
+
+      if (chip) {
+        const rect = chip.getBoundingClientRect();
+        const midX = rect.left + rect.width / 2;
+        const chipIndex = chips.indexOf(chip);
+
+        return x < midX ? chipIndex : chipIndex + 1;
+      }
+
+      let nearestIndex = chips.length;
+      let nearestDistance = Infinity;
+
+      chips.forEach((chipEl, index) => {
+        const rect = chipEl.getBoundingClientRect();
+        const centerY = rect.top + rect.height / 2;
+        const distanceY = Math.abs(y - centerY);
+
+        if (distanceY < nearestDistance) {
+          nearestDistance = distanceY;
+
+          const midX = rect.left + rect.width / 2;
+          nearestIndex = x < midX ? index : index + 1;
+        }
+      });
+
+      return nearestIndex;
+    }
+
+    function placePlaceholder(insertIndex) {
+      if (!dragState.placeholder) return;
+
+      const chips = [...answerArea.querySelectorAll(".word")];
+
+      if (dragState.placeholder.parentNode === answerArea) {
+        answerArea.removeChild(dragState.placeholder);
+      }
+
+      if (insertIndex >= chips.length) {
+        answerArea.appendChild(dragState.placeholder);
+      } else {
+        answerArea.insertBefore(dragState.placeholder, chips[insertIndex]);
+      }
+    }
+
+    function removePlaceholder() {
+      if (dragState.placeholder && dragState.placeholder.parentNode) {
+        dragState.placeholder.parentNode.removeChild(dragState.placeholder);
+      }
+    }
+
+    function getPlaceholderIndex() {
+      if (!dragState.placeholder || dragState.placeholder.parentNode !== answerArea) {
+        return selectedWords.length;
+      }
+
+      const nodes = [...answerArea.children];
+      return nodes.indexOf(dragState.placeholder);
+    }
+
+    function cleanupOriginClass() {
+      document.querySelectorAll(".dragging-origin").forEach(el => {
+        el.classList.remove("dragging-origin");
+      });
+    }
+
+    function normalizeSentence(sentence) {
+      return sentence
+        .toLowerCase()
+        .replace(/[.。]/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function getUserSentence() {
+      return selectedWords.map(item => item.word).join(" ");
+    }
+
+    function checkAnswer() {
+      const q = getCurrentQuestion();
+      const user = normalizeSentence(getUserSentence());
+      const normalizedAnswers = q.answers.map(answer => normalizeSentence(answer));
+      const isCorrect = normalizedAnswers.includes(user);
+
+      if (isCorrect) {
+        const key = `${currentGrade}-${currentIndex}`;
+
+        if (!answeredCorrect.has(key)) {
+          answeredCorrect.add(key);
+          score++;
+        }
+
+        showMessage("ok", `正解！<br>${formatAnswers(q.answers)}`);
+      } else {
+        showMessage("ng", `もう一度！<br>正答・別解はこちら：<br>${formatAnswers(q.answers)}`);
+      }
+
+      updateScore();
+    }
+
+    function formatAnswers(answers) {
+      if (answers.length === 1) {
+        return `正答：<strong>${answers[0]}</strong>`;
+      }
+
+      return answers.map((answer, index) => {
+        if (index === 0) {
+          return `正答：<strong>${answer}</strong>`;
+        }
+
+        return `別解${index}：<strong>${answer}</strong>`;
+      }).join("<br>");
+    }
+
+    function showHint() {
+      const q = getCurrentQuestion();
+      const firstAnswer = q.answers[0];
+      const hintWords = firstAnswer
+        .replace(/[.?!]/g, "")
+        .split(/\s+/)
+        .slice(0, 2)
+        .join(" ");
+
+      showMessage("info", `HINT：最初は <strong>${hintWords}</strong> ...`);
+    }
+
+    function clearAnswer() {
+      selectedWords = [];
+      renderAnswerArea();
+      renderWordBank();
+      clearMessage();
+    }
+
+    function nextQuestion() {
+      const total = questions[currentGrade].length;
+      currentIndex = (currentIndex + 1) % total;
+      ensureWordOrderForCurrentQuestion();
+      renderQuestion();
+    }
+
+    function prevQuestion() {
+      const total = questions[currentGrade].length;
+      currentIndex = (currentIndex - 1 + total) % total;
+      ensureWordOrderForCurrentQuestion();
+      renderQuestion();
+    }
+
+    function showMessage(type, html) {
+      message.className = `message show ${type}`;
+      message.innerHTML = html;
+    }
+
+    function clearMessage() {
+      message.className = "message";
+      message.innerHTML = "";
+    }
+
+    function updateScore() {
+      scoreEl.textContent = `SCORE: ${score}`;
+    }
   </script>
 </body>
 </html>
