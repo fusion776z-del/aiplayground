@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Idiom Forge — Sentence Builder (Eiken 4 / 5)</title>
+<style>
+:root{
+  --bg1:#050611;
+  --bg2:#0c1330;
+  --ink:#eaf2ff;
+  --muted:rgba(234,242,255,.72);
+  --glass:rgba(9,12,24,.74);
+  --warn:#ff5a7a;
+  --gold:#ffd86b;
+  --ok:#7cffc5;
+  --fade:120ms;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  min-height:100vh;
+  display:grid;
+  place-items:center;
+  color:var(--ink);
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:
+    radial-gradient(circle at 12% 14%, rgba(124,255,197,.12), transparent 30%),
+    radial-gradient(circle at 82% 22%, rgba(189,163,255,.10), transparent 28%),
+    radial-gradient(circle at 62% 84%, rgba(255,216,107,.10), transparent 30%),
+    linear-gradient(180deg,var(--bg1),var(--bg2) 55%,var(--bg1));
+  padding:max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  overflow-x:hidden;
+}
+.index-exit{
+  position:sticky;
+  top:0;
+  z-index:1000;
+  display:flex;
+  justify-content:center;
+  padding:10px;
+  background:linear-gradient(180deg,rgba(5,6,17,.95),rgba(5,6,17,.75) 60%,rgba(5,6,17,0));
+}
+.index-exit a{
+  text-decoration:none;
+  font-weight:900;
+  letter-spacing:.08em;
+  padding:10px 18px;
+  border-radius:18px;
+  color:#eaf2ff;
+  border:1px solid rgba(124,255,197,.35);
+  background:rgba(10,16,34,.65);
+  backdrop-filter:blur(8px);
+  box-shadow:0 6px 20px rgba(0,0,0,.35);
+}
+.index-exit a:active{transform:scale(.97)}
+.frame{
+  width:100%;
+  max-width:375px;
+  padding:14px;
+  border-radius:28px;
+  background:var(--glass);
+  backdrop-filter:blur(10px) saturate(1.15);
+  border:1px solid rgba(124,255,197,.20);
+  box-shadow:0 22px 70px rgba(0,0,0,.52),0 0 40px rgba(124,255,197,.08);
+  position:relative;
+}
+.grade-inframe{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  margin:2px 0 10px 0;
+}
+.grade-inframe .badge{
+  font-weight:900;
+  letter-spacing:.12em;
+  padding:9px 22px;
+  border-radius:22px;
+  color:#ffd86b;
+  border:1px solid rgba(255,216,107,.45);
+  background:rgba(10,16,34,.55);
+  box-shadow:0 6px 18px rgba(0,0,0,.35);
+}
+.topbar{
+  display:grid;
+  gap:10px;
+  align-items:center;
+  padding:10px 12px;
+  border-radius:18px;
+  background:rgba(10,16,34,.30);
+  border:1px solid rgba(124,255,197,.14);
+}
+.controls{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  justify-content:center;
+  flex-wrap:wrap;
+}
+.seg{
+  display:flex;
+  overflow:hidden;
+  border-radius:14px;
+  border:1px solid rgba(124,255,197,.16);
+  background:rgba(10,16,34,.18);
+}
+.seg button{
+  appearance:none;
+  border:0;
+  padding:10px 16px;
+  background:transparent;
+  color:rgba(255,255,255,.86);
+  font-weight:900;
+  letter-spacing:.06em;
+  cursor:pointer;
+  opacity:.75;
+}
+.seg button.active{
+  background:rgba(124,255,197,.14);
+  opacity:1;
+}
+.sel{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  padding:8px 10px;
+  border-radius:14px;
+  border:1px solid rgba(124,255,197,.14);
+  background:rgba(10,16,34,.18);
+  color:rgba(255,255,255,.86);
+  font-weight:800;
+  letter-spacing:.04em;
+}
+select{
+  max-width:100%;
+  background:#d9d9d9;
+  color:#111;
+  border:1px solid #bdbdbd;
+  border-radius:10px;
+  outline:none;
+  font-weight:900;
+  letter-spacing:.04em;
+  cursor:pointer;
+  padding:6px 10px;
+  appearance:none;
+}
+select:focus{box-shadow:0 0 0 2px rgba(255,216,107,.35)}
+select option{background:#f3f3f3;color:#111}
+.shelf-row{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  margin:12px 0 0 0;
+}
+#skillWrap{
+  width:100%;
+  justify-content:space-between;
+  flex-wrap:wrap;
+}
+#skillWrap span{white-space:nowrap}
+#skillWrap select{flex:1;min-width:0}
+.card{
+  margin-top:12px;
+  border-radius:18px;
+  background:rgba(10,16,34,.28);
+  border:1px solid rgba(124,255,197,.12);
+  box-shadow:0 10px 26px rgba(0,0,0,.25);
+  padding:12px;
+}
+.prompt{display:grid;gap:8px}
+.prompt .meta{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+}
+.chip{
+  font-size:11px;
+  letter-spacing:.06em;
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid rgba(189,163,255,.20);
+  background:rgba(189,163,255,.10);
+  color:rgba(234,242,255,.86);
+  display:inline-flex;
+  max-width:100%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.chip.gold{border-color:rgba(255,216,107,.20);background:rgba(255,216,107,.08)}
+.chip.warn{border-color:rgba(255,90,122,.22);background:rgba(255,90,122,.08)}
+.jp{
+  font-size:15px;
+  font-weight:800;
+  letter-spacing:.02em;
+  line-height:1.35;
+}
+.scene{
+  font-size:13px;
+  color:rgba(234,242,255,.78);
+  letter-spacing:.02em;
+  line-height:1.35;
+}
+.slots{
+  min-height:78px;
+  border-radius:18px;
+  padding:10px;
+  border:1px dashed rgba(255,255,255,.18);
+  background:rgba(10,16,34,.20);
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  align-items:center;
+  -webkit-user-select:none;
+  user-select:none;
+}
+.bank{
+  min-height:92px;
+  border-radius:18px;
+  padding:10px;
+  border:1px solid rgba(124,255,197,.12);
+  background:rgba(10,16,34,.16);
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  align-items:center;
+  -webkit-user-select:none;
+  user-select:none;
+}
+.bank,.bank *,.slots,.slots *{color:#fff}
+.tok{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:10px 12px;
+  border-radius:16px;
+  border:1px solid rgba(124,255,197,.16);
+  background:rgba(10,16,34,.18);
+  color:rgba(255,255,255,.92);
+  font-weight:900;
+  letter-spacing:.04em;
+  cursor:pointer;
+  user-select:none;
+  -webkit-user-select:none;
+  -webkit-touch-callout:none;
+  -webkit-tap-highlight-color:transparent;
+  -webkit-user-drag:none;
+  touch-action:none;
+  opacity:1;
+  transition:opacity var(--fade) ease,transform var(--fade) ease,background var(--fade) ease,border-color var(--fade) ease;
+}
+.tok:active{transform:scale(.97)}
+.tok.good{border-color:rgba(124,255,197,.38);background:rgba(124,255,197,.10)}
+.tok.bad{border-color:rgba(255,90,122,.45);background:rgba(255,90,122,.12)}
+.actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  justify-content:space-between;
+  align-items:center;
+  margin-top:10px;
+}
+.btn{
+  flex:1;
+  min-width:96px;
+  padding:12px 14px;
+  border-radius:18px;
+  border:1px solid rgba(124,255,197,.18);
+  background:rgba(10,16,34,.26);
+  color:rgba(255,255,255,.92);
+  font-weight:900;
+  letter-spacing:.06em;
+  cursor:pointer;
+  opacity:.88;
+}
+.btn.primary{border-color:rgba(124,255,197,.30);background:rgba(124,255,197,.14)}
+.btn.gold{border-color:rgba(255,216,107,.28);background:rgba(255,216,107,.10)}
+.status{
+  margin-top:10px;
+  border-radius:18px;
+  padding:12px;
+  border:1px solid rgba(255,255,255,.10);
+  background:rgba(10,16,34,.18);
+  display:grid;
+  gap:8px;
+}
+.status .line{
+  display:flex;
+  gap:10px;
+  align-items:flex-start;
+  justify-content:space-between;
+  flex-wrap:wrap;
+}
+.status .msg{
+  font-weight:900;
+  letter-spacing:.04em;
+  white-space:pre-line;
+}
+.status .sub{
+  color:rgba(234,242,255,.70);
+  font-size:12px;
+  line-height:1.45;
+}
+.explain{
+  margin-top:10px;
+  border-radius:18px;
+  padding:12px;
+  border:1px solid rgba(255,216,107,.18);
+  background:rgba(255,216,107,.06);
+  display:none;
+  gap:10px;
+}
+.explain.show{display:grid}
+.explain h3{
+  margin:0;
+  font-size:13px;
+  letter-spacing:.06em;
+}
+.explain .p{
+  color:rgba(234,242,255,.86);
+  font-size:12.5px;
+  line-height:1.55;
+}
+.explain .mono{
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:12px;
+  color:rgba(234,242,255,.82);
+  white-space:pre-wrap;
+}
+@media (max-width:420px){
+  .frame{padding:12px;border-radius:22px}
+  .seg button{padding:9px 12px}
+  .jp{font-size:14px}
+  .scene{font-size:12px}
+  .tok{padding:9px 10px;border-radius:14px}
+  .btn{min-width:90px;padding:11px 12px;border-radius:16px}
+}
+</style>
+</head>
+<body>
+
+<div class="index-exit">
+  <a href="index.html">← INDEX に戻る</a>
+</div>
+
+<div class="frame">
+  <div class="grade-inframe"><div class="badge" id="gradeBadge">GRADE4</div></div>
+
+  <div class="topbar">
+    <div class="controls">
+      <div class="seg" aria-label="grade switch">
+        <button id="btnG4" type="button" class="active">GRADE4</button>
+        <button id="btnG5" type="button">GRADE5</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="shelf-row">
+    <div class="sel" id="skillWrap">
+      <span>SHELF</span>
+      <select id="skillSel">
+        <option value="all">ALL</option>
+        <option value="be">be動詞</option>
+        <option value="general">一般動詞</option>
+        <option value="question">疑問文</option>
+        <option value="negative">否定文</option>
+        <option value="tense">時制</option>
+        <option value="modal">助動詞</option>
+        <option value="prep">前置詞</option>
+        <option value="there">There is / are</option>
+        <option value="comp">比較</option>
+        <option value="inf">不定詞・動名詞</option>
+        <option value="conj">接続詞</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="prompt">
+      <div class="meta">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <span id="chipGrade" class="chip gold">GRADE 4</span>
+          <span id="chipSkill" class="chip">SHELF ALL</span>
+          <span id="chipFocus" class="chip warn">FOCUS: —</span>
+        </div>
+        <div><span class="chip">Q <span id="qIndex">1</span>/<span id="qTotal">50</span></span></div>
+      </div>
+      <div id="jpPrompt" class="jp">（読み込み中…）</div>
+      <div id="scenePrompt" class="scene">タップで語句を並べよう。</div>
+    </div>
+
+    <div style="margin-top:12px;display:grid;gap:10px;">
+      <div class="scene">並べ替え（タップで追加 / 上の語句をタップで戻す）</div>
+      <div id="slots" class="slots"></div>
+
+      <div class="scene">BANK</div>
+      <div id="bank" class="bank"></div>
+
+      <div class="actions">
+        <button id="btnCheck" class="btn primary" type="button">CHECK</button>
+        <button id="btnHint" class="btn gold" type="button">HINT</button>
+        <button id="btnClear" class="btn" type="button">CLEAR</button>
+        <button id="btnBack" class="btn" type="button">BACK</button>
+        <button id="btnNext" class="btn" type="button">NEXT</button>
+      </div>
+
+      <div class="status" aria-live="polite">
+        <div class="line">
+          <div class="msg" id="statusMsg">英文を正しい順に並べよう。</div>
+          <div class="msg">SCORE: <span id="score">0</span></div>
+        </div>
+        <div class="sub" id="statusSub">正解すると次の問題へ進めます。HINTで最初の語句を表示します。</div>
+      </div>
+
+      <div id="explain" class="explain">
+        <h3 id="expTitle">解説</h3>
+        <div class="mono" id="expAnswer">—</div>
+        <div class="p" id="expBody">—</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const RAW = {
+  "5": [
+    {jp:"私は中学生です。", target:"I am a junior high school student.", skill:"be", focus:"am"},
+    {jp:"彼は私の友だちです。", target:"He is my friend.", skill:"be", focus:"is"},
+    {jp:"彼女は英語の先生です。", target:"She is an English teacher.", skill:"be", focus:"is"},
+    {jp:"これは私の本です。", target:"This is my book.", skill:"be", focus:"this is"},
+    {jp:"あれはあなたの自転車です。", target:"That is your bike.", skill:"be", focus:"that is"},
+    {jp:"私はサッカーが好きです。", target:"I like soccer.", skill:"general", focus:"like"},
+    {jp:"私は毎日英語を勉強します。", target:"I study English every day.", skill:"general", focus:"study"},
+    {jp:"彼は速く走ります。", target:"He runs fast.", skill:"general", focus:"runs"},
+    {jp:"彼女はピアノを弾きます。", target:"She plays the piano.", skill:"general", focus:"plays"},
+    {jp:"私たちは朝食を食べます。", target:"We eat breakfast.", skill:"general", focus:"eat"},
+    {jp:"あなたはテニスをしますか。", target:"Do you play tennis?", skill:"question", focus:"do"},
+    {jp:"あなたは犬が好きですか。", target:"Do you like dogs?", skill:"question", focus:"do"},
+    {jp:"彼は野球をしますか。", target:"Does he play baseball?", skill:"question", focus:"does"},
+    {jp:"彼女は英語を話しますか。", target:"Does she speak English?", skill:"question", focus:"does"},
+    {jp:"これはあなたのペンですか。", target:"Is this your pen?", skill:"question", focus:"is this"},
+    {jp:"私はコーヒーが好きではありません。", target:"I do not like coffee.", skill:"negative", focus:"do not"},
+    {jp:"彼はテレビを見ません。", target:"He does not watch TV.", skill:"negative", focus:"does not"},
+    {jp:"彼女はここにいません。", target:"She is not here.", skill:"negative", focus:"is not"},
+    {jp:"私は忙しくありません。", target:"I am not busy.", skill:"negative", focus:"am not"},
+    {jp:"それは私のかばんではありません。", target:"It is not my bag.", skill:"negative", focus:"is not"},
+    {jp:"私は東京に住んでいます。", target:"I live in Tokyo.", skill:"prep", focus:"in"},
+    {jp:"彼は学校へ行きます。", target:"He goes to school.", skill:"prep", focus:"to"},
+    {jp:"本は机の上にあります。", target:"The book is on the desk.", skill:"prep", focus:"on"},
+    {jp:"猫は箱の中にいます。", target:"The cat is in the box.", skill:"prep", focus:"in"},
+    {jp:"私は7時に起きます。", target:"I get up at seven.", skill:"prep", focus:"at"},
+    {jp:"私は今日、幸せです。", target:"I am happy today.", skill:"be", focus:"am"},
+    {jp:"彼らは私の友だちです。", target:"They are my friends.", skill:"be", focus:"are"},
+    {jp:"私たちは同じクラスです。", target:"We are in the same class.", skill:"be", focus:"are"},
+    {jp:"あなたはとても親切です。", target:"You are very kind.", skill:"be", focus:"are"},
+    {jp:"私の母は医者です。", target:"My mother is a doctor.", skill:"be", focus:"is"},
+    {jp:"私は毎日音楽を聞きます。", target:"I listen to music every day.", skill:"general", focus:"listen to"},
+    {jp:"彼は昼食を作ります。", target:"He makes lunch.", skill:"general", focus:"makes"},
+    {jp:"彼女は新しい自転車を持っています。", target:"She has a new bike.", skill:"general", focus:"has"},
+    {jp:"私たちは放課後に泳ぎます。", target:"We swim after school.", skill:"general", focus:"swim"},
+    {jp:"私はバスで学校へ行きます。", target:"I go to school by bus.", skill:"prep", focus:"by"},
+    {jp:"あなたは何が欲しいですか。", target:"What do you want?", skill:"question", focus:"what"},
+    {jp:"あなたはどこに住んでいますか。", target:"Where do you live?", skill:"question", focus:"where"},
+    {jp:"彼は何時に起きますか。", target:"What time does he get up?", skill:"question", focus:"what time"},
+    {jp:"あなたは何人の兄弟がいますか。", target:"How many brothers do you have?", skill:"question", focus:"how many"},
+    {jp:"これはだれのノートですか。", target:"Whose notebook is this?", skill:"question", focus:"whose"},
+    {jp:"私はリンゴを2つ持っています。", target:"I have two apples.", skill:"general", focus:"have"},
+    {jp:"私たちは公園でサッカーをします。", target:"We play soccer in the park.", skill:"prep", focus:"in"},
+    {jp:"彼女は朝に英語を勉強します。", target:"She studies English in the morning.", skill:"prep", focus:"in the morning"},
+    {jp:"私は日曜日に祖母を訪ねます。", target:"I visit my grandmother on Sunday.", skill:"prep", focus:"on Sunday"},
+    {jp:"その犬は大きくありません。", target:"The dog is not big.", skill:"negative", focus:"is not"},
+    {jp:"私は牛乳を飲みません。", target:"I do not drink milk.", skill:"negative", focus:"do not"},
+    {jp:"彼は数学が好きではありません。", target:"He does not like math.", skill:"negative", focus:"does not"},
+    {jp:"あなたは歌えますか。", target:"Can you sing?", skill:"modal", focus:"can"},
+    {jp:"私はギターを弾けます。", target:"I can play the guitar.", skill:"modal", focus:"can"},
+    {jp:"彼女は速く走ることができます。", target:"She can run fast.", skill:"modal", focus:"can"}
+  ],
+  "4": [
+    {jp:"私は昨日、公園へ行きました。", target:"I went to the park yesterday.", skill:"tense", focus:"past"},
+    {jp:"彼は昨夜テレビを見ました。", target:"He watched TV last night.", skill:"tense", focus:"past"},
+    {jp:"彼女は先週その本を読みました。", target:"She read the book last week.", skill:"tense", focus:"past"},
+    {jp:"私たちは昨日サッカーをしました。", target:"We played soccer yesterday.", skill:"tense", focus:"past"},
+    {jp:"私は今、宿題をしています。", target:"I am doing my homework now.", skill:"tense", focus:"present progressive"},
+    {jp:"彼は今、昼食を食べています。", target:"He is eating lunch now.", skill:"tense", focus:"present progressive"},
+    {jp:"彼女は今、英語を勉強しています。", target:"She is studying English now.", skill:"tense", focus:"present progressive"},
+    {jp:"私たちは明日、京都を訪れる予定です。", target:"We will visit Kyoto tomorrow.", skill:"tense", focus:"will"},
+    {jp:"私は今夜、母を手伝うつもりです。", target:"I will help my mother tonight.", skill:"tense", focus:"will"},
+    {jp:"彼は来週、忙しいでしょう。", target:"He will be busy next week.", skill:"tense", focus:"will be"},
+    {jp:"あなたは早く寝るべきです。", target:"You should go to bed early.", skill:"modal", focus:"should"},
+    {jp:"私はその箱を運ぶことができます。", target:"I can carry the box.", skill:"modal", focus:"can"},
+    {jp:"あなたはここで走ってはいけません。", target:"You must not run here.", skill:"modal", focus:"must not"},
+    {jp:"彼女は英語を上手に話せます。", target:"She can speak English well.", skill:"modal", focus:"can"},
+    {jp:"私たちは静かにしなければなりません。", target:"We must be quiet.", skill:"modal", focus:"must"},
+    {jp:"机の上に本が1冊あります。", target:"There is a book on the desk.", skill:"there", focus:"there is"},
+    {jp:"教室に生徒がたくさんいます。", target:"There are many students in the classroom.", skill:"there", focus:"there are"},
+    {jp:"箱の中に猫が1匹いました。", target:"There was a cat in the box.", skill:"there", focus:"there was"},
+    {jp:"公園に子どもたちがいました。", target:"There were children in the park.", skill:"there", focus:"there were"},
+    {jp:"駅の近くに図書館があります。", target:"There is a library near the station.", skill:"there", focus:"there is"},
+    {jp:"私は英語を勉強するために図書館へ行きました。", target:"I went to the library to study English.", skill:"inf", focus:"to study"},
+    {jp:"彼はサッカーをするのが好きです。", target:"He likes playing soccer.", skill:"inf", focus:"gerund"},
+    {jp:"私は何か冷たい飲み物が欲しいです。", target:"I want something cold to drink.", skill:"inf", focus:"to drink"},
+    {jp:"彼女は本を読むために早く起きました。", target:"She got up early to read a book.", skill:"inf", focus:"to read"},
+    {jp:"泳ぐことは楽しいです。", target:"Swimming is fun.", skill:"inf", focus:"gerund subject"},
+    {jp:"東京は大阪より大きいです。", target:"Tokyo is larger than Osaka.", skill:"comp", focus:"larger than"},
+    {jp:"この本はあの本よりおもしろいです。", target:"This book is more interesting than that one.", skill:"comp", focus:"more than"},
+    {jp:"彼は私たちのクラスで一番背が高いです。", target:"He is the tallest in our class.", skill:"comp", focus:"the tallest"},
+    {jp:"夏は春より暑いです。", target:"Summer is hotter than spring.", skill:"comp", focus:"hotter than"},
+    {jp:"これは3つの中で一番よい答えです。", target:"This is the best answer of the three.", skill:"comp", focus:"the best"},
+    {jp:"私は疲れていたので、早く寝ました。", target:"I went to bed early because I was tired.", skill:"conj", focus:"because"},
+    {jp:"雨が降ったら、家にいます。", target:"If it rains, I will stay home.", skill:"conj", focus:"if"},
+    {jp:"私が帰宅したとき、母は料理をしていました。", target:"When I came home, my mother was cooking.", skill:"conj", focus:"when"},
+    {jp:"私は英語と数学が好きです。", target:"I like English and math.", skill:"conj", focus:"and"},
+    {jp:"彼は忙しかったけれど、私を手伝ってくれました。", target:"He was busy, but he helped me.", skill:"conj", focus:"but"},
+    {jp:"私は午前7時に起きます。", target:"I get up at seven in the morning.", skill:"prep", focus:"at / in"},
+    {jp:"彼女は駅の前で待っています。", target:"She is waiting in front of the station.", skill:"prep", focus:"in front of"},
+    {jp:"私たちは日曜日に映画を見ました。", target:"We saw a movie on Sunday.", skill:"prep", focus:"on"},
+    {jp:"彼はバスで学校へ来ました。", target:"He came to school by bus.", skill:"prep", focus:"by"},
+    {jp:"私は夕食後に宿題をしました。", target:"I did my homework after dinner.", skill:"prep", focus:"after"},
+    {jp:"あなたは昨日どこへ行きましたか。", target:"Where did you go yesterday?", skill:"question", focus:"did"},
+    {jp:"彼は何を買いましたか。", target:"What did he buy?", skill:"question", focus:"what did"},
+    {jp:"あなたは明日何をする予定ですか。", target:"What will you do tomorrow?", skill:"question", focus:"will"},
+    {jp:"彼女は今何をしていますか。", target:"What is she doing now?", skill:"question", focus:"is doing"},
+    {jp:"あなたはなぜ早く起きたのですか。", target:"Why did you get up early?", skill:"question", focus:"why did"},
+    {jp:"私は昨日、朝食を食べませんでした。", target:"I did not eat breakfast yesterday.", skill:"negative", focus:"did not"},
+    {jp:"彼は今、テレビを見ていません。", target:"He is not watching TV now.", skill:"negative", focus:"is not"},
+    {jp:"彼女は明日ここへ来ないでしょう。", target:"She will not come here tomorrow.", skill:"negative", focus:"will not"},
+    {jp:"私たちはその店へ行きませんでした。", target:"We did not go to the store.", skill:"negative", focus:"did not"},
+    {jp:"教室にはだれもいませんでした。", target:"There were not any students in the classroom.", skill:"negative", focus:"were not any"}
+  ]
+};
+
+const EXTRA = [
+  "a","an","the","my","your","his","her","our","their",
+  "is","are","am","do","does","did","will","can","should","must",
+  "to","in","on","at","by","for","with","from","after","before",
+  "not","very","now","today","yesterday","tomorrow",".","?","!","I","you","he","she","we","they",","
+];
+
+let grade = "4";
+let pool = [];
+let index = 0;
+let score = 0;
+let selected = [];
+let bankTokens = [];
+let hintCount = 0;
+
+const $ = id => document.getElementById(id);
+
+function tokenize(s){
+  return s
+    .replace(/\?/g," ?")
+    .replace(/\./g," .")
+    .replace(/!/g," !")
+    .replace(/,/g," ,")
+    .split(/\s+/)
+    .filter(Boolean);
+}
+function cleanAnswer(tokens){
+  return tokens.join(" ")
+    .replace(/\s+([?.!,])/g,"$1")
+    .replace(/\s+/g," ")
+    .trim();
+}
+
+/**
+ * 収縮形（contractions）を展開して、"I'm" と "I am" を同一扱いにする
+ * ここでは学習向けに「よく出る形」を広く吸収（曖昧なものもある程度許容）
+ */
+function expandContractions(s){
+  let x = String(s);
+
+  // まずスマートクォートを通常のアポストロフィへ寄せる
+  x = x.replace(/[’]/g, "'");
+
+  // 小文字化は後段で行うが、ここは大文字小文字を気にせず置換したいので i フラグ
+  const rules = [
+    // be動詞
+    [/\bI\s*'m\b/gi, "I am"],
+    [/\bYou\s*'re\b/gi, "You are"],
+    [/\bWe\s*'re\b/gi, "We are"],
+    [/\bThey\s*'re\b/gi, "They are"],
+    [/\bHe\s*'s\b/gi, "He is"],
+    [/\bShe\s*'s\b/gi, "She is"],
+    [/\bIt\s*'s\b/gi, "It is"],
+    [/\bThat\s*'s\b/gi, "That is"],
+    [/\bThere\s*'s\b/gi, "There is"],
+    [/\bWhat\s*'s\b/gi, "What is"],
+    [/\bWho\s*'s\b/gi, "Who is"],
+    [/\bWhere\s*'s\b/gi, "Where is"],
+
+    // 否定
+    [/\bcan\s*'t\b/gi, "can not"],
+    [/\bwon\s*'t\b/gi, "will not"],
+    [/\bshan\s*'t\b/gi, "shall not"],
+    [/\bdo\s*n't\b/gi, "do not"],
+    [/\bdoes\s*n't\b/gi, "does not"],
+    [/\bdid\s*n't\b/gi, "did not"],
+    [/\bis\s*n't\b/gi, "is not"],
+    [/\baren\s*'t\b/gi, "are not"],
+    [/\bwas\s*n't\b/gi, "was not"],
+    [/\bwere\s*n't\b/gi, "were not"],
+    [/\bshould\s*n't\b/gi, "should not"],
+    [/\bcould\s*n't\b/gi, "could not"],
+    [/\bwould\s*n't\b/gi, "would not"],
+    [/\bmust\s*n't\b/gi, "must not"],
+
+    // have / will （学習用：頻出形）
+    [/\bI\s*'ve\b/gi, "I have"],
+    [/\bYou\s*'ve\b/gi, "You have"],
+    [/\bWe\s*'ve\b/gi, "We have"],
+    [/\bThey\s*'ve\b/gi, "They have"],
+
+    [/\bI\s*'ll\b/gi, "I will"],
+    [/\bYou\s*'ll\b/gi, "You will"],
+    [/\bHe\s*'ll\b/gi, "He will"],
+    [/\bShe\s*'ll\b/gi, "She will"],
+    [/\bWe\s*'ll\b/gi, "We will"],
+    [/\bThey\s*'ll\b/gi, "They will"],
+
+    // 'd は had/would が曖昧だが、学習向けに "would" 側へ寄せて許容範囲を広げる
+    [/\bI\s*'d\b/gi, "I would"],
+    [/\bYou\s*'d\b/gi, "You would"],
+    [/\bHe\s*'d\b/gi, "He would"],
+    [/\bShe\s*'d\b/gi, "She would"],
+    [/\bWe\s*'d\b/gi, "We would"],
+    [/\bThey\s*'d\b/gi, "They would"],
+
+    // Let's
+    [/\blet\s*'s\b/gi, "let us"]
+  ];
+
+  for (const [re, rep] of rules) x = x.replace(re, rep);
+
+  // cannot と can not を統一（どっちでも同一扱い）
+  x = x.replace(/\bcannot\b/gi, "can not");
+
+  return x;
+}
+
+/**
+ * ★今回の最終判定ルール
+ * - 大文字小文字を無視
+ * - カンマは文中で無視（Yes, I do == Yes I do）
+ * - アポストロフィは許容（除去）し、主要な収縮形は展開（I'm == I am）
+ * - 末尾の . ? ! は付け忘れOK（両方から除去）
+ */
+function norm(s){
+  let x = String(s);
+
+  x = expandContractions(x);
+
+  x = x
+    .toLowerCase()
+    .replace(/[“”]/g,'"')
+    .replace(/[’]/g,"'")
+
+    // カンマを無視（文中どこでも削除）
+    .replace(/,/g,"")
+
+    // アポストロフィを無視（展開後の残りを削除）
+    .replace(/'/g,"")
+
+    // 記号前スペース除去 & 余分スペース圧縮
+    .replace(/\s+([?.!])/g,"$1")
+    .replace(/\s+/g," ")
+    .trim()
+
+    // 末尾の . ? ! を無視（付け忘れOK）
+    .replace(/[.?!]+$/g,"")
+    .trim();
+
+  return x;
+}
+
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+function unique(arr){ return [...new Set(arr)]; }
+function makeBank(target){
+  const base = tokenize(target);
+  const need = Math.max(3, 11 - base.length);
+  const extras = shuffle(EXTRA.filter(x => !base.includes(x))).slice(0, need);
+  return shuffle(unique(base.concat(extras)));
+}
+function setGrade(g){
+  grade = g;
+  $("btnG4").classList.toggle("active", g==="4");
+  $("btnG5").classList.toggle("active", g==="5");
+  $("gradeBadge").textContent = "GRADE" + g;
+  $("chipGrade").textContent = "GRADE " + g;
+  score = 0;
+  $("score").textContent = score;
+  buildPool();
+}
+function buildPool(){
+  const skill = $("skillSel").value;
+  pool = RAW[grade].filter(q => skill === "all" || q.skill === skill);
+  if(pool.length === 0) pool = RAW[grade].slice();
+  index = 0;
+  loadQuestion();
+}
+function current(){ return pool[index]; }
+function loadQuestion(){
+  const q = current();
+  selected = [];
+  hintCount = 0;
+  bankTokens = makeBank(q.target);
+  $("qIndex").textContent = index + 1;
+  $("qTotal").textContent = pool.length;
+  $("jpPrompt").textContent = q.jp;
+  $("chipSkill").textContent = "SHELF " + ($("skillSel").value === "all" ? "ALL" : q.skill.toUpperCase());
+  $("chipFocus").textContent = "FOCUS: " + (q.focus || "—");
+  $("statusMsg").textContent = "英文を正しい順に並べよう。";
+  $("statusSub").textContent = "（カンマ/大文字小文字/アポストロフィ/収縮形の揺れ/末尾 . ? はゆるく判定します）";
+  $("explain").classList.remove("show");
+  render();
+}
+function render(){
+  const slots = $("slots");
+  const bank = $("bank");
+  slots.innerHTML = "";
+  bank.innerHTML = "";
+
+  selected.forEach((tok, i) => {
+    const b = document.createElement("button");
+    b.className = "tok";
+    b.type = "button";
+    b.textContent = tok;
+    b.onclick = () => {
+      selected.splice(i,1);
+      bankTokens.push(tok);
+      render();
+    };
+    slots.appendChild(b);
+  });
+
+  bankTokens.forEach((tok, i) => {
+    const b = document.createElement("button");
+    b.className = "tok";
+    b.type = "button";
+    b.textContent = tok;
+    b.onclick = () => {
+      selected.push(tok);
+      bankTokens.splice(i,1);
+      render();
+    };
+    bank.appendChild(b);
+  });
+}
+function showExplain(ok){
+  const q = current();
+  $("explain").classList.add("show");
+  $("expTitle").textContent = ok ? "正解！" : "解説";
+  $("expAnswer").textContent = "正解: " + q.target;
+  $("expBody").innerHTML =
+    "日本語の意味に合うように、語順を確認しましょう。<br>" +
+    "FOCUS: <b>" + (q.focus || "—") + "</b><br>" +
+    "※判定は学習向けにゆるめ（カンマ/大文字小文字/アポストロフィ/I'm=I am/末尾 . ?）です。";
+}
+function check(){
+  const q = current();
+  const ans = cleanAnswer(selected);
+
+  // ★ゆるめ正規化で比較
+  const ok = norm(ans) === norm(q.target);
+
+  [...$("slots").children].forEach(el => {
+    el.classList.remove("good","bad");
+    el.classList.add(ok ? "good" : "bad");
+  });
+
+  if(ok){
+    score++;
+    $("score").textContent = score;
+    $("statusMsg").textContent = "正解！\n" + q.target;
+    $("statusSub").textContent = "NEXTで次の問題へ進めます。";
+    showExplain(true);
+  }else{
+    $("statusMsg").textContent = "もう一度！\nあなたの答え: " + (ans || "—");
+    $("statusSub").textContent = "語順を確認しましょう。（カンマ/収縮形/末尾記号は無視されます）";
+    showExplain(false);
+  }
+}
+function hint(){
+  const q = current();
+  const target = tokenize(q.target);
+  if(hintCount >= target.length){
+    $("statusMsg").textContent = "HINT: もう全部出ています。";
+    return;
+  }
+  const next = target[hintCount];
+  const pos = bankTokens.indexOf(next);
+  if(pos >= 0){
+    selected.push(next);
+    bankTokens.splice(pos,1);
+  }
+  hintCount++;
+  $("statusMsg").textContent = "HINT: " + target.slice(0,hintCount).join(" ");
+  $("statusSub").textContent = "ヒントで先頭から順に語句を追加しました。";
+  render();
+}
+function clearAns(){
+  bankTokens = shuffle(bankTokens.concat(selected));
+  selected = [];
+  $("statusMsg").textContent = "クリアしました。";
+  $("statusSub").textContent = "もう一度並べ替えましょう。";
+  $("explain").classList.remove("show");
+  render();
+}
+function next(){
+  index = (index + 1) % pool.length;
+  loadQuestion();
+}
+function back(){
+  index = (index - 1 + pool.length) % pool.length;
+  loadQuestion();
+}
+
+$("btnG4").onclick = () => setGrade("4");
+$("btnG5").onclick = () => setGrade("5");
+$("skillSel").onchange = buildPool;
+$("btnCheck").onclick = check;
+$("btnHint").onclick = hint;
+$("btnClear").onclick = clearAns;
+$("btnNext").onclick = next;
+$("btnBack").onclick = back;
+
+setGrade("4");
+</script>
+</body>
+</html>
