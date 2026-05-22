@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>EIKEN 並べ替えトレーニング 5級・4級</title>
+  <title>EIKEN 並べ替えトレーニング 5級・4級（80問）</title>
   <style>
     :root {
       --bg: #080b16;
@@ -61,7 +61,7 @@
 
     h1 {
       margin: 0;
-      font-size: 26px;
+      font-size: 24px;
       line-height: 1.35;
     }
 
@@ -70,6 +70,7 @@
       line-height: 1.7;
       margin: 12px 0 0;
       font-weight: 600;
+      font-size: 14px;
     }
 
     main { padding: 22px; }
@@ -182,7 +183,7 @@
     }
 
     .jp {
-      font-size: 19px;
+      font-size: 18px;
       line-height: 1.7;
       font-weight: 850;
       margin: 0 0 16px;
@@ -282,7 +283,7 @@
     }
 
     @media (max-width: 420px) {
-      h1 { font-size: 22px; }
+      h1 { font-size: 20px; }
       .grade-card { align-items: stretch; flex-direction: column; }
       .enter-btn { width: 100%; }
       .buttons { grid-template-columns: 1fr; }
@@ -294,11 +295,12 @@
 <body>
   <div class="app">
     <header>
-      <div class="tag">EIKEN 並べ替えポータル</div>
+      <div class="tag">EIKEN 並べ替えポータル（80問）</div>
       <h1>英検5級・4級<br>英文並べ替えトレーニング</h1>
       <p class="lead">
         日本語に合うように英単語を並べ替えよう。<br>
-        ピリオドを入れ忘れても、単語の順番が合っていれば正解。
+        ピリオド「.」を入れ忘れても、単語の順番が合っていれば正解。<br>
+        別解があるときは、正答・別解を表示します。単語ブロックは毎回ランダム表示（ただし同じ問題中は固定）。
       </p>
     </header>
 
@@ -308,16 +310,16 @@
         <div class="grade-list">
           <div class="grade-card">
             <div>
-              <strong>5級</strong>
-              <span>be動詞・一般動詞・基本疑問文から。</span>
+              <strong>5級（40問）</strong>
+              <span>be動詞・一般動詞・疑問文・命令文など。</span>
             </div>
             <button class="enter-btn" onclick="startGrade('grade5')">ENTER</button>
           </div>
 
           <div class="grade-card">
             <div>
-              <strong>4級</strong>
-              <span>過去形・未来表現・比較・不定詞など。</span>
+              <strong>4級（40問）</strong>
+              <span>過去形・未来表現・比較・不定詞・助動詞など。</span>
             </div>
             <button class="enter-btn" onclick="startGrade('grade4')">ENTER</button>
           </div>
@@ -325,7 +327,7 @@
 
         <p class="small">
           ※ 文型問題はありません。英文の並べ替えのみです。<br>
-          ※ 別解がある問題では、正答後または不正解時に別解も表示されます。
+          ※ 80問（5級40＋4級40）に戻しています。
         </p>
       </section>
 
@@ -369,259 +371,580 @@
   </div>
 
   <script>
+    // =========================================================
+    // 80問：grade5=40問、grade4=40問
+    // - 文型なし
+    // - 判定はピリオド無視（. / 。 を除去）
+    // - 別解表示
+    // - ワードバンクは問題ごとにシャッフル（同一問題内では固定）
+    // =========================================================
+
     const questions = {
       grade5: [
-        { jp: "私はサッカーが好きです。", answers: ["I like soccer.", "I like football."], words: ["I","like","soccer","football","."] },
-        { jp: "あなたは英語を勉強します。", answers: ["You study English."], words: ["You","study","English","."] },
-        { jp: "彼は私の友達です。", answers: ["He is my friend."], words: ["He","is","my","friend","."] },
-        { jp: "これは私の本です。", answers: ["This is my book."], words: ["This","is","my","book","."] },
-        { jp: "私は犬を飼っています。", answers: ["I have a dog."], words: ["I","have","a","dog","."] },
-        { jp: "あなたはテニスをしますか。", answers: ["Do you play tennis?"], words: ["Do","you","play","tennis","?"] },
-        { jp: "彼女はピアノを弾きます。", answers: ["She plays the piano."], words: ["She","plays","the","piano","."] },
-        { jp: "私は東京出身です。", answers: ["I am from Tokyo.", "I'm from Tokyo."], words: ["I","am","I'm","from","Tokyo","."] },
-        { jp: "これは何ですか。", answers: ["What is this?"], words: ["What","is","this","?"] },
-        { jp: "私は毎日朝食を食べます。", answers: ["I eat breakfast every day."], words: ["I","eat","breakfast","every","day","."] }
+        { jp:"私はサッカーが好きです。", answers:["I like soccer.","I like football."], words:["I","like","soccer","football","."] },
+        { jp:"あなたは英語を勉強します。", answers:["You study English."], words:["You","study","English","."] },
+        { jp:"彼は私の友達です。", answers:["He is my friend."], words:["He","is","my","friend","."] },
+        { jp:"これは私の本です。", answers:["This is my book."], words:["This","is","my","book","."] },
+        { jp:"私は犬を飼っています。", answers:["I have a dog."], words:["I","have","a","dog","."] },
+        { jp:"あなたはテニスをしますか。", answers:["Do you play tennis?"], words:["Do","you","play","tennis","?"] },
+        { jp:"彼女はピアノを弾きます。", answers:["She plays the piano."], words:["She","plays","the","piano","."] },
+        { jp:"私は東京出身です。", answers:["I am from Tokyo.","I'm from Tokyo."], words:["I","am","I'm","from","Tokyo","."] },
+        { jp:"これは何ですか。", answers:["What is this?"], words:["What","is","this","?"] },
+        { jp:"私は毎日朝食を食べます。", answers:["I eat breakfast every day."], words:["I","eat","breakfast","every","day","."] },
+
+        { jp:"彼は野球が好きです。", answers:["He likes baseball."], words:["He","likes","baseball","."] },
+        { jp:"私は水を飲みます。", answers:["I drink water."], words:["I","drink","water","."] },
+        { jp:"私たちは学校へ行きます。", answers:["We go to school."], words:["We","go","to","school","."] },
+        { jp:"彼らは日本語を話します。", answers:["They speak Japanese."], words:["They","speak","Japanese","."] },
+        { jp:"私は音楽を聞きます。", answers:["I listen to music."], words:["I","listen","to","music","."] },
+        { jp:"あなたは何歳ですか。", answers:["How old are you?"], words:["How","old","are","you","?"] },
+        { jp:"彼女はかわいい猫を持っています。", answers:["She has a cute cat."], words:["She","has","a","cute","cat","."] },
+        { jp:"これは私のペンではありません。", answers:["This is not my pen."], words:["This","is","not","my","pen","."] },
+        { jp:"私は走るのが速いです。", answers:["I run fast."], words:["I","run","fast","."] },
+        { jp:"窓を開けてください。", answers:["Please open the window."], words:["Please","open","the","window","."] },
+
+        { jp:"彼は毎日バスで来ます。", answers:["He comes by bus every day."], words:["He","comes","by","bus","every","day","."] },
+        { jp:"私はその歌を知っています。", answers:["I know the song."], words:["I","know","the","song","."] },
+        { jp:"あなたはここに住んでいますか。", answers:["Do you live here?"], words:["Do","you","live","here","?"] },
+        { jp:"彼女は昼食を作ります。", answers:["She makes lunch."], words:["She","makes","lunch","."] },
+        { jp:"私は今日忙しいです。", answers:["I am busy today.","I'm busy today."], words:["I","am","I'm","busy","today","."] },
+        { jp:"彼は背が高いです。", answers:["He is tall."], words:["He","is","tall","."] },
+        { jp:"私たちは公園で遊びます。", answers:["We play in the park."], words:["We","play","in","the","park","."] },
+        { jp:"私は兄がいます。", answers:["I have a brother."], words:["I","have","a","brother","."] },
+        { jp:"彼女は毎朝7時に起きます。", answers:["She gets up at seven every morning."], words:["She","gets","up","at","seven","every","morning","."] },
+        { jp:"あなたはどこへ行きますか。", answers:["Where do you go?"], words:["Where","do","you","go","?"] },
+
+        { jp:"私は英語が少し分かります。", answers:["I understand a little English."], words:["I","understand","a","little","English","."] },
+        { jp:"彼らは昼食を食べます。", answers:["They eat lunch."], words:["They","eat","lunch","."] },
+        { jp:"私は写真を撮ります。", answers:["I take pictures.","I take photos."], words:["I","take","pictures","photos","."] },
+        { jp:"彼は毎週日曜日に走ります。", answers:["He runs every Sunday."], words:["He","runs","every","Sunday","."] },
+        { jp:"その箱は重いです。", answers:["The box is heavy."], words:["The","box","is","heavy","."] },
+        { jp:"彼女はその本を読みます。", answers:["She reads the book."], words:["She","reads","the","book","."] },
+        { jp:"私たちは友達です。", answers:["We are friends.","We're friends."], words:["We","are","We're","friends","."] },
+        { jp:"私はコーヒーが好きではありません。", answers:["I do not like coffee.","I don't like coffee."], words:["I","do","not","don't","like","coffee","."] },
+        { jp:"彼は泳ぐことができます。", answers:["He can swim."], words:["He","can","swim","."] },
+        { jp:"明日また来てください。", answers:["Please come again tomorrow."], words:["Please","come","again","tomorrow","."] }
       ],
+
       grade4: [
-        { jp: "私は昨日サッカーをしました。", answers: ["I played soccer yesterday.", "I played football yesterday."], words: ["I","played","soccer","football","yesterday","."] },
-        { jp: "彼女は明日図書館へ行くつもりです。", answers: ["She will go to the library tomorrow.", "She is going to go to the library tomorrow."], words: ["She","will","is","going","to","go","to","the","library","tomorrow","."] },
-        { jp: "私は音楽を聞くことが好きです。", answers: ["I like listening to music.", "I like to listen to music."], words: ["I","like","listening","to","music","to","listen","."] },
-        { jp: "彼は私より背が高いです。", answers: ["He is taller than I.", "He is taller than me."], words: ["He","is","taller","than","I","me","."] },
-        { jp: "私はその本を読むために図書館へ行きました。", answers: ["I went to the library to read the book."], words: ["I","went","to","the","library","to","read","the","book","."] },
-        { jp: "あなたは昨日何をしましたか。", answers: ["What did you do yesterday?"], words: ["What","did","you","do","yesterday","?"] },
-        { jp: "私は今、宿題をしています。", answers: ["I am doing my homework now.", "I'm doing my homework now."], words: ["I","am","I'm","doing","my","homework","now","."] },
-        { jp: "このかばんはあのかばんより大きいです。", answers: ["This bag is bigger than that one.", "This bag is larger than that one."], words: ["This","bag","is","bigger","larger","than","that","one","."] },
-        { jp: "私は英語を話すことができます。", answers: ["I can speak English."], words: ["I","can","speak","English","."] },
-        { jp: "彼は先週京都を訪れました。", answers: ["He visited Kyoto last week."], words: ["He","visited","Kyoto","last","week","."] },
-        {
-          jp: "彼女は先週映画を見ました。",
-          answers: ["She watched a movie last week.", "She saw a movie last week."],
-          words: ["She","watched","saw","a","movie","last","week","."]
-        }
+        { jp:"私は昨日サッカーをしました。", answers:["I played soccer yesterday.","I played football yesterday."], words:["I","played","soccer","football","yesterday","."] },
+        { jp:"彼女は明日図書館へ行くつもりです。", answers:["She will go to the library tomorrow.","She is going to go to the library tomorrow."], words:["She","will","is","going","to","go","to","the","library","tomorrow","."] },
+        { jp:"私は音楽を聞くことが好きです。", answers:["I like listening to music.","I like to listen to music."], words:["I","like","listening","to","music","to","listen","."] },
+        { jp:"彼は私より背が高いです。", answers:["He is taller than I.","He is taller than me."], words:["He","is","taller","than","I","me","."] },
+        { jp:"私はその本を読むために図書館へ行きました。", answers:["I went to the library to read the book."], words:["I","went","to","the","library","to","read","the","book","."] },
+        { jp:"あなたは昨日何をしましたか。", answers:["What did you do yesterday?"], words:["What","did","you","do","yesterday","?"] },
+        { jp:"私は今、宿題をしています。", answers:["I am doing my homework now.","I'm doing my homework now."], words:["I","am","I'm","doing","my","homework","now","."] },
+        { jp:"このかばんはあのかばんより大きいです。", answers:["This bag is bigger than that one.","This bag is larger than that one."], words:["This","bag","is","bigger","larger","than","that","one","."] },
+        { jp:"私は英語を話すことができます。", answers:["I can speak English."], words:["I","can","speak","English","."] },
+        { jp:"彼は先週京都を訪れました。", answers:["He visited Kyoto last week."], words:["He","visited","Kyoto","last","week","."] },
+
+        { jp:"彼女は先週映画を見ました。", answers:["She watched a movie last week.","She saw a movie last week."], words:["She","watched","saw","a","movie","last","week","."] },
+        { jp:"私は先週その店で買い物をしました。", answers:["I shopped at the store last week."], words:["I","shopped","at","the","store","last","week","."] },
+        { jp:"彼らは昨夜遅くまで勉強しました。", answers:["They studied until late last night."], words:["They","studied","until","late","last","night","."] },
+        { jp:"私は明日雨が降ると思います。", answers:["I think it will rain tomorrow."], words:["I","think","it","will","rain","tomorrow","."] },
+        { jp:"彼はその問題を簡単に解きました。", answers:["He solved the problem easily."], words:["He","solved","the","problem","easily","."] },
+        { jp:"私は彼に会うために駅へ行きました。", answers:["I went to the station to meet him."], words:["I","went","to","the","station","to","meet","him","."] },
+        { jp:"彼女はその宿題を終えました。", answers:["She finished the homework."], words:["She","finished","the","homework","."] },
+        { jp:"私は毎朝ジョギングします。", answers:["I jog every morning.","I go jogging every morning."], words:["I","jog","go","jogging","every","morning","."] },
+        { jp:"私の兄は私より早く起きます。", answers:["My brother gets up earlier than I do."], words:["My","brother","gets","up","earlier","than","I","do","."] },
+        { jp:"彼はその歌手を知っていますか。", answers:["Does he know the singer?"], words:["Does","he","know","the","singer","?"] },
+
+        { jp:"私はその写真を撮りました。", answers:["I took the picture.","I took the photo."], words:["I","took","the","picture","photo","."] },
+        { jp:"彼女はもう一度それを説明しました。", answers:["She explained it again."], words:["She","explained","it","again","."] },
+        { jp:"私は昨日早く寝ました。", answers:["I went to bed early yesterday."], words:["I","went","to","bed","early","yesterday","."] },
+        { jp:"私たちは次の土曜日に旅行します。", answers:["We will travel next Saturday.","We are going to travel next Saturday."], words:["We","will","are","going","to","travel","next","Saturday","."] },
+        { jp:"彼はとても上手に英語を話します。", answers:["He speaks English very well."], words:["He","speaks","English","very","well","."] },
+        { jp:"私はその部屋を掃除しなければなりません。", answers:["I must clean the room.","I have to clean the room."], words:["I","must","have","to","clean","the","room","."] },
+        { jp:"あなたはその本を読み終えましたか。", answers:["Did you finish reading the book?"], words:["Did","you","finish","reading","the","book","?"] },
+        { jp:"彼女は私にその話をしてくれました。", answers:["She told me the story."], words:["She","told","me","the","story","."] },
+        { jp:"私は毎週テニスをします。", answers:["I play tennis every week."], words:["I","play","tennis","every","week","."] },
+        { jp:"彼らは今、公園で遊んでいます。", answers:["They are playing in the park now.","They're playing in the park now."], words:["They","are","They're","playing","in","the","park","now","."] },
+
+        { jp:"私はこの問題の答えを知りません。", answers:["I do not know the answer to this question.","I don't know the answer to this question."], words:["I","do","not","don't","know","the","answer","to","this","question","."] },
+        { jp:"彼は私に手紙を書きました。", answers:["He wrote a letter to me."], words:["He","wrote","a","letter","to","me","."] },
+        { jp:"私はその映画が好きでした。", answers:["I liked the movie."], words:["I","liked","the","movie","."] },
+        { jp:"彼女は来週北海道へ行く予定です。", answers:["She is going to go to Hokkaido next week.","She will go to Hokkaido next week."], words:["She","is","going","to","will","go","to","Hokkaido","next","week","."] },
+        { jp:"この川はあの川より長いです。", answers:["This river is longer than that one."], words:["This","river","is","longer","than","that","one","."] },
+        { jp:"私はその知らせを聞いて驚きました。", answers:["I was surprised to hear the news."], words:["I","was","surprised","to","hear","the","news","."] },
+        { jp:"彼はそのゲームをやめました。", answers:["He stopped playing the game."], words:["He","stopped","playing","the","game","."] },
+        { jp:"私は彼女を助けるためにここに来ました。", answers:["I came here to help her."], words:["I","came","here","to","help","her","."] },
+        { jp:"あなたは泳ぐことができますか。", answers:["Can you swim?"], words:["Can","you","swim","?"] },
+        { jp:"彼らは来年新しい家を買うでしょう。", answers:["They will buy a new house next year."], words:["They","will","buy","a","new","house","next","year","."] }
       ]
     };
 
     let currentGrade = "grade5";
-    let currentIndex = 0;
-    let score = 0;
-    let answeredCorrect = new Set();
-    let selectedWords = [];
+let currentIndex = 0;
+let score = 0;
+let answeredCorrect = new Set();
+let selectedWords = [];
 
-    // ★ 追加：問題ごとに「シャッフルされた並び」を固定するためのキャッシュ
-    // キー: "grade4-0" など / 値: [{word, index}...] の配列（表示順）
-    const wordOrderCache = new Map();
+// 問題ごとにシャッフルした並びを固定するキャッシュ
+const wordOrderCache = new Map();
 
-    const indexScreen = document.getElementById("indexScreen");
-    const quizScreen = document.getElementById("quizScreen");
-    const gradeTitle = document.getElementById("gradeTitle");
-    const questionCount = document.getElementById("questionCount");
-    const jpSentence = document.getElementById("jpSentence");
-    const answerArea = document.getElementById("answerArea");
-    const wordBank = document.getElementById("wordBank");
-    const message = document.getElementById("message");
-    const scoreEl = document.getElementById("score");
+const indexScreen = document.getElementById("indexScreen");
+const quizScreen  = document.getElementById("quizScreen");
+const gradeTitle  = document.getElementById("gradeTitle");
+const questionCount = document.getElementById("questionCount");
+const jpSentence  = document.getElementById("jpSentence");
+const answerArea  = document.getElementById("answerArea");
+const wordBank    = document.getElementById("wordBank");
+const message     = document.getElementById("message");
+const scoreEl     = document.getElementById("score");
 
-    function startGrade(grade) {
-      currentGrade = grade;
-      currentIndex = 0;
-      score = 0;
-      answeredCorrect = new Set();
-      selectedWords = [];
-      wordOrderCache.clear(); // ★ グレード開始時にシャッフル状態をリセット
+// ====== 追加：ドラッグ状態 ======
+const dragState = {
+  active: false,
+  from: null,            // "bank" | "answer"
+  wordIndex: null,       // q.words の index（トークンの同一性）
+  answerPos: null,       // selectedWords 内の位置（answerからドラッグ時）
+  pointerId: null,
+  startX: 0, startY: 0,
+  moved: false,
+  ghost: null,
+  placeholder: null,
+};
 
-      indexScreen.classList.remove("active");
-      quizScreen.classList.add("active");
+const TAP_THRESHOLD = 8; // px：これ未満はタップ扱い
 
-      renderQuestion();
+function startGrade(grade) {
+  currentGrade = grade;
+  currentIndex = 0;
+  score = 0;
+  answeredCorrect = new Set();
+  selectedWords = [];
+  wordOrderCache.clear();
+
+  indexScreen.classList.remove("active");
+  quizScreen.classList.add("active");
+
+  renderQuestion();
+}
+
+function goIndex() {
+  quizScreen.classList.remove("active");
+  indexScreen.classList.add("active");
+  clearMessage();
+}
+
+function getCurrentQuestion() {
+  return questions[currentGrade][currentIndex];
+}
+
+function ensureWordOrderForCurrentQuestion() {
+  const key = `${currentGrade}-${currentIndex}`;
+  if (wordOrderCache.has(key)) return;
+
+  const q = getCurrentQuestion();
+  const arr = q.words.map((w, idx) => ({ word: w, index: idx }));
+
+  // Fisher–Yates shuffle
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  wordOrderCache.set(key, arr);
+}
+
+function renderQuestion() {
+  const q = getCurrentQuestion();
+  selectedWords = [];
+
+  gradeTitle.textContent = currentGrade === "grade5" ? "GRADE5" : "GRADE4";
+  questionCount.textContent = `Q${currentIndex + 1}/${questions[currentGrade].length}`;
+  jpSentence.textContent = q.jp;
+
+  ensureWordOrderForCurrentQuestion();
+
+  renderAnswerArea();
+  renderWordBank();
+  updateScore();
+  clearMessage();
+}
+
+/* ===== 描画 ===== */
+function renderAnswerArea() {
+  answerArea.innerHTML = "";
+
+  selectedWords.forEach((item, answerPos) => {
+    const btn = document.createElement("button");
+    btn.className = "word";
+    btn.textContent = item.word;
+
+    // どのトークンか、回答内のどこか
+    btn.dataset.zone = "answer";
+    btn.dataset.wordindex = String(item.index);
+    btn.dataset.answerpos = String(answerPos);
+
+    // タップで削除（ドラッグと区別するので click は使わず pointerup で判定）
+    btn.addEventListener("pointerdown", onPointerDownChip);
+
+    answerArea.appendChild(btn);
+  });
+}
+
+function renderWordBank() {
+  const key = `${currentGrade}-${currentIndex}`;
+  const order = wordOrderCache.get(key) || [];
+  wordBank.innerHTML = "";
+
+  order.forEach(({ word, index }) => {
+    const btn = document.createElement("button");
+    btn.className = "word";
+    btn.textContent = word;
+
+    btn.dataset.zone = "bank";
+    btn.dataset.wordindex = String(index);
+
+    const used = selectedWords.some(it => it.index === index);
+    if (used) btn.classList.add("used");
+
+    btn.addEventListener("pointerdown", onPointerDownChip);
+
+    wordBank.appendChild(btn);
+  });
+}
+
+/* ===== タップ操作（従来互換） ===== */
+function addWordFromBank(wordIndex, insertAt = null) {
+  const q = getCurrentQuestion();
+  if (selectedWords.some(it => it.index === wordIndex)) return; // 既に使ってる
+
+  const word = q.words[wordIndex];
+  const obj = { word, index: wordIndex };
+
+  if (insertAt === null || insertAt === undefined) {
+    selectedWords.push(obj);
+  } else {
+    selectedWords.splice(insertAt, 0, obj);
+  }
+  renderAnswerArea();
+  renderWordBank();
+  clearMessage();
+}
+
+function removeWordFromAnswer(answerPos) {
+  selectedWords.splice(answerPos, 1);
+  renderAnswerArea();
+  renderWordBank();
+  clearMessage();
+}
+
+/* ===== ドラッグ&ドロップ（Pointer Events） ===== */
+function onPointerDownChip(e) {
+  // used の bank はドラッグ/タップ無効
+  const el = e.currentTarget;
+  if (el.classList.contains("used") && el.dataset.zone === "bank") return;
+
+  dragState.active = true;
+  dragState.pointerId = e.pointerId;
+  dragState.startX = e.clientX;
+  dragState.startY = e.clientY;
+  dragState.moved = false;
+
+  dragState.from = el.dataset.zone; // bank or answer
+  dragState.wordIndex = Number(el.dataset.wordindex);
+  dragState.answerPos = el.dataset.answerpos != null ? Number(el.dataset.answerpos) : null;
+
+  el.setPointerCapture(e.pointerId);
+
+  // ゴースト作成（指についてくる見た目）
+  dragState.ghost = createGhost(el, e.clientX, e.clientY);
+
+  // プレースホルダー（挿入位置）
+  dragState.placeholder = document.createElement("div");
+  dragState.placeholder.className = "placeholder";
+  dragState.placeholder.textContent = "ここに入る";
+
+  // ドラッグ開始時点で answer なら、いったん origin を薄く
+  el.classList.add("dragging-origin");
+
+  document.addEventListener("pointermove", onPointerMove, { passive: false });
+  document.addEventListener("pointerup", onPointerUp, { passive: false });
+  document.addEventListener("pointercancel", onPointerCancel, { passive: false });
+
+  e.preventDefault();
+}
+
+function onPointerMove(e) {
+  if (!dragState.active || e.pointerId !== dragState.pointerId) return;
+
+  const dx = e.clientX - dragState.startX;
+  const dy = e.clientY - dragState.startY;
+  if (!dragState.moved && Math.hypot(dx, dy) > TAP_THRESHOLD) {
+    dragState.moved = true;
+  }
+
+  moveGhost(e.clientX, e.clientY);
+
+  // どこにドロップしそうか判定
+  const overAnswer = isPointInEl(answerArea, e.clientX, e.clientY);
+  const overBank   = isPointInEl(wordBank, e.clientX, e.clientY);
+
+  // answer の上ならプレースホルダーを挿入位置に移動
+  if (overAnswer) {
+    const insertIndex = getInsertIndexInAnswer(e.clientX, e.clientY);
+    placePlaceholder(insertIndex);
+  } else {
+    // answer 外ならプレースホルダーを消す
+    removePlaceholder();
+  }
+
+  e.preventDefault();
+}
+
+function onPointerUp(e) {
+  if (!dragState.active || e.pointerId !== dragState.pointerId) return;
+
+  // origin の薄化解除
+  cleanupOriginClass();
+
+  const wasTap = !dragState.moved;
+
+  // タップ扱いなら：bank→追加、answer→削除
+  if (wasTap) {
+    if (dragState.from === "bank") {
+      addWordFromBank(dragState.wordIndex);
+    } else if (dragState.from === "answer") {
+      removeWordFromAnswer(dragState.answerPos);
     }
+    finishDrag();
+    return;
+  }
 
-    function goIndex() {
-      quizScreen.classList.remove("active");
-      indexScreen.classList.add("active");
-      clearMessage();
-    }
+  // ドロップ判定
+  const overAnswer = isPointInEl(answerArea, e.clientX, e.clientY);
+  const overBank   = isPointInEl(wordBank, e.clientX, e.clientY);
 
-    function getCurrentQuestion() {
-      return questions[currentGrade][currentIndex];
-    }
+  if (overAnswer) {
+    // プレースホルダー位置を index にする
+    const dropIndex = getPlaceholderIndex();
 
-    function renderQuestion() {
-      const q = getCurrentQuestion();
-      selectedWords = [];
-
-      gradeTitle.textContent = currentGrade === "grade5" ? "GRADE5" : "GRADE4";
-      questionCount.textContent = `Q${currentIndex + 1}/${questions[currentGrade].length}`;
-      jpSentence.textContent = q.jp;
-
-      // ★ 初回描画時に、この問題の word-bank の表示順を作ってキャッシュ
-      ensureWordOrderForCurrentQuestion();
-
+    if (dragState.from === "bank") {
+      addWordFromBank(dragState.wordIndex, dropIndex);
+    } else {
+      // answer内の並べ替え
+      moveAnswerWord(dragState.answerPos, dropIndex);
       renderAnswerArea();
       renderWordBank();
-      updateScore();
       clearMessage();
     }
-
-    // ===== ランダム化の核心 =====
-    function ensureWordOrderForCurrentQuestion() {
-      const key = `${currentGrade}-${currentIndex}`;
-      if (wordOrderCache.has(key)) return;
-
-      const q = getCurrentQuestion();
-      const arr = q.words.map((w, idx) => ({ word: w, index: idx }));
-
-      // Fisher–Yates shuffle
-      for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-      }
-
-      wordOrderCache.set(key, arr);
+  } else if (overBank) {
+    // answer から bank へ戻す = 削除
+    if (dragState.from === "answer") {
+      removeWordFromAnswer(dragState.answerPos);
     }
-    // ===========================
+    // bank→bank は何もしない
+  } else {
+    // どこでもない場所：何もしない（元に戻る）
+    // （answer→どこでもない は並び維持）
+    // 画面は再描画で元に戻る
+    renderAnswerArea();
+    renderWordBank();
+  }
 
-    function renderAnswerArea() {
-      answerArea.innerHTML = "";
+  finishDrag();
+}
 
-      selectedWords.forEach((item, answerIndex) => {
-        const btn = document.createElement("button");
-        btn.className = "word";
-        btn.textContent = item.word;
-        btn.onclick = () => removeWord(answerIndex);
-        answerArea.appendChild(btn);
-      });
+function onPointerCancel(e) {
+  if (!dragState.active || e.pointerId !== dragState.pointerId) return;
+  cleanupOriginClass();
+  renderAnswerArea();
+  renderWordBank();
+  finishDrag();
+}
+
+function finishDrag() {
+  removePlaceholder();
+  removeGhost();
+
+  document.removeEventListener("pointermove", onPointerMove);
+  document.removeEventListener("pointerup", onPointerUp);
+  document.removeEventListener("pointercancel", onPointerCancel);
+
+  dragState.active = false;
+  dragState.from = null;
+  dragState.wordIndex = null;
+  dragState.answerPos = null;
+  dragState.pointerId = null;
+  dragState.startX = dragState.startY = 0;
+  dragState.moved = false;
+}
+
+function createGhost(originEl, x, y) {
+  const ghost = originEl.cloneNode(true);
+  ghost.classList.add("drag-ghost");
+  ghost.style.width = `${originEl.getBoundingClientRect().width}px`;
+  document.body.appendChild(ghost);
+  moveGhost(x, y);
+  return ghost;
+}
+
+function moveGhost(x, y) {
+  if (!dragState.ghost) return;
+  dragState.ghost.style.left = `${x}px`;
+  dragState.ghost.style.top  = `${y}px`;
+}
+
+function removeGhost() {
+  if (dragState.ghost && dragState.ghost.parentNode) {
+    dragState.ghost.parentNode.removeChild(dragState.ghost);
+  }
+  dragState.ghost = null;
+}
+
+function isPointInEl(el, x, y) {
+  const r = el.getBoundingClientRect();
+  return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+}
+
+function getInsertIndexInAnswer(x, y) {
+  const chips = [...answerArea.querySelectorAll(".word")];
+  if (chips.length === 0) return 0;
+
+  // 指の下にあるチップを優先
+  const under = document.elementFromPoint(x, y);
+  const chip = under && under.closest ? under.closest("#answerArea .word") : null;
+
+  if (chip) {
+    const rect = chip.getBoundingClientRect();
+    const midX = rect.left + rect.width / 2;
+    const chipIndex = chips.indexOf(chip);
+    return (x < midX) ? chipIndex : chipIndex + 1;
+  }
+
+  // 何もないなら末尾
+  return chips.length;
+}
+
+function placePlaceholder(insertIndex) {
+  const chips = [...answerArea.querySelectorAll(".word")];
+  // placeholder がまだ無ければ追加
+  if (!dragState.placeholder) return;
+
+  // 既に入ってるなら移動
+  if (dragState.placeholder.parentNode === answerArea) {
+    // remove and re-insert
+    answerArea.removeChild(dragState.placeholder);
+  }
+
+  if (insertIndex >= chips.length) {
+    answerArea.appendChild(dragState.placeholder);
+  } else {
+    answerArea.insertBefore(dragState.placeholder, chips[insertIndex]);
+  }
+}
+
+function removePlaceholder() {
+  if (dragState.placeholder && dragState.placeholder.parentNode) {
+    dragState.placeholder.parentNode.removeChild(dragState.placeholder);
+  }
+}
+
+function getPlaceholderIndex() {
+  if (!dragState.placeholder || dragState.placeholder.parentNode !== answerArea) {
+    return selectedWords.length;
+  }
+  const nodes = [...answerArea.children];
+  return nodes.indexOf(dragState.placeholder);
+}
+
+function moveAnswerWord(fromIndex, toIndex) {
+  if (fromIndex == null) return;
+  if (toIndex == null) return;
+
+  // placeholder が from を跨ぐときのズレ補正
+  // 例：後ろに動かす場合、取り出した後に index が1減る
+  const item = selectedWords[fromIndex];
+  selectedWords.splice(fromIndex, 1);
+
+  let target = toIndex;
+  if (toIndex > fromIndex) target = toIndex - 1;
+
+  if (target < 0) target = 0;
+  if (target > selectedWords.length) target = selectedWords.length;
+
+  selectedWords.splice(target, 0, item);
+}
+
+function cleanupOriginClass() {
+  document.querySelectorAll(".dragging-origin").forEach(el => el.classList.remove("dragging-origin"));
+}
+
+/* ===== 既存のチェック機能（そのまま） ===== */
+function normalizeSentence(sentence) {
+  return sentence
+    .toLowerCase()
+    .replace(/[.。]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function getUserSentence() {
+  return selectedWords.map(item => item.word).join(" ");
+}
+
+function checkAnswer() {
+  const q = getCurrentQuestion();
+  const user = normalizeSentence(getUserSentence());
+  const normalizedAnswers = q.answers.map(ans => normalizeSentence(ans));
+  const isCorrect = normalizedAnswers.includes(user);
+
+  if (isCorrect) {
+    const key = `${currentGrade}-${currentIndex}`;
+    if (!answeredCorrect.has(key)) {
+      answeredCorrect.add(key);
+      score++;
     }
+    showMessage("ok", `正解！<br>${formatAnswers(q.answers)}`);
+  } else {
+    showMessage("ng", `もう一度！<br>正答・別解はこちら：<br>${formatAnswers(q.answers)}`);
+  }
+  updateScore();
+}
 
-    function renderWordBank() {
-      const key = `${currentGrade}-${currentIndex}`;
-      const order = wordOrderCache.get(key) || [];
+function formatAnswers(answers) {
+  if (answers.length === 1) return `正答：<strong>${answers[0]}</strong>`;
+  return answers.map((ans, i) => i === 0
+      ? `正答：<strong>${ans}</strong>`
+      : `別解${i}：<strong>${ans}</strong>`
+    ).join("<br>");
+}
 
-      wordBank.innerHTML = "";
+function showHint() {
+  const q = getCurrentQuestion();
+  const firstAnswer = q.answers[0];
+  const hintWords = firstAnswer.replace(/[.?!]/g, "").split(/\s+/).slice(0, 2).join(" ");
+  showMessage("info", `HINT：最初は <strong>${hintWords}</strong> ...`);
+}
 
-      order.forEach(({ word, index }) => {
-        const btn = document.createElement("button");
-        btn.className = "word";
+function nextQuestion() {
+  const total = questions[currentGrade].length;
+  currentIndex = (currentIndex + 1) % total;
+  ensureWordOrderForCurrentQuestion();
+  renderQuestion();
+}
 
-        const used = selectedWords.some(item => item.index === index);
-        if (used) btn.classList.add("used");
+function prevQuestion() {
+  const total = questions[currentGrade].length;
+  currentIndex = (currentIndex - 1 + total) % total;
+  ensureWordOrderForCurrentQuestion();
+  renderQuestion();
+}
 
-        btn.textContent = word;
-        btn.onclick = () => selectWord(word, index);
-        wordBank.appendChild(btn);
-      });
-    }
+function showMessage(type, html) {
+  message.className = `message show ${type}`;
+  message.innerHTML = html;
+}
 
-    function selectWord(word, index) {
-      if (selectedWords.some(item => item.index === index)) return;
+function clearMessage() {
+  message.className = "message";
+  message.innerHTML = "";
+}
 
-      selectedWords.push({ word, index });
-      renderAnswerArea();
-      renderWordBank();
-      clearMessage();
-    }
-
-    function removeWord(answerIndex) {
-      selectedWords.splice(answerIndex, 1);
-      renderAnswerArea();
-      renderWordBank();
-      clearMessage();
-    }
-
-    function clearAnswer() {
-      selectedWords = [];
-      renderAnswerArea();
-      renderWordBank();
-      clearMessage();
-    }
-
-    function normalizeSentence(sentence) {
-      return sentence
-        .toLowerCase()
-        .replace(/[.。]/g, "")  // ピリオドは無視
-        .replace(/\s+/g, " ")
-        .trim();
-    }
-
-    function getUserSentence() {
-      return selectedWords.map(item => item.word).join(" ");
-    }
-
-    function checkAnswer() {
-      const q = getCurrentQuestion();
-      const user = normalizeSentence(getUserSentence());
-
-      const normalizedAnswers = q.answers.map(ans => normalizeSentence(ans));
-      const isCorrect = normalizedAnswers.includes(user);
-
-      if (isCorrect) {
-        const key = `${currentGrade}-${currentIndex}`;
-        if (!answeredCorrect.has(key)) {
-          answeredCorrect.add(key);
-          score++;
-        }
-        showMessage("ok", `正解！<br>${formatAnswers(q.answers)}`);
-      } else {
-        showMessage("ng", `もう一度！<br>正答・別解はこちら：<br>${formatAnswers(q.answers)}`);
-      }
-
-      updateScore();
-    }
-
-    function formatAnswers(answers) {
-      if (answers.length === 1) {
-        return `正答：<strong>${answers[0]}</strong>`;
-      }
-      return answers
-        .map((ans, i) => (i === 0 ? `正答：<strong>${ans}</strong>` : `別解${i}：<strong>${ans}</strong>`))
-        .join("<br>");
-    }
-
-    function showHint() {
-      const q = getCurrentQuestion();
-      const firstAnswer = q.answers[0];
-
-      const hintWords = firstAnswer
-        .replace(/[.?!]/g, "")
-        .split(/\s+/)
-        .slice(0, 2)
-        .join(" ");
-
-      showMessage("info", `HINT：最初は <strong>${hintWords}</strong> ...`);
-    }
-
-    function nextQuestion() {
-      const total = questions[currentGrade].length;
-      currentIndex = (currentIndex + 1) % total;
-
-      // ★ 次の問題の並びを用意
-      ensureWordOrderForCurrentQuestion();
-
-      renderQuestion();
-    }
-
-    function prevQuestion() {
-      const total = questions[currentGrade].length;
-      currentIndex = (currentIndex - 1 + total) % total;
-
-      // ★ 前の問題の並びを用意
-      ensureWordOrderForCurrentQuestion();
-
-      renderQuestion();
-    }
-
-    function showMessage(type, html) {
-      message.className = `message show ${type}`;
-      message.innerHTML = html;
-    }
-
-    function clearMessage() {
-      message.className = "message";
-      message.innerHTML = "";
-    }
-
-    function updateScore() {
-      scoreEl.textContent = `SCORE: ${score}`;
-    }
+function updateScore() {
+  scoreEl.textContent = `SCORE: ${score}`;
+}
   </script>
 </body>
 </html>
