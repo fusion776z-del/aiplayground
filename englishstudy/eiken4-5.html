@@ -13,12 +13,12 @@
       --text: #f4f4f5;
       --muted: #a1a1aa;
       --accent: #facc15;
-      --accent2: #22c55e;
-      --danger: #ef4444;
       --btn: #1f2937;
       --btn2: #312e81;
     }
+
     * { box-sizing: border-box; }
+
     body {
       margin: 0;
       min-height: 100vh;
@@ -32,6 +32,7 @@
       justify-content: center;
       padding: 28px 14px;
     }
+
     .app {
       width: min(560px, 100%);
       border: 1px solid var(--line);
@@ -40,7 +41,12 @@
       box-shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
       overflow: hidden;
     }
-    header { padding: 26px 22px 18px; border-bottom: 1px solid var(--line); }
+
+    header {
+      padding: 26px 22px 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
     .tag {
       display: inline-block;
       border: 1px solid rgba(250, 204, 21, 0.45);
@@ -52,13 +58,30 @@
       letter-spacing: 0.08em;
       margin-bottom: 16px;
     }
-    h1 { margin: 0; font-size: 26px; line-height: 1.35; }
-    .lead { color: var(--muted); line-height: 1.7; margin: 12px 0 0; font-weight: 600; }
+
+    h1 {
+      margin: 0;
+      font-size: 26px;
+      line-height: 1.35;
+    }
+
+    .lead {
+      color: var(--muted);
+      line-height: 1.7;
+      margin: 12px 0 0;
+      font-weight: 600;
+    }
+
     main { padding: 22px; }
+
     .screen { display: none; }
     .screen.active { display: block; }
 
-    .grade-list { display: grid; gap: 14px; }
+    .grade-list {
+      display: grid;
+      gap: 14px;
+    }
+
     .grade-card {
       background: var(--panel2);
       border: 1px solid var(--line);
@@ -69,8 +92,18 @@
       justify-content: space-between;
       gap: 12px;
     }
-    .grade-card strong { font-size: 22px; display: block; margin-bottom: 5px; }
-    .grade-card span { color: var(--muted); font-weight: 650; font-size: 14px; }
+
+    .grade-card strong {
+      font-size: 22px;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .grade-card span {
+      color: var(--muted);
+      font-weight: 650;
+      font-size: 14px;
+    }
 
     button {
       appearance: none;
@@ -85,8 +118,10 @@
       transition: transform 0.08s ease, border-color 0.15s ease, background 0.15s ease;
       touch-action: manipulation;
     }
+
     button:hover { border-color: rgba(250, 204, 21, 0.55); }
     button:active { transform: scale(0.98); }
+
     .enter-btn { background: var(--btn2); min-width: 96px; }
 
     .top-actions {
@@ -96,7 +131,9 @@
       align-items: center;
       margin-bottom: 18px;
     }
+
     .back-index { border-radius: 999px; background: transparent; }
+
     .grade-badge {
       color: var(--accent);
       border: 1px solid rgba(250, 204, 21, 0.45);
@@ -125,6 +162,7 @@
       border-radius: 22px;
       padding: 18px;
     }
+
     .quiz-head {
       display: flex;
       justify-content: space-between;
@@ -134,6 +172,7 @@
       color: var(--muted);
       font-weight: 900;
     }
+
     .count {
       background: #241f3f;
       border-radius: 999px;
@@ -141,7 +180,13 @@
       font-size: 13px;
       color: #ddd6fe;
     }
-    .jp { font-size: 19px; line-height: 1.7; font-weight: 850; margin: 0 0 16px; }
+
+    .jp {
+      font-size: 19px;
+      line-height: 1.7;
+      font-weight: 850;
+      margin: 0 0 16px;
+    }
 
     .answer-area {
       min-height: 76px;
@@ -155,6 +200,7 @@
       margin-bottom: 14px;
       background: rgba(2, 6, 23, 0.35);
     }
+
     .word-bank {
       border: 1px solid var(--line);
       border-radius: 18px;
@@ -164,6 +210,7 @@
       gap: 9px;
       margin-bottom: 15px;
     }
+
     .word {
       border-radius: 999px;
       padding: 10px 14px;
@@ -172,14 +219,27 @@
       font-weight: 900;
       min-height: 42px;
     }
+
     .word.used { opacity: 0.35; pointer-events: none; }
     .answer-area .word { background: #1e293b; }
 
-    .buttons { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
     .buttons .wide { grid-column: 1 / -1; }
 
-    .check { background: rgba(34, 197, 94, 0.18); border-color: rgba(34, 197, 94, 0.38); }
-    .hint { background: rgba(250, 204, 21, 0.12); border-color: rgba(250, 204, 21, 0.32); }
+    .check {
+      background: rgba(34, 197, 94, 0.18);
+      border-color: rgba(34, 197, 94, 0.38);
+    }
+
+    .hint {
+      background: rgba(250, 204, 21, 0.12);
+      border-color: rgba(250, 204, 21, 0.32);
+    }
 
     .message {
       margin-top: 15px;
@@ -189,13 +249,37 @@
       font-weight: 750;
       display: none;
     }
-    .message.show { display: block; }
-    .message.ok { background: rgba(34, 197, 94, 0.14); border: 1px solid rgba(34, 197, 94, 0.35); }
-    .message.ng { background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); }
-    .message.info { background: rgba(59, 130, 246, 0.12); border: 1px solid rgba(59, 130, 246, 0.3); }
 
-    .score { margin-top: 16px; color: var(--muted); font-weight: 900; text-align: right; }
-    .small { color: var(--muted); font-size: 13px; line-height: 1.6; margin-top: 14px; }
+    .message.show { display: block; }
+
+    .message.ok {
+      background: rgba(34, 197, 94, 0.14);
+      border: 1px solid rgba(34, 197, 94, 0.35);
+    }
+
+    .message.ng {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .message.info {
+      background: rgba(59, 130, 246, 0.12);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .score {
+      margin-top: 16px;
+      color: var(--muted);
+      font-weight: 900;
+      text-align: right;
+    }
+
+    .small {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+      margin-top: 14px;
+    }
 
     @media (max-width: 420px) {
       h1 { font-size: 22px; }
@@ -240,7 +324,7 @@
         </div>
 
         <p class="small">
-          ※ 各級80問は「テンプレ＋単語リスト」から自動生成します（リサイクル減）。<br>
+          ※ 文型問題はありません。英文の並べ替えのみです。<br>
           ※ 別解がある問題では、正答後または不正解時に別解も表示されます。
         </p>
       </section>
@@ -260,7 +344,7 @@
         <div class="quiz-box">
           <div class="quiz-head">
             <span>SHELF ALL</span>
-            <span id="questionCount" class="count">Q1/80</span>
+            <span id="questionCount" class="count">Q1/1</span>
           </div>
 
           <p id="jpSentence" class="jp"></p>
@@ -285,499 +369,47 @@
   </div>
 
   <script>
-    // =========================
-    // 共通ユーティリティ
-    // =========================
-    const TARGET_COUNT_PER_GRADE = 80;
-
-    function randInt(n) { return Math.floor(Math.random() * n); }
-
-    function pick(arr) { return arr[randInt(arr.length)]; }
-
-    function shuffleArray(arr) {
-      const a = arr.slice();
-      for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [a[i], a[j]] = [a[j], a[i]];
-      }
-      return a;
-    }
-
-    function uniquePush(arr, item) {
-      if (!arr.includes(item)) arr.push(item);
-    }
-
-    function articleFor(noun) {
-      // 超簡易：先頭が母音なら an
-      return /^[aeiou]/i.test(noun) ? "an" : "a";
-    }
-
-    function tokenizeAnswer(answer) {
-      // 文末記号を単独トークンにする
-      let p = "";
-      if (/[.?!]$/.test(answer)) {
-        p = answer.slice(-1);
-        answer = answer.slice(0, -1);
-      }
-      const tokens = answer.split(/\s+/).filter(Boolean);
-      if (p) tokens.push(p);
-      return tokens;
-    }
-
-    function buildWordBankFrom(answerTokens, distractorPool, maxExtra = 3) {
-      const bank = answerTokens.slice();
-      const lowerSet = new Set(bank.map(w => w.toLowerCase()));
-
-      // ひっかけ（同カテゴリ語彙）を少しだけ混ぜる
-      const extras = shuffleArray(distractorPool)
-        .filter(w => !lowerSet.has(w.toLowerCase()) && w.trim() !== "")
-        .slice(0, maxExtra);
-
-      extras.forEach(w => bank.push(w));
-
-      // 表示順は renderWordBank() で毎回シャッフルするので、ここではそのまま
-      return bank;
-    }
-
-    // 判定の正規化（? の前のスペース問題もここで吸収）
-    function normalizeSentence(sentence) {
-      return sentence
-        .toLowerCase()
-        .replace(/[.。]/g, "")           // ピリオド無視
-        .replace(/\s+([?!])/g, "$1")     // ? ! の直前の空白を消す
-        .replace(/\s+/g, " ")
-        .trim();
-    }
-
-    // =========================
-    // 5級 自動生成
-    // =========================
-    const G5 = {
-      subjects: [
-        { en: "I", jp: "私は" },
-        { en: "You", jp: "あなたは" },
-        { en: "He", jp: "彼は" },
-        { en: "She", jp: "彼女は" },
-        { en: "We", jp: "私たちは" },
-        { en: "They", jp: "彼らは" },
-        { en: "My brother", jp: "私の兄は" },
-        { en: "My sister", jp: "私の姉(妹)は" }
+    const questions = {
+      grade5: [
+        { jp: "私はサッカーが好きです。", answers: ["I like soccer.", "I like football."], words: ["I","like","soccer","football","."] },
+        { jp: "あなたは英語を勉強します。", answers: ["You study English."], words: ["You","study","English","."] },
+        { jp: "彼は私の友達です。", answers: ["He is my friend."], words: ["He","is","my","friend","."] },
+        { jp: "これは私の本です。", answers: ["This is my book."], words: ["This","is","my","book","."] },
+        { jp: "私は犬を飼っています。", answers: ["I have a dog."], words: ["I","have","a","dog","."] },
+        { jp: "あなたはテニスをしますか。", answers: ["Do you play tennis?"], words: ["Do","you","play","tennis","?"] },
+        { jp: "彼女はピアノを弾きます。", answers: ["She plays the piano."], words: ["She","plays","the","piano","."] },
+        { jp: "私は東京出身です。", answers: ["I am from Tokyo.", "I'm from Tokyo."], words: ["I","am","I'm","from","Tokyo","."] },
+        { jp: "これは何ですか。", answers: ["What is this?"], words: ["What","is","this","?"] },
+        { jp: "私は毎日朝食を食べます。", answers: ["I eat breakfast every day."], words: ["I","eat","breakfast","every","day","."] }
       ],
-      sports: [
-        { en: "soccer", jp: "サッカー" },
-        { en: "tennis", jp: "テニス" },
-        { en: "baseball", jp: "野球" },
-        { en: "basketball", jp: "バスケットボール" },
-        { en: "volleyball", jp: "バレーボール" }
-      ],
-      foods: [
-        { en: "bread", jp: "パン" },
-        { en: "rice", jp: "ごはん" },
-        { en: "an apple", jp: "りんご" },
-        { en: "a banana", jp: "バナナ" },
-        { en: "pizza", jp: "ピザ" },
-        { en: "sushi", jp: "すし" }
-      ],
-      things: [
-        { en: "a book", jp: "本" },
-        { en: "a pen", jp: "ペン" },
-        { en: "a bag", jp: "かばん" },
-        { en: "a dog", jp: "犬" },
-        { en: "a cat", jp: "猫" },
-        { en: "a bike", jp: "自転車" }
-      ],
-      places: [
-        { en: "Tokyo", jp: "東京" },
-        { en: "Osaka", jp: "大阪" },
-        { en: "Sapporo", jp: "札幌" },
-        { en: "Kyoto", jp: "京都" },
-        { en: "Hakodate", jp: "函館" }
-      ],
-      schoolSubjects: [
-        { en: "English", jp: "英語" },
-        { en: "math", jp: "数学" },
-        { en: "music", jp: "音楽" },
-        { en: "science", jp: "理科" }
-      ],
-      verbsLike: ["like"],
-      verbsWatch: ["watch"],
-      verbsRead: ["read"],
-      days: [
-        { en: "today", jp: "今日" },
-        { en: "every day", jp: "毎日" },
-        { en: "on Sunday", jp: "日曜日に" },
-        { en: "on Saturday", jp: "土曜日に" }
-      ],
-      whThings: [
-        { en: "this", jp: "これは" },
-        { en: "that", jp: "あれは" }
+      grade4: [
+        { jp: "私は昨日サッカーをしました。", answers: ["I played soccer yesterday.", "I played football yesterday."], words: ["I","played","soccer","football","yesterday","."] },
+        { jp: "彼女は明日図書館へ行くつもりです。", answers: ["She will go to the library tomorrow.", "She is going to go to the library tomorrow."], words: ["She","will","is","going","to","go","to","the","library","tomorrow","."] },
+        { jp: "私は音楽を聞くことが好きです。", answers: ["I like listening to music.", "I like to listen to music."], words: ["I","like","listening","to","music","to","listen","."] },
+        { jp: "彼は私より背が高いです。", answers: ["He is taller than I.", "He is taller than me."], words: ["He","is","taller","than","I","me","."] },
+        { jp: "私はその本を読むために図書館へ行きました。", answers: ["I went to the library to read the book."], words: ["I","went","to","the","library","to","read","the","book","."] },
+        { jp: "あなたは昨日何をしましたか。", answers: ["What did you do yesterday?"], words: ["What","did","you","do","yesterday","?"] },
+        { jp: "私は今、宿題をしています。", answers: ["I am doing my homework now.", "I'm doing my homework now."], words: ["I","am","I'm","doing","my","homework","now","."] },
+        { jp: "このかばんはあのかばんより大きいです。", answers: ["This bag is bigger than that one.", "This bag is larger than that one."], words: ["This","bag","is","bigger","larger","than","that","one","."] },
+        { jp: "私は英語を話すことができます。", answers: ["I can speak English."], words: ["I","can","speak","English","."] },
+        { jp: "彼は先週京都を訪れました。", answers: ["He visited Kyoto last week."], words: ["He","visited","Kyoto","last","week","."] },
+        {
+          jp: "彼女は先週映画を見ました。",
+          answers: ["She watched a movie last week.", "She saw a movie last week."],
+          words: ["She","watched","saw","a","movie","last","week","."]
+        }
       ]
     };
 
-    function present3rd(verb) {
-      // 超簡易：like->likes, play->plays, watch->watches など最低限
-      if (verb === "have") return "has";
-      if (verb.endsWith("ch") || verb.endsWith("sh") || verb.endsWith("x") || verb.endsWith("s"))
-        return verb + "es";
-      return verb + "s";
-    }
-
-    function beForm(subjEn) {
-      if (subjEn === "I") return { plain: "am", contr: "I'm" };
-      if (subjEn === "You" || subjEn === "We" || subjEn === "They") return { plain: "are", contr: "You're" };
-      return { plain: "is", contr: "He's" }; // He/She など（Sheは厳密にはShe'sだが、学習用に簡略化）
-    }
-
-    function g5_makeLikeSentence() {
-      const s = pick(G5.subjects);
-      const obj = pick([
-        { en: "music", jp: "音楽" },
-        { en: "books", jp: "本" },
-        { en: "cats", jp: "猫" },
-        { en: "dogs", jp: "犬" },
-        ...G5.sports.map(x => ({ en: x.en, jp: x.jp }))
-      ]);
-
-      const verb = "like";
-      const v = (s.en === "He" || s.en === "She" || s.en === "My brother" || s.en === "My sister")
-        ? present3rd(verb)
-        : verb;
-
-      const jp = `${s.jp}${obj.jp}が好きです。`;
-      const answer = `${s.en} ${v} ${obj.en}.`;
-
-      const tokens = tokenizeAnswer(answer);
-      const distractorPool = ["love", "play", "eat", "read", "watch", "English", "tennis", "soccer", "music", "books"];
-      const words = buildWordBankFrom(tokens, distractorPool, 3);
-      return { jp, answers: [answer], words };
-    }
-
-    function g5_makePlaySentence() {
-      const s = pick(G5.subjects);
-      const sp = pick(G5.sports);
-      const verb = "play";
-      const v = (s.en === "He" || s.en === "She" || s.en === "My brother" || s.en === "My sister")
-        ? present3rd(verb)
-        : verb;
-
-      const jp = `${s.jp}${sp.jp}をします。`;
-      const answer = `${s.en} ${v} ${sp.en}.`;
-
-      const tokens = tokenizeAnswer(answer);
-      const distractorPool = G5.sports.map(x => x.en).concat(["like", "watch", "read"]);
-      const words = buildWordBankFrom(tokens, distractorPool, 3);
-      return { jp, answers: [answer], words };
-    }
-
-    function g5_makeHaveSentence() {
-      const s = pick(G5.subjects);
-      const t = pick(G5.things);
-
-      const verb = "have";
-      const v = (s.en === "He" || s.en === "She" || s.en === "My brother" || s.en === "My sister")
-        ? "has"
-        : "have";
-
-      const jp = `${s.jp}${t.jp}を持っています。`;
-      const answer = `${s.en} ${v} ${t.en}.`;
-
-      const tokens = tokenizeAnswer(answer);
-      const distractorPool = G5.things.map(x => x.en).concat(["a", "an", "like", "play"]);
-      const words = buildWordBankFrom(tokens, distractorPool, 3);
-      return { jp, answers: [answer], words };
-    }
-
-    function g5_makeFromSentence() {
-      const s = pick(G5.subjects);
-      const p = pick(G5.places);
-
-      // be動詞＆短縮形も許可
-      const isI = s.en === "I";
-      const isYouWeThey = (s.en === "You" || s.en === "We" || s.en === "They");
-      const be = isI ? "am" : (isYouWeThey ? "are" : "is");
-      const contr = isI ? "I'm" : (isYouWeThey ? "You're" : (s.en === "He" ? "He's" : "She's"));
-
-      const jp = `${s.jp}${p.jp}出身です。`;
-      const ans1 = `${s.en} ${be} from ${p.en}.`;
-      const ans2 = `${contr} from ${p.en}.`;
-
-      const tokens = tokenizeAnswer(ans1);
-      const distractorPool = G5.places.map(x => x.en).concat(["in", "at", "from", "are", "is", "am", "I'm", "You're"]);
-      const words = buildWordBankFrom(tokens, distractorPool, 3);
-
-      // wordsに短縮形も入れて別解も作れるようにしておく
-      uniquePush(words, contr);
-
-      return { jp, answers: [ans1, ans2], words };
-    }
-
-    function g5_makeStudySentence() {
-      const s = pick(G5.subjects);
-      const sub = pick(G5.schoolSubjects);
-
-      const verb = "study";
-      const v = (s.en === "He" || s.en === "She" || s.en === "My brother" || s.en === "My sister")
-        ? present3rd(verb)
-        : verb;
-
-      const jp = `${s.jp}${sub.jp}を勉強します。`;
-      const answer = `${s.en} ${v} ${sub.en}.`;
-
-      const tokens = tokenizeAnswer(answer);
-      const distractorPool = G5.schoolSubjects.map(x => x.en).concat(["read", "play", "like"]);
-      const words = buildWordBankFrom(tokens, distractorPool, 3);
-      return { jp, answers: [answer], words };
-    }
-
-    function g5_makeDoYouPlayQuestion() {
-      // 基本疑問文（Do you ... ?）
-      const sp = pick(G5.sports);
-      const jp = `あなたは${sp.jp}をしますか。`;
-      const answer = `Do you play ${sp.en}?`;
-
-      const tokens = tokenizeAnswer(answer);
-      const distractorPool = G5.sports.map(x => x.en).concat(["Do", "does", "study", "like", "watch"]);
-      const words = buildWordBankFrom(tokens, distractorPool, 3);
-      return { jp, answers: [answer], words };
-    }
-
-    function g5_makeWhatIsThisQuestion() {
-      const wt = pick(G5.whThings);
-      const jp = `${wt.jp}何ですか。`;
-      const answer = `What is ${wt.en}?`;
-
-      const tokens = tokenizeAnswer(answer);
-      const distractorPool = ["Who", "Where", "What", "is", "are", "this", "that"];
-      const words = buildWordBankFrom(tokens, distractorPool, 2);
-      return { jp, answers: [answer], words };
-    }
-
-    function g5_makeEatSentence() {
-      const s = pick(G5.subjects);
-      const f = pick(G5.foods);
-      const d = pick([{en:"every day", jp:"毎日"}, {en:"for breakfast", jp:"朝食に"}, {en:"for lunch", jp:"昼食に"}]);
-
-      const verb = "eat";
-      const v = (s.en === "He" || s.en === "She" || s.en === "My brother" || s.en === "My sister")
-        ? present3rd(verb)
-        : verb;
-
-      const jp = `${s.jp}${d.jp}${f.jp}を食べます。`;
-      const answer = `${s.en} ${v} ${f.en} ${d.en}.`;
-
-      const tokens = tokenizeAnswer(answer);
-      const distractorPool = G5.foods.map(x => x.en).concat(["every", "day", "breakfast", "lunch", "dinner", "play"]);
-      const words = buildWordBankFrom(tokens, distractorPool, 3);
-      return { jp, answers: [answer], words };
-    }
-
-    const G5_TEMPLATES = [
-      g5_makeLikeSentence,
-      g5_makePlaySentence,
-      g5_makeHaveSentence,
-      g5_makeFromSentence,
-      g5_makeStudySentence,
-      g5_makeDoYouPlayQuestion,
-      g5_makeWhatIsThisQuestion,
-      g5_makeEatSentence
-    ];
-
-    function generateGrade5(count) {
-      const out = [];
-      const seen = new Set();
-      let guard = 0;
-
-      while (out.length < count && guard < 4000) {
-        guard++;
-        const q = pick(G5_TEMPLATES)();
-        const key = normalizeSentence(q.answers[0]);
-        if (seen.has(key)) continue;
-        seen.add(key);
-        out.push(q);
-      }
-      return out;
-    }
-
-    // =========================
-    // 4級 自動生成（語彙増量版）
-    // =========================
-    const G4 = {
-      subjects: [
-        { en: "I", jp: "私は" },
-        { en: "You", jp: "あなたは" },
-        { en: "He", jp: "彼は" },
-        { en: "She", jp: "彼女は" },
-        { en: "We", jp: "私たちは" },
-        { en: "They", jp: "彼らは" }
-      ],
-      places: [
-        { en: "the library", jp: "図書館" },
-        { en: "the park", jp: "公園" },
-        { en: "the station", jp: "駅" },
-        { en: "the store", jp: "店" }
-      ],
-      pastVerbs: [
-        { base: "play", past: "played", jp: "しました" },
-        { base: "visit", past: "visited", jp: "訪れました" },
-        { base: "watch", past: "watched", jp: "見ました" },
-        { base: "study", past: "studied", jp: "勉強しました" }
-      ],
-      objects: [
-        { en: "soccer", jp: "サッカー" },
-        { en: "tennis", jp: "テニス" },
-        { en: "TV", jp: "テレビ" },
-        { en: "English", jp: "英語" },
-        { en: "music", jp: "音楽" }
-      ],
-      adjectives: [
-        { en: "taller", jp: "背が高い" },
-        { en: "faster", jp: "速い" },
-        { en: "bigger", jp: "大きい" }
-      ],
-      times: [
-        { en: "yesterday", jp: "昨日" },
-        { en: "last week", jp: "先週" },
-        { en: "tomorrow", jp: "明日" }
-      ]
-    };
-
-    function g4_makePastSentence() {
-      const s = pick(G4.subjects);
-      const v = pick(G4.pastVerbs);
-      const o = pick(G4.objects);
-      const t = pick([{en:"yesterday", jp:"昨日"}, {en:"last week", jp:"先週"}]);
-
-      const jp = `${s.jp}${t.jp}${o.jp}を${v.jp}。`;
-      const answer = `${s.en} ${v.past} ${o.en} ${t.en}.`;
-
-      const tokens = tokenizeAnswer(answer);
-      const distractorPool = G4.objects.map(x => x.en).concat(G4.pastVerbs.map(x => x.past), ["tomorrow", "will"]);
-      const words = buildWordBankFrom(tokens, distractorPool, 3);
-      return { jp, answers: [answer], words };
-    }
-
-    function g4_makeFutureSentence() {
-      const s = pick(G4.subjects);
-      const p = pick(G4.places);
-      const t = { en: "tomorrow", jp: "明日" };
-
-      const jp = `${s.jp}${t.jp}${p.jp}へ行くつもりです。`;
-      const ans1 = `${s.en} will go to ${p.en} ${t.en}.`;
-      const ans2 = `${s.en} is going to go to ${p.en} ${t.en}.`;
-
-      const tokens = tokenizeAnswer(ans1);
-      const distractorPool = ["will", "is", "are", "going", "to", "go", "tomorrow"].concat(G4.places.map(x => x.en));
-      const words = buildWordBankFrom(tokens, distractorPool, 3);
-      uniquePush(words, "is"); uniquePush(words, "going");
-      return { jp, answers: [ans1, ans2], words };
-    }
-
-    function g4_makeComparativeSentence() {
-      const s = pick(G4.subjects.filter(x => x.en !== "I" && x.en !== "You"));
-      const adj = pick(G4.adjectives);
-      const jp = `${s.jp}私より${adj.jp}です。`;
-      const ans1 = `${s.en} is ${adj.en} than I.`;
-      const ans2 = `${s.en} is ${adj.en} than me.`;
-
-      const tokens = tokenizeAnswer(ans1);
-      const distractorPool = ["than", "me", "I", "am", "are", "is"].concat(G4.adjectives.map(x => x.en));
-      const words = buildWordBankFrom(tokens, distractorPool, 2);
-      uniquePush(words, "me");
-      return { jp, answers: [ans1, ans2], words };
-    }
-
-    function g4_makeToInfPurposeSentence() {
-      const s = pick(G4.subjects);
-      const p = pick(G4.places);
-      const jp = `${s.jp}その本を読むために${p.jp}へ行きました。`;
-      const answer = `${s.en} went to ${p.en} to read the book.`;
-
-      const tokens = tokenizeAnswer(answer);
-      const distractorPool = ["go", "went", "to", "read", "write", "the", "book"].concat(G4.places.map(x => x.en));
-      const words = buildWordBankFrom(tokens, distractorPool, 3);
-      return { jp, answers: [answer], words };
-    }
-
-    function g4_makeDidYouQuestion() {
-      const t = pick([{en:"yesterday", jp:"昨日"}, {en:"last week", jp:"先週"}]);
-      const jp = `あなたは${t.jp}何をしましたか。`;
-      const answer = `What did you do ${t.en}?`;
-
-      const tokens = tokenizeAnswer(answer);
-      const distractorPool = ["What", "did", "do", "does", "you", "yesterday", "last", "week"];
-      const words = buildWordBankFrom(tokens, distractorPool, 2);
-      return { jp, answers: [answer], words };
-    }
-
-    function g4_makeProgressiveSentence() {
-      const s = pick(G4.subjects);
-      const jp = `${s.jp}今、宿題をしています。`;
-      const ans1 = `${s.en} am doing my homework now.`;
-      const ans2 = `${s.en} are doing my homework now.`; // You/We/They 用に“形違い”も出やすく
-
-      // 主語に合わせて正解を切り替え
-      const correct = (s.en === "I") ? ans1 : ( (s.en === "You" || s.en === "We" || s.en === "They") ? ans2 : `${s.en} is doing my homework now.` );
-
-      const tokens = tokenizeAnswer(correct);
-      const distractorPool = ["am", "are", "is", "doing", "my", "homework", "now", "study"];
-      const words = buildWordBankFrom(tokens, distractorPool, 2);
-
-      const answers = [];
-      answers.push(correct);
-      // 別解（短縮）も許容
-      if (s.en === "I") answers.push(`I'm doing my homework now.`);
-      if (s.en === "You") answers.push(`You're doing my homework now.`);
-
-      uniquePush(words, "I'm");
-      uniquePush(words, "You're");
-      return { jp, answers, words };
-    }
-
-    function g4_makeCanSentence() {
-      const s = pick(G4.subjects);
-      const jp = `${s.jp}英語を話すことができます。`;
-      const answer = `${s.en} can speak English.`;
-
-      const tokens = tokenizeAnswer(answer);
-      const distractorPool = ["can", "cannot", "speak", "English", "music", "play", "study"];
-      const words = buildWordBankFrom(tokens, distractorPool, 3);
-      return { jp, answers: [answer], words };
-    }
-
-    const G4_TEMPLATES = [
-      g4_makePastSentence,
-      g4_makeFutureSentence,
-      g4_makeComparativeSentence,
-      g4_makeToInfPurposeSentence,
-      g4_makeDidYouQuestion,
-      g4_makeProgressiveSentence,
-      g4_makeCanSentence
-    ];
-
-    function generateGrade4(count) {
-      const out = [];
-      const seen = new Set();
-      let guard = 0;
-
-      while (out.length < count && guard < 5000) {
-        guard++;
-        const q = pick(G4_TEMPLATES)();
-        const key = normalizeSentence(q.answers[0]);
-        if (seen.has(key)) continue;
-        seen.add(key);
-        out.push(q);
-      }
-      return out;
-    }
-
-    // =========================
-    // 画面ロジック（既存の動き）
-    // =========================
     let currentGrade = "grade5";
     let currentIndex = 0;
     let score = 0;
     let answeredCorrect = new Set();
     let selectedWords = [];
+
+    // ★ 追加：問題ごとに「シャッフルされた並び」を固定するためのキャッシュ
+    // キー: "grade4-0" など / 値: [{word, index}...] の配列（表示順）
+    const wordOrderCache = new Map();
 
     const indexScreen = document.getElementById("indexScreen");
     const quizScreen = document.getElementById("quizScreen");
@@ -789,22 +421,17 @@
     const message = document.getElementById("message");
     const scoreEl = document.getElementById("score");
 
-    // セッション問題（開始時に自動生成して固定）
-    const sessionQuestions = { grade5: [], grade4: [] };
-
     function startGrade(grade) {
       currentGrade = grade;
       currentIndex = 0;
       score = 0;
       answeredCorrect = new Set();
       selectedWords = [];
-
-      // ★ここが本変更点：周回じゃなく「生成」で80問作る
-      sessionQuestions.grade5 = generateGrade5(TARGET_COUNT_PER_GRADE);
-      sessionQuestions.grade4 = generateGrade4(TARGET_COUNT_PER_GRADE);
+      wordOrderCache.clear(); // ★ グレード開始時にシャッフル状態をリセット
 
       indexScreen.classList.remove("active");
       quizScreen.classList.add("active");
+
       renderQuestion();
     }
 
@@ -815,7 +442,7 @@
     }
 
     function getCurrentQuestion() {
-      return sessionQuestions[currentGrade][currentIndex];
+      return questions[currentGrade][currentIndex];
     }
 
     function renderQuestion() {
@@ -823,8 +450,11 @@
       selectedWords = [];
 
       gradeTitle.textContent = currentGrade === "grade5" ? "GRADE5" : "GRADE4";
-      questionCount.textContent = `Q${currentIndex + 1}/${sessionQuestions[currentGrade].length}`;
+      questionCount.textContent = `Q${currentIndex + 1}/${questions[currentGrade].length}`;
       jpSentence.textContent = q.jp;
+
+      // ★ 初回描画時に、この問題の word-bank の表示順を作ってキャッシュ
+      ensureWordOrderForCurrentQuestion();
 
       renderAnswerArea();
       renderWordBank();
@@ -832,8 +462,27 @@
       clearMessage();
     }
 
+    // ===== ランダム化の核心 =====
+    function ensureWordOrderForCurrentQuestion() {
+      const key = `${currentGrade}-${currentIndex}`;
+      if (wordOrderCache.has(key)) return;
+
+      const q = getCurrentQuestion();
+      const arr = q.words.map((w, idx) => ({ word: w, index: idx }));
+
+      // Fisher–Yates shuffle
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+
+      wordOrderCache.set(key, arr);
+    }
+    // ===========================
+
     function renderAnswerArea() {
       answerArea.innerHTML = "";
+
       selectedWords.forEach((item, answerIndex) => {
         const btn = document.createElement("button");
         btn.className = "word";
@@ -844,26 +493,27 @@
     }
 
     function renderWordBank() {
-      const q = getCurrentQuestion();
+      const key = `${currentGrade}-${currentIndex}`;
+      const order = wordOrderCache.get(key) || [];
+
       wordBank.innerHTML = "";
 
-      // 単語ボタンの表示順は毎回ランダム
-      const indexedWords = q.words.map((w, idx) => ({ w, idx }));
-      const randomized = shuffleArray(indexedWords);
-
-      randomized.forEach(({ w, idx }) => {
+      order.forEach(({ word, index }) => {
         const btn = document.createElement("button");
         btn.className = "word";
-        const used = selectedWords.some(item => item.index === idx);
+
+        const used = selectedWords.some(item => item.index === index);
         if (used) btn.classList.add("used");
-        btn.textContent = w;
-        btn.onclick = () => selectWord(w, idx);
+
+        btn.textContent = word;
+        btn.onclick = () => selectWord(word, index);
         wordBank.appendChild(btn);
       });
     }
 
     function selectWord(word, index) {
       if (selectedWords.some(item => item.index === index)) return;
+
       selectedWords.push({ word, index });
       renderAnswerArea();
       renderWordBank();
@@ -884,6 +534,14 @@
       clearMessage();
     }
 
+    function normalizeSentence(sentence) {
+      return sentence
+        .toLowerCase()
+        .replace(/[.。]/g, "")  // ピリオドは無視
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
     function getUserSentence() {
       return selectedWords.map(item => item.word).join(" ");
     }
@@ -891,6 +549,7 @@
     function checkAnswer() {
       const q = getCurrentQuestion();
       const user = normalizeSentence(getUserSentence());
+
       const normalizedAnswers = q.answers.map(ans => normalizeSentence(ans));
       const isCorrect = normalizedAnswers.includes(user);
 
@@ -904,6 +563,7 @@
       } else {
         showMessage("ng", `もう一度！<br>正答・別解はこちら：<br>${formatAnswers(q.answers)}`);
       }
+
       updateScore();
     }
 
@@ -912,33 +572,40 @@
         return `正答：<strong>${answers[0]}</strong>`;
       }
       return answers
-        .map((ans, i) => {
-          if (i === 0) return `正答：<strong>${ans}</strong>`;
-          return `別解${i}：<strong>${ans}</strong>`;
-        })
+        .map((ans, i) => (i === 0 ? `正答：<strong>${ans}</strong>` : `別解${i}：<strong>${ans}</strong>`))
         .join("<br>");
     }
 
     function showHint() {
       const q = getCurrentQuestion();
       const firstAnswer = q.answers[0];
+
       const hintWords = firstAnswer
         .replace(/[.?!]/g, "")
         .split(/\s+/)
         .slice(0, 2)
         .join(" ");
+
       showMessage("info", `HINT：最初は <strong>${hintWords}</strong> ...`);
     }
 
     function nextQuestion() {
-      const total = sessionQuestions[currentGrade].length;
+      const total = questions[currentGrade].length;
       currentIndex = (currentIndex + 1) % total;
+
+      // ★ 次の問題の並びを用意
+      ensureWordOrderForCurrentQuestion();
+
       renderQuestion();
     }
 
     function prevQuestion() {
-      const total = sessionQuestions[currentGrade].length;
+      const total = questions[currentGrade].length;
       currentIndex = (currentIndex - 1 + total) % total;
+
+      // ★ 前の問題の並びを用意
+      ensureWordOrderForCurrentQuestion();
+
       renderQuestion();
     }
 
