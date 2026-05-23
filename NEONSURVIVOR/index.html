@@ -131,6 +131,7 @@ canvas{
   position:absolute; inset:0; display:none; place-items:center;
   border-radius:16px; background:rgba(0,0,0,.35);
   z-index:120;
+  pointer-events:auto;
 }
 .overlay.show{display:grid}
 .overlay .card{
@@ -146,6 +147,7 @@ canvas{
 .kbd{font:600 12px ui-monospace,SFMono-Regular,Menlo,monospace;color:rgba(255,255,255,.85)}
 </style>
 </head>
+
 <body>
 <div class="wrap">
   <div class="frame">
@@ -226,7 +228,7 @@ function distPointSeg(px,py,x1,y1,x2,y2){
   const c1=vx*wx+vy*wy;
   if(c1<=0) return Math.hypot(px-x1,py-y1);
   const c2=vx*vx+vy*vy;
-  if(c2<=c1) return Math.hypot(px-x2,py-y2);
+  if(c2<=c1) return Math.hypot(px-x2,py-y2); // ★修正（py-x2 → py-y2）
   const t=c1/c2;
   const bx=x1+t*vx, by=y1+t*vy;
   return Math.hypot(px-bx,py-by);
@@ -236,6 +238,26 @@ function distPointSeg(px,py,x1,y1,x2,y2){
 const IS_MOBILE = (window.matchMedia && window.matchMedia("(pointer:coarse)").matches) || ("ontouchstart" in window);
 const input = { up:0,down:0,left:0,right:0, ax:0,ay:0, focus:0, bomb:0, type:0, pause:0, start:0 };
 function consume(k){ const v=input[k]; input[k]=0; return v; }
+
+// ===== Tiny SFX (optional) =====
+let audioCtx=null;
+function ensureAudio(){ if(audioCtx) return; try{ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); }catch(_e){} }
+function unlockAudio(){ ensureAudio(); if(!audioCtx) return; if(audioCtx.state==="suspended") audioCtx.resume().catch(()=>{}); }
+function beep(type,f1,f2,t,g){
+  if(!audioCtx || audioCtx.state!=="running") return;
+  const now=audioCtx.currentTime;
+  const o=audioCtx.createOscillator();
+  const ga=audioCtx.createGain();
+  o.type=type;
+  o.frequency.setValueAtTime(f1,now);
+  if(f2) o.frequency.exponentialRampToValueAtTime(f2, now+t);
+  ga.gain.setValueAtTime(g,now);
+  ga.gain.exponentialRampToValueAtTime(0.0001, now+t);
+  o.connect(ga); ga.connect(audioCtx.destination);
+  o.start(now); o.stop(now+t+0.02);
+}
+addEventListener("pointerdown", unlockAudio, {once:true, passive:true});
+addEventListener("keydown", unlockAudio, {once:true});
 
 // ===== Mobile buttons =====
 function uiTouchOn(el){ if(el) el.classList.add("ui-touch"); }
@@ -269,7 +291,16 @@ function uiTouchOff(el){ if(el) el.classList.remove("ui-touch"); }
     pauseBtn.addEventListener("pointercancel",(e)=>{ e.preventDefault(); setActive(pauseBtn,false); uiTouchOff(pauseBtn); }, {passive:false});
   }
 
-  cvs.addEventListener("pointerdown", ()=>{ input.start=1; }, {passive:true});
+  // ★ overlay上でもタップで start を立てる（スマホ開始）
+  function tapStart(e){
+    if(e && e.preventDefault) e.preventDefault();
+    input.start = 1;
+    unlockAudio();
+  }
+  cvs.addEventListener("pointerdown", tapStart, {passive:false});
+  if(overlay) overlay.addEventListener("pointerdown", tapStart, {passive:false});
+  cvs.addEventListener("touchstart", tapStart, {passive:false});
+  if(overlay) overlay.addEventListener("touchstart", tapStart, {passive:false});
 })();
 
 // ===== Joystick =====
@@ -333,26 +364,6 @@ addEventListener("keyup",(e)=>{
   if(k==="Shift") input.focus=0;
 });
 
-// ===== Tiny SFX (optional) =====
-let audioCtx=null;
-function ensureAudio(){ if(audioCtx) return; try{ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); }catch(_e){} }
-function unlockAudio(){ ensureAudio(); if(!audioCtx) return; if(audioCtx.state==="suspended") audioCtx.resume().catch(()=>{}); }
-function beep(type,f1,f2,t,g){
-  if(!audioCtx || audioCtx.state!=="running") return;
-  const now=audioCtx.currentTime;
-  const o=audioCtx.createOscillator();
-  const ga=audioCtx.createGain();
-  o.type=type;
-  o.frequency.setValueAtTime(f1,now);
-  if(f2) o.frequency.exponentialRampToValueAtTime(f2, now+t);
-  ga.gain.setValueAtTime(g,now);
-  ga.gain.exponentialRampToValueAtTime(0.0001, now+t);
-  o.connect(ga); ga.connect(audioCtx.destination);
-  o.start(now); o.stop(now+t+0.02);
-}
-addEventListener("pointerdown", unlockAudio, {once:true, passive:true});
-addEventListener("keydown", unlockAudio, {once:true});
-
 // ===== Colors =====
 const colors = {
   cyan:"#72f7ff", pink:"#ff5db1", orange:"#ffb347", green:"#89ff9b",
@@ -378,8 +389,8 @@ let paused=false;
 const game = {
   t:0,
   stage:1,
-  stageT:0,           // stage timer (frames)
-  stageKills:0,       // kills in this stage
+  stageT:0,
+  stageKills:0,
   totalKills:0,
   xp:0, xpNext:14,
   level:1,
@@ -399,7 +410,7 @@ const player = {
   inv: 0,
   spd: 3.9,
   dmg: 1.0,
-  fireRate: 14,       // ripple pulse interval base
+  fireRate: 14,
   shotT: 0,
   magnet: 54
 };
@@ -412,10 +423,10 @@ const upg = {
 };
 
 // Entities
-let bullets=[];   // dot bullets for WIDE
-let ripples=[];  // ripple rings
-let lasers=[];   // beam
-let eBullets=[]; // enemy/boss bullets
+let bullets=[];
+let ripples=[];
+let lasers=[];
+let eBullets=[];
 let enemies=[];
 let drops=[];
 let bursts=[];
@@ -662,14 +673,22 @@ function bossUpdate(){
     const col=boss.col;
 
     // base interval
-    boss.cd = Math.max(10, 34 - ph*6 - ((stg-1)*2));
+    boss.cd = Math.max(10, 50 - ph*6 - ((stg-1)*2));
+
+    // ★ボス弾スピード調整（遅くして回避可能に）
+    const SPEED_MUL_A = 0.72; // aimed fan
+    const SPEED_MUL_B = 0.70; // ring
+    const SPEED_MUL_C = 0.68; // spiral
 
     // pattern A: aimed fan
     const nA = 5 + ph*2;
     const dx=px-boss.x, dy=py-boss.y;
     const a0=Math.atan2(dy,dx);
     const spread = (ph>=3)?0.09:0.12;
-    const spd = 2.6 + stg*0.18 + ph*0.12;
+
+    // 旧: 2.6 + stg*0.18 + ph*0.12
+    const spd = (2.15 + stg*0.12 + ph*0.08) * SPEED_MUL_A;
+
     for(let i=0;i<nA;i++){
       const a=a0 + (i-(nA-1)/2)*spread;
       eBullets.push({x:boss.x,y:boss.y,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,r:4,life:240,col:col,dmg:1,boss:true});
@@ -678,7 +697,8 @@ function bossUpdate(){
     // pattern B: ring (phase 2+)
     if(ph>=2 && (boss.t%2===0)){
       const nB = 10 + stg*2;
-      const sp2 = 1.9 + stg*0.12;
+      // 旧: 1.9 + stg*0.12
+      const sp2 = (1.55 + stg*0.08) * SPEED_MUL_B;
       for(let i=0;i<nB;i++){
         const a=(i/nB)*Math.PI*2 + boss.t*0.01;
         eBullets.push({x:boss.x,y:boss.y,vx:Math.cos(a)*sp2,vy:Math.sin(a)*sp2,r:3,life:220,col:"rgba(255,255,255,.85)",dmg:1,boss:true});
@@ -688,9 +708,10 @@ function bossUpdate(){
     // pattern C: spiral (phase 3+)
     if(ph>=3){
       const arms = 3 + (stg>=5?1:0);
+      // 旧: 2.2 + stg*0.10
+      const sp3 = (1.75 + stg*0.06) * SPEED_MUL_C;
       for(let k=0;k<arms;k++){
         const a = Math.PI + boss.t*0.08 + k*(Math.PI*2/arms);
-        const sp3 = 2.2 + stg*0.10;
         eBullets.push({x:boss.x,y:boss.y,vx:Math.cos(a)*sp3,vy:Math.sin(a)*sp3,r:4,life:260,col:colors.gold,dmg:1,boss:true,curve:(k%2===0?0.005:-0.005)});
       }
     }
@@ -737,18 +758,18 @@ function updateOrbit(){
 
 // ===== Combat: player firing =====
 function spawnRipple(){
-  // Ripple = expanding ring centered on player. It "magnetizes" capsules widely.
+  // ★射程をさらに伸ばす（前回より強め）
   const col=colors.cyan;
-  const baseGrow = input.focus ? 3.0 : 3.6;
-  const baseLife = input.focus ? 40 : 36;
-  const r0 = 10;
+  const baseGrow = input.focus ? 4.2 : 5.3;
+  const baseLife = input.focus ? 64 : 56;
+  const r0 = 14;
   ripples.push({
     x:player.x, y:player.y,
     r:r0,
     life:baseLife, maxLife:baseLife,
     grow:baseGrow,
     col:col,
-    dmg: player.dmg * 0.55
+    dmg: player.dmg * 0.80
   });
 }
 function shootWide(){
@@ -774,12 +795,15 @@ function shootLaser(){
   const L=hypot(dx,dy);
   const ux=dx/L, uy=dy/L;
   const multi=upg.multi|0;
-  const len = 140 + game.stage*10 + multi*12;
+
+  // ★射程をさらに伸ばす（ほぼ画面貫通）
+  const len = 320 + game.stage*22 + multi*28;
+
   lasers.push({
     x1: player.x + ux*10, y1: player.y + uy*10,
     x2: player.x + ux*(10+len), y2: player.y + uy*(10+len),
     w: (input.focus ? 6 : 4) + Math.min(3,multi),
-    dmg: player.dmg*0.55,
+    dmg: player.dmg*0.85,
     life: 10,
     col: colors.green
   });
@@ -1176,10 +1200,14 @@ function stageClearMet(){
   const timeSec = game.stageT/60;
   const goalT = stageGoalTimeSec(stg);
   const goalK = stageGoalKills(stg);
-  // 条件：時間+キル両方（ただし最低時間は必須）
-  if(timeSec >= goalT && game.stageKills >= goalK) return true;
-  // 保険：時間が大幅に超えたらボスへ（詰まり防止）
-  if(timeSec >= goalT + 25) return true;
+
+  // ★ゆるく：時間達成＋キル85%でもOK
+  if(timeSec >= goalT && game.stageKills >= Math.floor(goalK*0.85)) return true;
+  // ★ゆるく：時間85%＋キル達成でもOK
+  if(timeSec >= goalT*0.85 && game.stageKills >= goalK) return true;
+  // ★詰まり防止：保険時間少し短縮（旧:+25）
+  if(timeSec >= goalT + 20) return true;
+
   return false;
 }
 
@@ -1260,8 +1288,8 @@ function updateRipples(){
     r.life--;
     r.r += r.grow;
 
-    // absorb capsules widely: mark drops as magnetized if within ripple radius + margin
-    const absorbR = r.r + 22;
+    // ★吸収（磁化）範囲も拡大（さらに吸いやすく）
+    const absorbR = r.r + 52;
     const absorbR2 = absorbR*absorbR;
     for(let j=0;j<drops.length;j++){
       const d=drops[j];
@@ -1271,7 +1299,7 @@ function updateRipples(){
       }
     }
 
-    // damage enemies (tick with cooldown)
+    // damage enemies
     const rr = r.r;
     const rr2 = rr*rr;
     for(let j=enemies.length-1;j>=0;j--){
@@ -1294,7 +1322,7 @@ function updateRipples(){
       }
     }
 
-    // boss damage (less frequent)
+    // boss damage
     if(boss){
       if(boss.rippleCD>0) boss.rippleCD--;
       const dd = dist2(r.x,r.y,boss.x,boss.y);
@@ -1344,7 +1372,7 @@ function updateBullets(){
 
     // hit boss
     if(boss && hitCircle(b.x,b.y,b.r, boss.x,boss.y,boss.r)){
-      boss.hp -= b.dmg*0.55;
+      boss.hp -= b.dmg*0.80;
       if(boss.hp<0) boss.hp=0;
       shake=Math.max(shake,1.5);
       addBurst(b.x,b.y, b.col, 3, 1.2);
@@ -1660,7 +1688,7 @@ function update(){
   // stage/boss logic
   if(state==="play"){
     game.stageT++;
-    updateWeapons();        // RIPPLE/WIDE/LASER auto fire
+    updateWeapons();
     updateRipples();
     updateBullets();
     updateEnemies();
@@ -1675,7 +1703,6 @@ function update(){
     updateParticles();
   }
   else if(state==="boss"){
-    // boss fight: allow shooting + ripples + drops too
     updateWeapons();
     updateRipples();
     updateBullets();
@@ -1743,7 +1770,7 @@ function render(){
     ctx.restore();
   }
 
-  // ending / over overlays handled by overlay (but keep HUD hidden)
+  // HUD
   if(state==="play"||state==="boss"||state==="bossIntro"||state==="clear"){
     drawHUD();
   }
