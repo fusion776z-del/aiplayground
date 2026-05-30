@@ -12,6 +12,7 @@ window.setActiveSkill = setActiveSkill;
 window.turnLeft = turnLeft;
 window.turnRight = turnRight;
 window.lookCenter = lookCenter;
+window.toggleSkillShop = toggleSkillShop;
 
 // =========================
 // お店データ
@@ -927,6 +928,19 @@ function setActiveSkill(skillKey) {
     status.innerHTML =
       `🚀 移動方法を ${skill.name} に変更しました！<br>` +
       `前進1回で経過時間 +${skill.moveTime}秒、維持費 ${skill.maintenance}円です。`;
+  }
+}
+
+
+function toggleSkillShop(force) {
+  const open = typeof force === "boolean"
+    ? force
+    : !document.body.classList.contains("skill-shop-open");
+  document.body.classList.toggle("skill-shop-open", open);
+  const btn = document.getElementById("skillShopToggle");
+  if (btn) {
+    btn.innerText = open ? "閉じる" : "🛒 スキル";
+    btn.setAttribute("aria-expanded", String(open));
   }
 }
 
