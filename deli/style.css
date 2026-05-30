@@ -1,0 +1,192 @@
+body {
+  margin: 0;
+  font-family: sans-serif;
+  background: #111;
+  color: white;
+  text-align: center;
+}
+
+.container {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+h1 {
+  margin: 12px 0 16px;
+}
+
+.card,
+.info-box {
+  background: #1d1d1d;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+.order-title {
+  font-size: 22px;
+  font-weight: bold;
+  color: #7df9ff;
+  margin-bottom: 6px;
+}
+
+.sub {
+  color: #bfbfbf;
+  margin: 6px 0;
+  font-size: 14px;
+}
+
+.shop-grid,
+.skill-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+button {
+  border: none;
+  border-radius: 12px;
+  padding: 14px 10px;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+  background: #2d2d2d;
+  color: white;
+}
+
+button:hover {
+  background: #3a3a3a;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.action-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.move-btn {
+  background: #0066ff;
+}
+
+.deliver-btn {
+  background: #00a86b;
+}
+
+.next-btn {
+  background: #ff8c00;
+  display: none;
+}
+
+#status {
+  min-height: 72px;
+  line-height: 1.7;
+  font-size: 16px;
+}
+
+#timer {
+  font-size: 20px;
+  color: yellow;
+  font-weight: bold;
+  margin: 8px 0;
+}
+
+#progress {
+  font-size: 16px;
+  color: #90ee90;
+  margin: 8px 0;
+}
+
+#scoreBoard {
+  line-height: 1.8;
+  font-size: 16px;
+}
+
+.small {
+  font-size: 13px;
+  color: #bbbbbb;
+}
+
+.selected-shop {
+  color: #ffd166;
+  font-weight: bold;
+}
+
+.skill-card {
+  background: #252525;
+  border-radius: 12px;
+  padding: 12px;
+  text-align: left;
+}
+
+.skill-title {
+  font-weight: bold;
+  color: #ffdb7d;
+  margin-bottom: 6px;
+}
+
+.skill-desc {
+  font-size: 13px;
+  color: #ddd;
+  margin-bottom: 10px;
+  line-height: 1.6;
+}
+
+.skill-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.buy-btn {
+  background: #8a2be2;
+}
+
+.use-btn {
+  background: #009688;
+}
+
+.badge-owned {
+  display: inline-block;
+  background: #00a86b;
+  color: white;
+  padding: 3px 8px;
+  border-radius: 99px;
+  font-size: 12px;
+  margin-left: 6px;
+}
+
+.badge-active {
+  display: inline-block;
+  background: #0066ff;
+  color: white;
+  padding: 3px 8px;
+  border-radius: 99px;
+  font-size: 12px;
+  margin-left: 6px;
+}
+
+@media (max-width: 640px) {
+  .shop-grid,
+  .skill-grid {
+    grid-template-columns: 1fr;
+  }
+
+  button {
+    font-size: 14px;
+    padding: 12px 8px;
+  }
+
+  #timer {
+    font-size: 18px;
+  }
+}
