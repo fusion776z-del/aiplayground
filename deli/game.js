@@ -27,16 +27,65 @@ const orders = [
 
 // =========================
 // スキルデータ
-// moveTime: 前進1回ごとに増える経過時間
-// cost: 購入金額（仮のおすすめ値。好きに変えられます）
+// moveTime: 前進1回で増える経過時間
+// maxUses: 1注文あたりの使用回数
+// maintenance: 1回使うごとの維持費
 // =========================
 const movementSkills = {
-  walk:      { key: "walk",      name: "歩く",       moveTime: 8, cost: 0,    ownedByDefault: true },
-  run:       { key: "run",       name: "走る",       moveTime: 7, cost: 120,  ownedByDefault: false },
-  bicycle:   { key: "bicycle",   name: "自転車",     moveTime: 6, cost: 260,  ownedByDefault: false },
-  bike:      { key: "bike",      name: "バイク",     moveTime: 5, cost: 520,  ownedByDefault: false },
-  car:       { key: "car",       name: "自動車",     moveTime: 4, cost: 900,  ownedByDefault: false },
-  parkour:   { key: "parkour",   name: "パルクール", moveTime: 3, cost: 1400, ownedByDefault: false }
+  walk: {
+    key: "walk",
+    name: "歩く",
+    moveTime: 8,
+    cost: 0,
+    maxUses: Infinity,
+    maintenance: 0,
+    ownedByDefault: true
+  },
+  run: {
+    key: "run",
+    name: "走る",
+    moveTime: 7,
+    cost: 120,
+    maxUses: Infinity,
+    maintenance: 0,
+    ownedByDefault: false
+  },
+  bicycle: {
+    key: "bicycle",
+    name: "自転車",
+    moveTime: 6,
+    cost: 260,
+    maxUses: 6,
+    maintenance: 5,
+    ownedByDefault: false
+  },
+  bike: {
+    key: "bike",
+    name: "バイク",
+    moveTime: 5,
+    cost: 520,
+    maxUses: 4,
+    maintenance: 12,
+    ownedByDefault: false
+  },
+  car: {
+    key: "car",
+    name: "自動車",
+    moveTime: 4,
+    cost: 900,
+    maxUses: 3,
+    maintenance: 20,
+    ownedByDefault: false
+  },
+  parkour: {
+    key: "parkour",
+    name: "パルクール",
+    moveTime: 3,
+    cost: 1400,
+    maxUses: 2,
+    maintenance: 0,
+    ownedByDefault: false
+  }
 };
 
 // =========================
@@ -46,13 +95,14 @@ let currentOrder = null;
 let selectedShopKey = null;
 let selectedShop = null;
 let time = 0;
-let money = 0;         // 所持金（購入に使う）
+let money = 0;         // 所持金（購入と維持費に使う）
 let totalEarned = 0;   // 累計報酬
 let bestMoney = parseInt(localStorage.getItem("deliveryBestMoney") || "0", 10);
 let progressSteps = 0;
 let orderFinished = false;
 let activeMoveSkill = localStorage.getItem("deliveryActiveMoveSkill") || "walk";
 let ownedSkills = loadOwnedSkills();
+let skillUsesLeft = {};
 
 // =========================
 // 初期化
@@ -65,6 +115,7 @@ window.onload = () => {
     activeMoveSkill = "walk";
   }
 
+  resetSkillUses();
   renderSkillShop();
   updateMoveText();
   updateScoreBoard();
@@ -90,6 +141,21 @@ function saveSkillState() {
   localStorage.setItem("deliveryBestMoney", String(bestMoney));
 }
 
+function resetSkillUses() {
+  skillUsesLeft = {};
+  Object.values(movementSkills).forEach((skill) => {
+    skillUsesLeft[skill.key] = skill.maxUses;
+  });
+}
+
+function getUsesLabel(skillKey) {
+  const skill = movementSkills[skillKey];
+  if (skill.maxUses === Infinity) {
+    return "無制限";
+  }
+  return `${skillUsesLeft[skillKey]}回 / ${skill.maxUses}回`;
+}
+
 // =========================
 // 新しい注文
 // =========================
@@ -100,6 +166,7 @@ function newOrder() {
   time = 0;
   progressSteps = 0;
   orderFinished = false;
+  resetSkillUses();
 
   document.getElementById("orderText").innerText = "注文：" + currentOrder.name;
   document.getElementById("orderRule").innerText = "制限時間：" + currentOrder.timeLimit + "秒";
@@ -109,6 +176,8 @@ function newOrder() {
   updateTimer();
   updateProgress();
   updateMoveText();
+  updateScoreBoard();
+  renderSkillShop();
   document.getElementById("nextBtn").style.display = "none";
 }
 
@@ -130,7 +199,7 @@ function chooseShop(shopKey) {
 }
 
 // =========================
-// タイマー表示
+// 表示更新
 // =========================
 function updateTimer() {
   document.getElementById("timer").innerText = "経過時間：" + time + "秒";
@@ -148,8 +217,9 @@ function updateProgress() {
 
 function updateMoveText() {
   const skill = movementSkills[activeMoveSkill];
+  const usesLabel = skill.maxUses === Infinity ? "回数無制限" : `残り${skillUsesLeft[skill.key]}回`;
   document.getElementById("selectedMoveText").innerText =
-    `現在の移動方法：${skill.name}（1回で経過時間 +${skill.moveTime}秒）`;
+    `現在の移動方法：${skill.name}（1回で経過時間 +${skill.moveTime}秒 / 維持費 ${skill.maintenance}円 / ${usesLabel}）`;
 }
 
 // =========================
@@ -164,22 +234,49 @@ function move() {
   }
 
   const skill = movementSkills[activeMoveSkill];
+
+  if (skillUsesLeft[skill.key] <= 0) {
+    document.getElementById("status").innerHTML =
+      `⚠️ ${skill.name} はこの注文ではもう使えません。<br>別の移動方法に切り替えてください。`;
+    renderSkillShop();
+    updateMoveText();
+    return;
+  }
+
+  if (money < skill.maintenance) {
+    document.getElementById("status").innerHTML =
+      `⚠️ 所持金が足りないため ${skill.name} を使えません。<br>別の移動方法に切り替えてください。`;
+    return;
+  }
+
   progressSteps++;
   time += skill.moveTime;
+  money -= skill.maintenance;
+
+  if (skill.maxUses !== Infinity) {
+    skillUsesLeft[skill.key]--;
+  }
+
+  if (money < 0) money = 0;
 
   updateTimer();
   updateProgress();
+  updateMoveText();
+  updateScoreBoard();
+  renderSkillShop();
 
   const remain = selectedShop.travelSteps - progressSteps;
 
   if (remain > 0) {
     document.getElementById("status").innerHTML =
       `<span class="selected-shop">${selectedShop.name}</span> に移動中…<br>` +
-      `到着まであと ${remain} 回前進`;
+      `到着まであと ${remain} 回前進<br>` +
+      `${skill.name} を使用（維持費 -${skill.maintenance}円）`;
   } else {
     document.getElementById("status").innerHTML =
       `<span class="selected-shop">${selectedShop.name}</span> に到着しました！<br>` +
-      `『配達する』を押してください。`;
+      `『配達する』を押してください。<br>` +
+      `${skill.name} を使用（維持費 -${skill.maintenance}円）`;
   }
 }
 
@@ -218,6 +315,7 @@ function deliver() {
     progressSteps = 0;
 
     updateProgress();
+    updateMoveText();
     updateScoreBoard();
     renderSkillShop();
     saveSkillState();
@@ -279,6 +377,7 @@ function deliver() {
 
   orderFinished = true;
   document.getElementById("nextBtn").style.display = "inline-block";
+  updateMoveText();
   updateScoreBoard();
   renderSkillShop();
   saveSkillState();
@@ -294,6 +393,7 @@ function renderSkillShop() {
   Object.values(movementSkills).forEach((skill) => {
     const owned = !!ownedSkills[skill.key];
     const active = activeMoveSkill === skill.key;
+    const usesLabel = skill.maxUses === Infinity ? "無制限" : `${skillUsesLeft[skill.key]}回 / ${skill.maxUses}回`;
 
     const card = document.createElement("div");
     card.className = "skill-card";
@@ -307,7 +407,9 @@ function renderSkillShop() {
       <div class="skill-title">${skill.name}${badges}</div>
       <div class="skill-desc">
         前進1回で経過時間 +${skill.moveTime}秒<br>
-        価格：${skill.cost}円
+        購入価格：${skill.cost}円<br>
+        維持費：${skill.maintenance}円 / 回<br>
+        残り回数：${usesLabel}
       </div>
       <div class="skill-actions">
         <button class="buy-btn" ${owned ? 'disabled' : ''} onclick="buySkill('${skill.key}')">購入</button>
@@ -357,7 +459,7 @@ function setActiveSkill(skillKey) {
   const skill = movementSkills[skillKey];
   document.getElementById("status").innerHTML =
     `🚀 移動方法を ${skill.name} に変更しました！<br>` +
-    `前進1回で経過時間 +${skill.moveTime}秒です。`;
+    `前進1回で経過時間 +${skill.moveTime}秒、維持費 ${skill.maintenance}円です。`;
 }
 
 // =========================
