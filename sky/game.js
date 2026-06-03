@@ -8955,3 +8955,214 @@ loop();
   }
 
 })();
+/* =========================================================
+   スマホ用 ショップ強化タップ対応パッチ 完全版
+   貼る場所:
+   - game.js の一番下
+   - これまで貼った全パッチよりさらに後ろ
+
+   効果:
+   - スマホでショップ項目を直接タップして購入できる
+   - 剣 / 盾 / 魔法 の3項目をタップ購入
+   - 移動用ジョイスティックや右ボタン操作と干渉しにくい
+   - キーボード 1 / 2 / 3 購入もそのまま維持
+   - ショップUIに「タップで強化」を追加表示
+   ========================================================= */
+(function(){
+  if(window.__mobileShopTapBuyPatchApplied) return;
+  window.__mobileShopTapBuyPatchApplied = true;
+
+  /*
+    shop UI は game.js の ui() 内でこの位置に描画されている:
+    for(let i=0;i<items.length;i++){
+      const y=305+i*60;
+      RR(34,y,VW-68,48,12);
+    }
+    そのため、この矩形をタップ判定に使う。
+  */
+  const SHOP_ITEM_X = 34;
+  const SHOP_ITEM_W = VW - 68;
+  const SHOP_ITEM_Y0 = 305;
+  const SHOP_ITEM_H = 48;
+  const SHOP_ITEM_GAP = 60;
+
+  function canvasPointFromEvent(e){
+    const rect = cvs.getBoundingClientRect();
+
+    /*
+      canvas は CSS で拡大縮小されているので、
+      実座標を 360x640 のゲーム座標へ変換する。
+    */
+    const x = (e.clientX - rect.left) * (cvs.width / rect.width);
+    const y = (e.clientY - rect.top) * (cvs.height / rect.height);
+
+    return {x,y};
+  }
+
+  function getShopItemIndexAt(x,y){
+    if(typeof shopItems !== "function") return -1;
+
+    const items = shopItems();
+
+    for(let i=0;i<items.length;i++){
+      const iy = SHOP_ITEM_Y0 + i * SHOP_ITEM_GAP;
+
+      if(
+        x >= SHOP_ITEM_X &&
+        x <= SHOP_ITEM_X + SHOP_ITEM_W &&
+        y >= iy &&
+        y <= iy + SHOP_ITEM_H
+      ){
+        return i;
+      }
+    }
+
+    return -1;
+  }
+
+  function tryTapBuyShopItem(e){
+    if(typeof G === "undefined") return false;
+    if(G.state !== "shop") return false;
+    if(!G.shop) return false;
+
+    const p = canvasPointFromEvent(e);
+    const idx = getShopItemIndexAt(p.x,p.y);
+
+    if(idx < 0){
+      return false;
+    }
+
+    /*
+      ここで止めないと、既存の canvas pointerdown が input.action=1 を立てて
+      ショップを閉じることがある。
+    */
+    e.preventDefault();
+    e.stopPropagation();
+
+    if(typeof e.stopImmediatePropagation === "function"){
+      e.stopImmediatePropagation();
+    }
+
+    if(typeof buy === "function"){
+      buy(idx);
+    }
+
+    /*
+      購入タップが ACT として処理されてショップが閉じないようにする。
+    */
+    if(typeof flush === "function"){
+      flush();
+    }else if(typeof input !== "undefined"){
+      input.attack = 0;
+      input.action = 0;
+      input.start = 0;
+      input.magic = 0;
+      input.dash = 0;
+    }
+
+    return true;
+  }
+
+  /*
+    capture:true で、既存の cvs pointerdown より先に拾う。
+    これがスマホでショップが勝手に閉じる対策。
+  */
+  cvs.addEventListener("pointerdown",function(e){
+    tryTapBuyShopItem(e);
+  },{capture:true,passive:false});
+
+  cvs.addEventListener("touchstart",function(e){
+    if(typeof G === "undefined") return;
+    if(G.state !== "shop") return;
+
+    /*
+      touchstart でもブラウザのダブルタップズームやスクロールを抑制。
+      実際の購入処理は pointerdown 側で行う。
+    */
+    e.preventDefault();
+  },{capture:true,passive:false});
+
+  /*
+    右側 ACT ボタンはこれまで通り閉じる用に残す。
+    ただしショップ中に ATK/MAGIC/DASH を押しても変な入力が残らないようにする。
+  */
+  ["attackBtn","magicBtn","dashBtn"].forEach(id=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+
+    el.addEventListener("pointerdown",function(e){
+      if(typeof G !== "undefined" && G.state === "shop"){
+        e.preventDefault();
+        e.stopPropagation();
+
+        if(typeof e.stopImmediatePropagation === "function"){
+          e.stopImmediatePropagation();
+        }
+
+        if(typeof flush === "function"){
+          flush();
+        }
+      }
+    },{capture:true,passive:false});
+  });
+
+  /*
+    ショップUIの説明文をスマホ向けに上乗せ表示。
+    既存 ui() を壊さず、draw の最後に説明だけ追加する。
+  */
+  function drawMobileShopTapHint(){
+    if(typeof G === "undefined") return;
+    if(G.state !== "shop") return;
+
+    ctx.save();
+    ctx.setTransform(1,0,0,1,0,0);
+
+    /*
+      既存UIの説明文付近に、スマホ向け文言を追加。
+    */
+    ctx.fillStyle = "#fff7a8";
+    ctx.font = "900 12px system-ui";
+    ctx.textAlign = "left";
+    ctx.fillText("スマホ: 強化したい項目をタップ",38,286);
+
+    /*
+      各購入枠に薄いタップガイドを追加。
+    */
+    const items = typeof shopItems === "function" ? shopItems() : [];
+
+    for(let i=0;i<items.length;i++){
+      const y = SHOP_ITEM_Y0 + i * SHOP_ITEM_GAP;
+
+      ctx.save();
+      ctx.globalAlpha = 0.18 + Math.sin((G.time || 0) * 0.08 + i) * 0.04;
+      ctx.strokeStyle = "#ffd84d";
+      ctx.lineWidth = 2;
+
+      if(typeof RR === "function"){
+        RR(SHOP_ITEM_X,y,SHOP_ITEM_W,SHOP_ITEM_H,12);
+        ctx.stroke();
+      }else{
+        ctx.strokeRect(SHOP_ITEM_X,y,SHOP_ITEM_W,SHOP_ITEM_H);
+      }
+
+      ctx.restore();
+
+      ctx.fillStyle = "rgba(255,255,255,.82)";
+      ctx.font = "800 10px system-ui";
+      ctx.textAlign = "right";
+      ctx.fillText("TAP",SHOP_ITEM_X + SHOP_ITEM_W - 14,y + 30);
+    }
+
+    ctx.restore();
+  }
+
+  if(typeof draw === "function"){
+    const __oldDrawMobileShopTapBuy = draw;
+
+    draw = function(){
+      __oldDrawMobileShopTapBuy();
+      drawMobileShopTapHint();
+    };
+  }
+
+})();
