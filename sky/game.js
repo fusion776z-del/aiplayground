@@ -8536,3 +8536,422 @@ loop();
   });
 
 })();
+/* =========================================================
+   スマホ操作 最終安定化パッチ
+   - ジョイスティックが右ボタン操作で止まる問題を修正
+   - アタック連打で画面が拡大する問題を防止
+   - 移動しながら ATK / MAGIC / DASH / ACT を押せる
+   - 既存の joystick パッチよりさらに後ろに貼る
+   ========================================================= */
+(function(){
+  if(window.__finalMobileControlStabilityPatchApplied) return;
+  window.__finalMobileControlStabilityPatchApplied = true;
+
+  const JOY_RADIUS = 54;
+  const STICK_MAX = 42;
+  const DEAD_ZONE = 0.16;
+
+  const joy = document.getElementById("joystick");
+  const stick = document.getElementById("stick");
+
+  /*
+    1) スマホのダブルタップズーム・選択・長押しメニューを抑制
+  */
+  (function preventMobileZoomAndSelection(){
+    let meta = document.querySelector('meta[name="viewport"]');
+
+    if(!meta){
+      meta = document.createElement("meta");
+      meta.name = "viewport";
+      document.head.appendChild(meta);
+    }
+
+    meta.setAttribute(
+      "content",
+      "width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"
+    );
+
+    const style = document.createElement("style");
+    style.textContent = `
+      html, body, canvas, #game, #joystick, #stick, .actions, .tbtn {
+        touch-action: none !important;
+        -ms-touch-action: none !important;
+        -webkit-user-select: none !important;
+        user-select: none !important;
+        -webkit-touch-callout: none !important;
+        -webkit-tap-highlight-color: transparent !important;
+      }
+
+      #joystick, #stick, .actions, .tbtn {
+        overscroll-behavior: none !important;
+      }
+
+      .tbtn {
+        cursor: pointer;
+      }
+    `;
+    document.head.appendChild(style);
+
+    /*
+      iOS Safari 対策。
+      gesturestart / gesturechange は Safari 系でピンチ拡大を止めるための保険。
+    */
+    ["gesturestart","gesturechange","gestureend"].forEach(type=>{
+      document.addEventListener(type,function(e){
+        e.preventDefault();
+      },{passive:false});
+    });
+
+    /*
+      ダブルタップズーム対策。
+    */
+    let lastTouchEnd = 0;
+
+    document.addEventListener("touchend",function(e){
+      const now = Date.now();
+
+      if(now - lastTouchEnd <= 350){
+        e.preventDefault();
+      }
+
+      lastTouchEnd = now;
+    },{passive:false});
+
+    document.addEventListener("dblclick",function(e){
+      e.preventDefault();
+    },{passive:false});
+  })();
+
+  /*
+    2) 右ボタンを押した時に左スティックが止まらないよう、
+       ジョイスティック状態を input.ax / input.ay とは別に保持する。
+       以前のパッチが input.ax を 0 にしても、ここで毎フレーム戻す。
+  */
+  window.__mobileJoy = window.__mobileJoy || {
+    active:false,
+    pointerId:null,
+    centerX:0,
+    centerY:0,
+    ax:0,
+    ay:0
+  };
+
+  const joyState = window.__mobileJoy;
+
+  if(input){
+    input.ax = input.ax || 0;
+    input.ay = input.ay || 0;
+  }
+
+  function updateCenter(){
+    if(!joy) return;
+
+    const rect = joy.getBoundingClientRect();
+
+    joyState.centerX = rect.left + rect.width / 2;
+    joyState.centerY = rect.top + rect.height / 2;
+  }
+
+  function setStickVisual(nx,ny){
+    if(!stick) return;
+
+    const sx = nx * STICK_MAX;
+    const sy = ny * STICK_MAX;
+
+    stick.style.transform =
+      "translate(calc(-50% + " + sx + "px), calc(-50% + " + sy + "px))";
+  }
+
+  function resetJoy(){
+    joyState.active = false;
+    joyState.pointerId = null;
+    joyState.ax = 0;
+    joyState.ay = 0;
+
+    if(input){
+      input.ax = 0;
+      input.ay = 0;
+    }
+
+    setStickVisual(0,0);
+  }
+
+  function applyJoystickPoint(clientX,clientY){
+    let dx = clientX - joyState.centerX;
+    let dy = clientY - joyState.centerY;
+
+    const len = Math.hypot(dx,dy);
+
+    if(len > JOY_RADIUS){
+      dx = dx / len * JOY_RADIUS;
+      dy = dy / len * JOY_RADIUS;
+    }
+
+    let nx = dx / JOY_RADIUS;
+    let ny = dy / JOY_RADIUS;
+
+    const mag = Math.hypot(nx,ny);
+
+    if(mag < DEAD_ZONE){
+      nx = 0;
+      ny = 0;
+    }
+
+    joyState.ax = nx;
+    joyState.ay = ny;
+
+    if(input){
+      input.ax = nx;
+      input.ay = ny;
+    }
+
+    setStickVisual(nx,ny);
+  }
+
+  /*
+    3) ジョイスティックの pointer 処理。
+       重要:
+       - reset は同じ pointerId の時だけ
+       - 右ボタンの pointerup では reset しない
+  */
+  if(joy && stick){
+    joy.addEventListener("pointerdown",function(e){
+      e.preventDefault();
+      e.stopPropagation();
+
+      joyState.active = true;
+      joyState.pointerId = e.pointerId;
+
+      updateCenter();
+
+      try{
+        joy.setPointerCapture(e.pointerId);
+      }catch(err){}
+
+      applyJoystickPoint(e.clientX,e.clientY);
+    },{passive:false});
+
+    joy.addEventListener("pointermove",function(e){
+      if(!joyState.active) return;
+      if(joyState.pointerId !== e.pointerId) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      applyJoystickPoint(e.clientX,e.clientY);
+    },{passive:false});
+
+    joy.addEventListener("pointerup",function(e){
+      if(joyState.pointerId !== e.pointerId) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      try{
+        joy.releasePointerCapture(e.pointerId);
+      }catch(err){}
+
+      resetJoy();
+    },{passive:false});
+
+    joy.addEventListener("pointercancel",function(e){
+      if(joyState.pointerId !== e.pointerId) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      resetJoy();
+    },{passive:false});
+
+    joy.addEventListener("lostpointercapture",function(){
+      /*
+        lostpointercapture は攻撃ボタンでは基本発生しないが、
+        スティック側の capture が失われた時だけ止める。
+      */
+      if(joyState.active){
+        resetJoy();
+      }
+    });
+  }
+
+  /*
+    4) 右ボタン側の pointerup がジョイスティックへ影響しないようにする。
+       既存の tap() は pointerdown だけを使って input を入れているため、
+       ここでは stopPropagation と preventDefault を追加する。
+  */
+  ["attackBtn","magicBtn","dashBtn","actionBtn"].forEach(id=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+
+    function stopTouch(e){
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    el.addEventListener("pointerdown",function(e){
+      stopTouch(e);
+    },{passive:false});
+
+    el.addEventListener("pointermove",function(e){
+      stopTouch(e);
+    },{passive:false});
+
+    el.addEventListener("pointerup",function(e){
+      stopTouch(e);
+    },{passive:false});
+
+    el.addEventListener("pointercancel",function(e){
+      stopTouch(e);
+    },{passive:false});
+
+    el.addEventListener("touchstart",function(e){
+      stopTouch(e);
+    },{passive:false});
+
+    el.addEventListener("touchend",function(e){
+      stopTouch(e);
+    },{passive:false});
+  });
+
+  /*
+    5) document pointerup で雑に reset しない。
+       ただし、ジョイスティックの pointerId と一致する時だけ reset する。
+       これが「ATKを離すと移動が止まる」対策の本命。
+  */
+  document.addEventListener("pointerup",function(e){
+    if(!joyState.active) return;
+    if(joyState.pointerId !== e.pointerId) return;
+
+    resetJoy();
+  },{passive:true});
+
+  document.addEventListener("pointercancel",function(e){
+    if(!joyState.active) return;
+    if(joyState.pointerId !== e.pointerId) return;
+
+    resetJoy();
+  },{passive:true});
+
+  window.addEventListener("blur",function(){
+    resetJoy();
+  });
+
+  document.addEventListener("visibilitychange",function(){
+    if(document.hidden){
+      resetJoy();
+    }
+  });
+
+  window.addEventListener("resize",function(){
+    if(joyState.active){
+      updateCenter();
+    }
+  });
+
+  window.addEventListener("orientationchange",function(){
+    resetJoy();
+  });
+
+  /*
+    6) updP を最終上書き。
+       input.ax / input.ay が他の古いパッチで 0 にされても、
+       joyState.ax / joyState.ay を優先して移動する。
+  */
+  updP = function(){
+    const p = G.player;
+    if(!p) return;
+
+    ["inv","dashCd","attackCd","attackT","comboT"].forEach(k=>{
+      if(p[k] > 0){
+        p[k]--;
+      }
+    });
+
+    if(p.comboT <= 0){
+      p.combo = 0;
+    }
+
+    let mx = input.right - input.left;
+    let my = input.down - input.up;
+
+    /*
+      ジョイスティックが生きている間は joyState を優先。
+      これにより、ATKボタンの pointerup で input.ax が一瞬0になっても止まらない。
+    */
+    const jx = joyState.active ? joyState.ax : (input.ax || 0);
+    const jy = joyState.active ? joyState.ay : (input.ay || 0);
+
+    if(Math.hypot(jx,jy) > DEAD_ZONE){
+      mx = jx;
+      my = jy;
+    }
+
+    const nn = nrm(mx,my);
+
+    p.vx = nn.l > .001 ? nn.x : 0;
+    p.vy = nn.l > .001 ? nn.y : 0;
+
+    if(Math.abs(mx) + Math.abs(my) > 0.001){
+      p.dir = Math.abs(mx) > Math.abs(my)
+        ? (mx > 0 ? "right" : "left")
+        : (my > 0 ? "down" : "up");
+    }
+
+    let sp = p.speed;
+
+    if(C("dash") && p.dashCd <= 0){
+      p.dashT = 10;
+      p.dashCd = 40;
+      p.inv = Math.max(p.inv,16);
+    }
+
+    if(p.dashT > 0){
+      p.dashT--;
+      sp = 7.4;
+    }
+
+    if(nn.l > .001){
+      move(p,nn.x * sp,nn.y * sp);
+    }
+
+    /*
+      攻撃・魔法・アクションは移動と独立して処理。
+      これで移動しながらATKを押しても止まりにくい。
+    */
+    if(C("attack") && p.attackCd <= 0){
+      attack();
+    }
+
+    if(C("magic")){
+      magic();
+    }
+
+    if(C("action")){
+      action();
+    }
+  };
+
+  /*
+    7) 毎フレーム input.ax/ay を復元する保険。
+       古いパッチの document pointerup が input.ax/ay を0にしても、
+       左スティックが active なら次フレームで復活する。
+  */
+  if(typeof update === "function"){
+    const __oldUpdateFinalMobileControl = update;
+
+    update = function(){
+      if(joyState.active && input){
+        input.ax = joyState.ax;
+        input.ay = joyState.ay;
+      }
+
+      __oldUpdateFinalMobileControl();
+
+      if(joyState.active && input){
+        input.ax = joyState.ax;
+        input.ay = joyState.ay;
+      }
+    };
+  }
+
+})();
