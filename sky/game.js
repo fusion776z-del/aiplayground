@@ -9166,3 +9166,341 @@ loop();
   }
 
 })();
+/* =========================================================
+   スマホ操作ボタン再割り当て 最終版
+   貼る場所:
+   - game.js の一番下
+   - これまで貼った全パッチよりさらに後ろ
+
+   変更内容:
+   - ACTボタンを HERB ボタンに変更
+   - ATKボタンに ACT / START の効果も追加
+   - スマホでは ATK で攻撃・会話送り・宝箱・扉・ショップ閉じる
+   - HERBボタンで薬草を使用
+   - 既存の actionBtn の古い action 入力を止める
+   - 以前追加した herbBtn があれば削除して重複を防ぐ
+   ========================================================= */
+(function(){
+  if(window.__atkIncludesActAndActBecomesHerbPatchApplied) return;
+  window.__atkIncludesActAndActBecomesHerbPatchApplied = true;
+
+  const attackBtn = document.getElementById("attackBtn");
+  const actionBtn = document.getElementById("actionBtn");
+
+  /*
+    以前の薬草ボタン追加パッチで herbBtn が存在する場合は削除。
+    今回は ACT ボタン自体を HERB にする。
+  */
+  const oldHerbBtn = document.getElementById("herbBtn");
+  if(oldHerbBtn && oldHerbBtn !== actionBtn){
+    oldHerbBtn.remove();
+  }
+
+  function stop(e){
+    if(!e) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    if(typeof e.stopImmediatePropagation === "function"){
+      e.stopImmediatePropagation();
+    }
+  }
+
+  function restoreJoystickIfActive(){
+    /*
+      右ボタン操作でジョイスティックが止まらないように保険。
+      以前のスマホ操作安定化パッチの joyState がある場合は復元する。
+    */
+    if(window.__mobileJoy && window.__mobileJoy.active && typeof input !== "undefined"){
+      input.ax = window.__mobileJoy.ax || 0;
+      input.ay = window.__mobileJoy.ay || 0;
+    }
+  }
+
+  function clearButtonInputsOnly(){
+    /*
+      移動入力は消さず、ボタン系だけ消す。
+      ジョイスティック移動を邪魔しない。
+    */
+    if(typeof input === "undefined") return;
+
+    input.attack = 0;
+    input.action = 0;
+    input.start = 0;
+    input.magic = 0;
+    input.dash = 0;
+
+    restoreJoystickIfActive();
+  }
+
+  function herbCount(){
+    if(typeof G === "undefined" || !G.player) return 0;
+
+    const inv = G.player.inventory || [];
+    let total = 0;
+
+    for(const v of inv){
+      if(
+        typeof v === "object" &&
+        v &&
+        v.id === "small_herb" &&
+        (v.count || 0) > 0
+      ){
+        total += v.count || 0;
+      }
+    }
+
+    return total;
+  }
+
+  function useHerbFromActButton(){
+    if(typeof G === "undefined") return;
+    if(!G.player) return;
+
+    /*
+      HERBボタンはフィールド中だけ有効。
+      会話中・ショップ中・クリア画面などで暴発しないようにする。
+      ショップを閉じたい時は ATK ボタンを押す。
+    */
+    if(G.state !== "field"){
+      return;
+    }
+
+    const p = G.player;
+
+    if(herbCount() <= 0){
+      if(typeof msg === "function"){
+        msg("薬草を持っていない", 50);
+      }
+      clearButtonInputsOnly();
+      return;
+    }
+
+    if(p.hp >= p.maxHp){
+      if(typeof msg === "function"){
+        msg("HPは満タンだ", 45);
+      }
+      clearButtonInputsOnly();
+      return;
+    }
+
+    /*
+      既存の herb() を使う。
+      herb() は small_herb を1個減らして HP を回復する既存処理。
+    */
+    if(typeof herb === "function"){
+      herb();
+    }else{
+      /*
+        herb() が何らかの理由で見えない場合の保険。
+      */
+      const item = (p.inventory || []).find(v =>
+        typeof v === "object" &&
+        v &&
+        v.id === "small_herb" &&
+        v.count > 0
+      );
+
+      if(item){
+        item.count--;
+        p.hp = Math.min(p.maxHp, p.hp + 5);
+      }
+    }
+
+    if(typeof msg === "function"){
+      msg("薬草を使った！", 45);
+    }
+
+    clearButtonInputsOnly();
+  }
+
+  function pressAtkWithAct(){
+    if(typeof input === "undefined") return;
+
+    /*
+      ATKボタンに以下をまとめる:
+      - attack: 攻撃
+      - action: 会話送り / 宝箱 / 扉 / ショップ閉じる
+      - start : タイトル開始 / クリア画面送り
+    */
+    if(typeof G !== "undefined" && G.lock > 0){
+      return;
+    }
+
+    input.attack = 1;
+    input.action = 1;
+    input.start = 1;
+
+    restoreJoystickIfActive();
+  }
+
+  /*
+    ACTボタンをHERBボタンとして見た目変更。
+  */
+  if(actionBtn){
+    actionBtn.textContent = "HERB";
+    actionBtn.setAttribute("data-count", "0");
+    actionBtn.title = "薬草を使う";
+
+    actionBtn.style.background = "rgba(46,190,100,.30)";
+    actionBtn.style.color = "#eaffd2";
+    actionBtn.style.position = "relative";
+  }
+
+  /*
+    HERB所持数バッジ用CSS。
+  */
+  const style = document.createElement("style");
+  style.textContent = `
+    #actionBtn{
+      background:rgba(46,190,100,.30) !important;
+      color:#eaffd2 !important;
+      position:relative !important;
+    }
+
+    #actionBtn::after{
+      content:attr(data-count);
+      position:absolute;
+      right:7px;
+      top:5px;
+      min-width:18px;
+      height:18px;
+      padding:0 4px;
+      border-radius:999px;
+      background:rgba(8,25,45,.72);
+      color:#fff7a8;
+      font-size:11px;
+      line-height:18px;
+      text-align:center;
+      pointer-events:none;
+    }
+
+    #attackBtn::after{
+      content:"ACT";
+      position:absolute;
+      right:6px;
+      top:5px;
+      font-size:10px;
+      color:#fff7a8;
+      opacity:.9;
+      pointer-events:none;
+    }
+
+    #attackBtn{
+      position:relative !important;
+    }
+  `;
+  document.head.appendChild(style);
+
+  /*
+    重要:
+    元の game.js には tap("actionBtn","action") がある。
+    それを止めるため、capture:true + stopImmediatePropagation で先に拾う。
+  */
+  if(actionBtn){
+    actionBtn.addEventListener("pointerdown",function(e){
+      stop(e);
+      useHerbFromActButton();
+    },{capture:true,passive:false});
+
+    actionBtn.addEventListener("pointerup",function(e){
+      stop(e);
+    },{capture:true,passive:false});
+
+    actionBtn.addEventListener("pointermove",function(e){
+      stop(e);
+    },{capture:true,passive:false});
+
+    actionBtn.addEventListener("pointercancel",function(e){
+      stop(e);
+    },{capture:true,passive:false});
+
+    actionBtn.addEventListener("touchstart",function(e){
+      stop(e);
+    },{capture:true,passive:false});
+
+    actionBtn.addEventListener("touchend",function(e){
+      stop(e);
+    },{capture:true,passive:false});
+  }
+
+  /*
+    ATKボタンを ATK + ACT + START にする。
+    元の tap("attackBtn","attack") を止めて、こちらでまとめて入力する。
+  */
+  if(attackBtn){
+    attackBtn.addEventListener("pointerdown",function(e){
+      stop(e);
+      pressAtkWithAct();
+    },{capture:true,passive:false});
+
+    attackBtn.addEventListener("pointerup",function(e){
+      stop(e);
+      restoreJoystickIfActive();
+    },{capture:true,passive:false});
+
+    attackBtn.addEventListener("pointermove",function(e){
+      stop(e);
+      restoreJoystickIfActive();
+    },{capture:true,passive:false});
+
+    attackBtn.addEventListener("pointercancel",function(e){
+      stop(e);
+      restoreJoystickIfActive();
+    },{capture:true,passive:false});
+
+    attackBtn.addEventListener("touchstart",function(e){
+      stop(e);
+    },{capture:true,passive:false});
+
+    attackBtn.addEventListener("touchend",function(e){
+      stop(e);
+    },{capture:true,passive:false});
+  }
+
+  function updateHerbCountBadge(){
+    if(!actionBtn) return;
+
+    const c = herbCount();
+    actionBtn.setAttribute("data-count", String(c));
+
+    /*
+      薬草がない時は薄く、ある時は見やすく。
+    */
+    if(c <= 0){
+      actionBtn.style.opacity = "0.34";
+    }else{
+      actionBtn.style.opacity = "0.66";
+    }
+  }
+
+  /*
+    update/draw のたびに所持数表示を更新。
+  */
+  if(typeof update === "function"){
+    const __oldUpdateAtkActHerbPatch = update;
+
+    update = function(){
+      updateHerbCountBadge();
+      __oldUpdateAtkActHerbPatch();
+      updateHerbCountBadge();
+      restoreJoystickIfActive();
+    };
+  }
+
+  if(typeof draw === "function"){
+    const __oldDrawAtkActHerbPatch = draw;
+
+    draw = function(){
+      __oldDrawAtkActHerbPatch();
+      updateHerbCountBadge();
+    };
+  }
+
+  /*
+    すでにロード済みでも即反映。
+  */
+  updateHerbCountBadge();
+
+})();
