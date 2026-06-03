@@ -23,39 +23,47 @@
       min-height:100vh;
     }
 
-    /* ===== 背景 ===== */
+    /* ===== THREE BG ===== */
+    #bgCanvas{
+      position:fixed;
+      top:0;
+      left:0;
+      width:100%;
+      height:100%;
+      z-index:-10;
+    }
 
+    /* ===== 背景 ===== */
     .bg{
       position:fixed;
       inset:0;
       background:
-      radial-gradient(circle at top left,#1b2a52 0%,transparent 30%),
-      radial-gradient(circle at bottom right,#00f0ff22 0%,transparent 35%),
-      #050816;
+        radial-gradient(circle at top left,#1b2a52 0%,transparent 30%),
+        radial-gradient(circle at bottom right,#00f0ff22 0%,transparent 35%),
+        #050816;
       z-index:-3;
     }
 
     /* グリッド */
-
     .grid{
       position:fixed;
       inset:0;
       background-image:
-      linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+        linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
       background-size:40px 40px;
       mask-image:linear-gradient(to bottom, rgba(0,0,0,1), rgba(0,0,0,0.2));
       z-index:-2;
     }
 
     /* 浮遊する光 */
-
     .glow{
       position:absolute;
       border-radius:50%;
       filter:blur(100px);
       opacity:0.5;
       animation:float 8s ease-in-out infinite;
+      pointer-events:none;
     }
 
     .g1{
@@ -85,7 +93,6 @@
     }
 
     /* ===== HERO ===== */
-
     .hero{
       min-height:100vh;
       display:flex;
@@ -93,7 +100,7 @@
       justify-content:center;
       align-items:center;
       text-align:center;
-      padding:40px 20px;
+      padding:40px 20px 80px;
       position:relative;
     }
 
@@ -114,17 +121,14 @@
       font-weight:700;
       line-height:1;
       margin-bottom:25px;
-
       background:linear-gradient(
-      90deg,
-      #ffffff,
-      #00ffff,
-      #7b61ff
+        90deg,
+        #ffffff,
+        #00ffff,
+        #7b61ff
       );
-
       -webkit-background-clip:text;
       -webkit-text-fill-color:transparent;
-
       animation:glitch 5s infinite;
     }
 
@@ -163,66 +167,7 @@
       }
     }
 
-    /* ===== ボタン ===== */
-
-    .buttons{
-      display:flex;
-      gap:20px;
-      flex-wrap:wrap;
-      justify-content:center;
-      margin-bottom:80px;
-    }
-
-    .btn{
-      padding:18px 34px;
-      border-radius:16px;
-      border:1px solid #ffffff20;
-      text-decoration:none;
-      color:white;
-      font-weight:600;
-      transition:0.3s;
-      position:relative;
-      overflow:hidden;
-      backdrop-filter:blur(12px);
-      background:#ffffff08;
-    }
-
-    .btn::before{
-      content:"";
-      position:absolute;
-      inset:0;
-      background:linear-gradient(
-      90deg,
-      transparent,
-      rgba(255,255,255,0.2),
-      transparent
-      );
-      transform:translateX(-100%);
-      transition:0.6s;
-    }
-
-    .btn:hover::before{
-      transform:translateX(100%);
-    }
-
-    .btn:hover{
-      transform:translateY(-5px) scale(1.03);
-      border-color:#00ffff88;
-      box-shadow:
-      0 0 20px #00ffff55,
-      0 0 50px #00ffff22;
-    }
-
-    .primary{
-      background:linear-gradient(
-      135deg,
-      #00d9ff,
-      #7b61ff
-      );
-    }
-
     /* ===== カード ===== */
-
     .cards{
       width:100%;
       max-width:1200px;
@@ -239,9 +184,11 @@
       background:rgba(255,255,255,0.05);
       border:1px solid rgba(255,255,255,0.1);
       backdrop-filter:blur(20px);
-
       transition:0.4s;
       overflow:hidden;
+      text-decoration:none;
+      color:white;
+      min-height:220px;
     }
 
     .card::before{
@@ -249,10 +196,10 @@
       position:absolute;
       inset:0;
       background:linear-gradient(
-      135deg,
-      transparent,
-      rgba(255,255,255,0.08),
-      transparent
+        135deg,
+        transparent,
+        rgba(255,255,255,0.08),
+        transparent
       );
       opacity:0;
       transition:0.4s;
@@ -264,12 +211,26 @@
 
     .card:hover{
       transform:
-      translateY(-10px)
-      rotateX(5deg)
-      rotateY(-5deg);
-
+        translateY(-10px)
+        rotateX(5deg)
+        rotateY(-5deg);
       box-shadow:
-      0 10px 40px rgba(0,255,255,0.15);
+        0 10px 40px rgba(0,255,255,0.15);
+    }
+
+    .card.sky-card{
+      border-color:rgba(255,216,77,0.35);
+      background:
+        radial-gradient(circle at top right,rgba(255,216,77,0.18),transparent 36%),
+        radial-gradient(circle at bottom left,rgba(99,216,255,0.16),transparent 42%),
+        rgba(255,255,255,0.05);
+    }
+
+    .card.sky-card:hover{
+      box-shadow:
+        0 0 22px rgba(255,216,77,0.35),
+        0 12px 46px rgba(99,216,255,0.18);
+      border-color:rgba(255,216,77,0.75);
     }
 
     .icon{
@@ -288,8 +249,11 @@
       line-height:1.8;
     }
 
-    /* ===== スクロール ===== */
+    .sky-card p{
+      color:#fff3b8;
+    }
 
+    /* ===== スクロール ===== */
     .scroll{
       position:absolute;
       bottom:30px;
@@ -309,9 +273,7 @@
     }
 
     /* ===== レスポンシブ ===== */
-
     @media(max-width:768px){
-
       .title{
         font-size:3rem;
       }
@@ -320,39 +282,26 @@
         font-size:1rem;
       }
 
-      .buttons{
-        flex-direction:column;
-        width:100%;
+      .cards{
+        grid-template-columns:1fr;
       }
 
-      .btn{
-        width:100%;
+      .card{
         text-align:center;
       }
     }
-/* ===== THREE BG ===== */
-
-#bgCanvas{
-  position:fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  z-index:-10;
-}
   </style>
 </head>
+
 <body>
-<canvas id="bgCanvas"></canvas>
+  <canvas id="bgCanvas"></canvas>
 
   <div class="bg"></div>
   <div class="grid"></div>
-
   <div class="glow g1"></div>
   <div class="glow g2"></div>
 
   <section class="hero">
-
     <div class="badge">
       🚀 AI × GAME × EDUCATION
     </div>
@@ -367,199 +316,190 @@
       遊びながら学べる未来をつくる。
     </p>
 
-    
+    <div class="cards">
 
+      <!-- SKY ISLAND ADVENTURE -->
+      <a href="sky/index.html" class="card sky-card">
+        <div class="icon">🏝️</div>
+        <h3>SKY ISLAND</h3>
+        <p>
+          七つの空島を巡るアクションRPG。<br>
+          鍵・魔法陣・決闘空間・ボス戦を突破しよう。
+        </p>
+      </a>
 
-<div class="cards">
-<!-- 3D NEON -->
-<a href="3dNEON/index.html" class="card">
-  <div class="icon">🎮</div>
-  <h3>3dNEON</h3>
-  <p>
-    スマホで遊べる3Dシューティング。<br>
-    全5ステージ構成のネオンアクション。
-  </p>
-</a>
+      <!-- 3D NEON -->
+      <a href="3dNEON/index.html" class="card">
+        <div class="icon">🎮</div>
+        <h3>3dNEON</h3>
+        <p>
+          スマホで遊べる3Dシューティング。<br>
+          全5ステージ構成のネオンアクション。
+        </p>
+      </a>
 
+      <!-- NEON STRIKER -->
+      <a href="NEON/index.html" class="card">
+        <div class="icon">⚡</div>
+        <h3>NEON STRIKER</h3>
+        <p>
+          高速シューティング。<br>
+          レーザー・ボム・斬り抜ける王道弾幕。
+        </p>
+      </a>
 
-  <!-- AI GAMES -->
-  <!-- NEON STRIKER -->
-<a href="NEON/index.html" class="card">
-  <div class="icon">⚡</div>
-  <h3>NEON STRIKER</h3>
-  <p>
-    高速シューティング。<br>
-    レーザー・ボム・斬り抜ける王道弾幕。
-  </p>
-</a>
+      <!-- NEON SURVIVOR -->
+      <a href="NEONSURVIVOR/index.html" class="card">
+        <div class="icon">🌀</div>
+        <h3>NEON SURVIVOR</h3>
+        <p>
+          リップルで吸収進化。<br>
+          7ステージ×ボス戦のサバイバル。
+        </p>
+      </a>
 
-<!-- NEON SURVIVOR -->
-<a href="NEONSURVIVOR/index.html" class="card">
-  <div class="icon">🌀</div>
-  <h3>NEON SURVIVOR</h3>
-  <p>
-    リップルで吸収進化。<br>
-    7ステージ×ボス戦のサバイバル。
-  </p>
-</a>
+      <!-- ENGLISH -->
+      <a href="englishstudy/index.html" class="card">
+        <div class="icon">📘</div>
+        <h3>ENGLISH STUDY</h3>
+        <p>
+          AIに作らせた 英語学習コンテンツ。
+        </p>
+      </a>
 
-  <!-- ENGLISH -->
-  <a href="englishstudy/index.html" class="card">
-    <div class="icon">📘</div>
-    <h3>ENGLISH STUDY</h3>
-    <p>
-      AIに作らせた　英語学習コンテンツ。
-    </p>
-  </a>
+      <!-- MPCB -->
+      <a href="mpcbstudy/index.html" class="card">
+        <div class="icon">🧠</div>
+        <h3>MPCB STUDY</h3>
+        <p>
+          AIに作らせた 数学・物理・化学・生物の
+          学習コンテンツ。
+        </p>
+      </a>
 
-  <!-- MPCB -->
-  <a href="mpcbstudy/index.html" class="card">
-    <div class="icon">🧠</div>
-    <h3>MPCB STUDY</h3>
-    <p>
-      AIに作らせた　数学・物理・化学・生物の
-      学習コンテンツ。
-    </p>
-  </a>
+      <!-- STOCKSTUDY -->
+      <a href="stockstudy/index.html" class="card">
+        <div class="icon">📈</div>
+        <h3>STOCKSTUDY</h3>
+        <p>
+          AIに作らせた 株価のチャート
+          学習コンテンツ。
+        </p>
+      </a>
 
-  <!-- STOCKSTUDY -->
-  <a href="stockstudy/index.html" class="card">
-    <div class="icon">⚡</div>
-    <h3>STOCKSTUDY</h3>
-    <p>
-      AIに作らせた　株価のチャート
-      学習コンテンツ。
-    </p>
-  </a>
-<!-- DELIVERY GAME -->
-<a href="deli/index.html" class="card">
-  <div class="icon">🚚</div>
-  <h3>配達ゲーム</h3>
-  <p>
-    注文を正しく選んで時間内に配達！<br>
-    移動方法と戦略がカギのシミュレーションゲーム。
-  </p>
-</a>
-</div>
+      <!-- DELIVERY GAME -->
+      <a href="deli/index.html" class="card">
+        <div class="icon">🚚</div>
+        <h3>配達ゲーム</h3>
+        <p>
+          注文を正しく選んで時間内に配達！<br>
+          移動方法と戦略がカギのシミュレーションゲーム。
+        </p>
+      </a>
 
+    </div>
   </section>
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-<script>
 
-// ===== SCENE =====
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 
-const scene = new THREE.Scene({const scene = new THREE.Scene();
-  canvas:document.getElementById("bgCanvas"),
-  alpha:true
-});
+  <script>
+    // ===== THREE BG =====
+    const canvas = document.getElementById("bgCanvas");
 
-renderer.setSize(
-  window.innerWidth,
-  window.innerHeight
-);
+    const scene = new THREE.Scene();
 
-renderer.setPixelRatio(window.devicePixelRatio);
+    const camera = new THREE.PerspectiveCamera(
+      75,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      1000
+    );
 
-// ===== PARTICLES =====
+    camera.position.z = 5;
 
-const particlesGeometry =
-new THREE.BufferGeometry();
+    const renderer = new THREE.WebGLRenderer({
+      canvas:canvas,
+      alpha:true,
+      antialias:true
+    });
 
-const particlesCount = 2000;
+    renderer.setSize(
+      window.innerWidth,
+      window.innerHeight
+    );
 
-const posArray =
-new Float32Array(particlesCount * 3);
+    renderer.setPixelRatio(
+      Math.min(window.devicePixelRatio, 2)
+    );
 
-for(let i = 0; i < particlesCount * 3; i++){
+    // ===== PARTICLES =====
+    const particlesGeometry = new THREE.BufferGeometry();
+    const particlesCount = 2000;
+    const posArray = new Float32Array(particlesCount * 3);
 
-  posArray[i] =
-  (Math.random() - 0.5) * 20;
-}
+    for(let i = 0; i < particlesCount * 3; i++){
+      posArray[i] = (Math.random() - 0.5) * 20;
+    }
 
-particlesGeometry.setAttribute(
-  'position',
-  new THREE.BufferAttribute(posArray,3)
-);
+    particlesGeometry.setAttribute(
+      "position",
+      new THREE.BufferAttribute(posArray,3)
+    );
 
-// ===== MATERIAL =====
+    // ===== MATERIAL =====
+    const particlesMaterial = new THREE.PointsMaterial({
+      size:0.02,
+      color:"#00ffff",
+      transparent:true,
+      opacity:0.8
+    });
 
-const particlesMaterial =
-new THREE.PointsMaterial({
+    // ===== MESH =====
+    const particlesMesh = new THREE.Points(
+      particlesGeometry,
+      particlesMaterial
+    );
 
-  size:0.02,
-  color:"#00ffff",
+    scene.add(particlesMesh);
 
-  transparent:true,
-  opacity:0.8
-});
+    // ===== MOUSE =====
+    let mouseX = 0;
+    let mouseY = 0;
 
-// ===== MESH =====
+    document.addEventListener("mousemove",(event)=>{
+      mouseX = event.clientX / window.innerWidth - 0.5;
+      mouseY = event.clientY / window.innerHeight - 0.5;
+    });
 
-const particlesMesh =
-new THREE.Points(
-  particlesGeometry,
-  particlesMaterial
-);
+    // ===== ANIMATE =====
+    function animate(){
+      requestAnimationFrame(animate);
 
-scene.add(particlesMesh);
+      particlesMesh.rotation.y += 0.001;
+      particlesMesh.rotation.x += 0.0005;
 
-camera.position.z = 5;
+      particlesMesh.rotation.y += mouseX * 0.002;
+      particlesMesh.rotation.x += mouseY * 0.002;
 
-// ===== MOUSE =====
+      renderer.render(scene,camera);
+    }
 
-let mouseX = 0;
-let mouseY = 0;
+    animate();
 
-document.addEventListener("mousemove",(event)=>{
+    // ===== RESIZE =====
+    window.addEventListener("resize",()=>{
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
 
-  mouseX =
-  event.clientX / window.innerWidth - 0.5;
+      renderer.setSize(
+        window.innerWidth,
+        window.innerHeight
+      );
 
-  mouseY =
-  event.clientY / window.innerHeight - 0.5;
-});
-
-// ===== ANIMATE =====
-
-function animate(){
-
-  requestAnimationFrame(animate);
-
-  particlesMesh.rotation.y += 0.001;
-  particlesMesh.rotation.x += 0.0005;
-
-  particlesMesh.rotation.y += mouseX * 0.002;
-  particlesMesh.rotation.x += mouseY * 0.002;
-
-  renderer.render(scene,camera);
-}
-
-animate();
-
-// ===== RESIZE =====
-
-window.addEventListener("resize",()=>{
-
-  camera.aspect =
-  window.innerWidth / window.innerHeight;
-
-  camera.updateProjectionMatrix();
-
-  renderer.setSize(
-    window.innerWidth,
-    window.innerHeight
-  );
-});
-const camera = new THREE.PerspectiveCamera(
-  75,
-  window.innerWidth / window.innerHeight,
-  0.1,
-  1000
-);
-
-</script>
-
-
-
+      renderer.setPixelRatio(
+        Math.min(window.devicePixelRatio, 2)
+      );
+    });
+  </script>
 </body>
 </html>
