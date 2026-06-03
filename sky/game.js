@@ -8280,3 +8280,259 @@ loop();
   };
 
 })();
+/* =========================================================
+   スマホ左ジョイスティック有効化パッチ 完全版
+   貼る場所:
+   - game.js の一番下
+   - これまで貼った全パッチよりさらに後ろ
+
+   効果:
+   - index.html の #joystick / #stick を使って移動できる
+   - 左下ジョイスティックで上下左右・斜め移動
+   - PCのキーボード操作はそのまま維持
+   - 指を離したら自動で停止
+   - タイトル画面でもジョイスティック操作中に誤作動しにくい
+   ========================================================= */
+(function(){
+  if(window.__mobileJoystickControlPatchApplied) return;
+  window.__mobileJoystickControlPatchApplied = true;
+
+  const JOY_RADIUS = 54;
+  const STICK_MAX = 42;
+  const DEAD_ZONE = 0.16;
+
+  const joy = document.getElementById("joystick");
+  const stick = document.getElementById("stick");
+
+  if(!joy || !stick){
+    console.warn("[JoystickPatch] #joystick または #stick が見つかりません");
+    return;
+  }
+
+  let active = false;
+  let pointerId = null;
+  let centerX = 0;
+  let centerY = 0;
+
+  /*
+    キーボード入力と競合しないように、
+    ジョイスティック専用の値を input.ax / input.ay に入れる。
+  */
+  input.ax = 0;
+  input.ay = 0;
+
+  function resetStick(){
+    active = false;
+    pointerId = null;
+
+    input.ax = 0;
+    input.ay = 0;
+
+    /*
+      ジョイスティック由来の方向入力だけ戻す。
+      キーボード操作中でも変になりにくいよう、
+      ここでは ax/ay を主に使う。
+    */
+    stick.style.transform = "translate(-50%,-50%)";
+  }
+
+  function updateCenter(){
+    const rect = joy.getBoundingClientRect();
+    centerX = rect.left + rect.width / 2;
+    centerY = rect.top + rect.height / 2;
+  }
+
+  function applyPointer(clientX, clientY){
+    let dx = clientX - centerX;
+    let dy = clientY - centerY;
+
+    const len = Math.hypot(dx,dy);
+
+    if(len > JOY_RADIUS){
+      dx = dx / len * JOY_RADIUS;
+      dy = dy / len * JOY_RADIUS;
+    }
+
+    const nx = dx / JOY_RADIUS;
+    const ny = dy / JOY_RADIUS;
+
+    const mag = Math.hypot(nx,ny);
+
+    if(mag < DEAD_ZONE){
+      input.ax = 0;
+      input.ay = 0;
+    }else{
+      input.ax = nx;
+      input.ay = ny;
+    }
+
+    const sx = nx * STICK_MAX;
+    const sy = ny * STICK_MAX;
+
+    stick.style.transform =
+      "translate(calc(-50% + " + sx + "px), calc(-50% + " + sy + "px))";
+  }
+
+  joy.addEventListener("pointerdown",function(e){
+    e.preventDefault();
+
+    active = true;
+    pointerId = e.pointerId;
+
+    try{
+      joy.setPointerCapture(pointerId);
+    }catch(err){}
+
+    updateCenter();
+    applyPointer(e.clientX,e.clientY);
+  },{passive:false});
+
+  joy.addEventListener("pointermove",function(e){
+    if(!active) return;
+    if(pointerId !== null && e.pointerId !== pointerId) return;
+
+    e.preventDefault();
+    applyPointer(e.clientX,e.clientY);
+  },{passive:false});
+
+  joy.addEventListener("pointerup",function(e){
+    if(pointerId !== null && e.pointerId !== pointerId) return;
+
+    e.preventDefault();
+
+    try{
+      joy.releasePointerCapture(pointerId);
+    }catch(err){}
+
+    resetStick();
+  },{passive:false});
+
+  joy.addEventListener("pointercancel",function(e){
+    if(pointerId !== null && e.pointerId !== pointerId) return;
+
+    e.preventDefault();
+    resetStick();
+  },{passive:false});
+
+  joy.addEventListener("lostpointercapture",function(){
+    resetStick();
+  });
+
+  /*
+    画面回転・リサイズ時に中心座標を取り直す。
+  */
+  window.addEventListener("resize",function(){
+    if(active){
+      updateCenter();
+    }
+  });
+
+  window.addEventListener("orientationchange",function(){
+    resetStick();
+  });
+
+  /*
+    元の updP を上書き。
+    既存コードは input.right - input.left / input.down - input.up だけを見ているので、
+    ここで input.ax / input.ay も移動に反映する。
+  */
+  if(typeof updP === "function"){
+    const __oldUpdPForJoystick = updP;
+
+    updP = function(){
+      const p = G.player;
+
+      if(!p){
+        __oldUpdPForJoystick();
+        return;
+      }
+
+      /*
+        元の updP とほぼ同じ処理を再実装。
+        違いは mx / my に joystick の ax / ay を加えること。
+      */
+      ["inv","dashCd","attackCd","attackT","comboT"].forEach(k=>{
+        if(p[k] > 0) p[k]--;
+      });
+
+      if(p.comboT <= 0){
+        p.combo = 0;
+      }
+
+      /*
+        キーボード入力 + ジョイスティック入力。
+        キーボードが押されていればキーボードも使える。
+      */
+      let mx = input.right - input.left;
+      let my = input.down - input.up;
+
+      const jx = input.ax || 0;
+      const jy = input.ay || 0;
+
+      /*
+        ジョイスティックが入力されている場合はそちらを優先。
+        これで斜め移動がなめらかになる。
+      */
+      if(Math.hypot(jx,jy) > DEAD_ZONE){
+        mx = jx;
+        my = jy;
+      }
+
+      const nn = nrm(mx,my);
+
+      p.vx = nn.l > .001 ? nn.x : 0;
+      p.vy = nn.l > .001 ? nn.y : 0;
+
+      if(Math.abs(mx) + Math.abs(my) > 0.001){
+        p.dir = Math.abs(mx) > Math.abs(my)
+          ? (mx > 0 ? "right" : "left")
+          : (my > 0 ? "down" : "up");
+      }
+
+      let sp = p.speed;
+
+      if(C("dash") && p.dashCd <= 0){
+        p.dashT = 10;
+        p.dashCd = 40;
+        p.inv = Math.max(p.inv,16);
+      }
+
+      if(p.dashT > 0){
+        p.dashT--;
+        sp = 7.4;
+      }
+
+      if(nn.l > .001){
+        move(p,nn.x * sp,nn.y * sp);
+      }
+
+      if(C("attack") && p.attackCd <= 0){
+        attack();
+      }
+
+      if(C("magic")){
+        magic();
+      }
+
+      if(C("action")){
+        action();
+      }
+    };
+  }
+
+  /*
+    念のため、ページ外へ指が出た時も止める。
+  */
+  document.addEventListener("pointerup",function(){
+    if(active){
+      resetStick();
+    }
+  },{passive:true});
+
+  document.addEventListener("visibilitychange",function(){
+    if(document.hidden){
+      resetStick();
+    }
+  });
+
+})();
