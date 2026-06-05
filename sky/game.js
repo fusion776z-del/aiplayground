@@ -1496,6 +1496,35 @@ loop();
     },{capture:true,passive:false});
   }
 
+// MAGIC / DASH ボタン修正：capture 側で stopPropagation されても入力を立てる
+  const magicBtn=document.getElementById("magicBtn");
+  const dashBtn=document.getElementById("dashBtn");
+
+  function mobileOnceButton(el,fn){
+    if(!el)return;
+    el.addEventListener("pointerdown",e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      if(G.lock>0)return;
+      fn();
+    },{capture:true,passive:false});
+
+    // 古いスマホ向け保険
+    el.addEventListener("touchstart",e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      if(G.lock>0)return;
+      fn();
+    },{capture:true,passive:false});
+  }
+
+  mobileOnceButton(magicBtn,()=>{
+    input.magic=1;
+  });
+
+  mobileOnceButton(dashBtn,()=>{
+    input.dash=1;
+  });
   if(attackBtn){
     attackBtn.addEventListener("pointerdown",e=>{
       e.preventDefault();e.stopPropagation();
