@@ -7,6 +7,54 @@ const STAGES=[Stage1,Stage2,Stage3,Stage4,Stage5,Stage6,Stage7];
 
 ctx.imageSmoothingEnabled=false;
 
+// ─── バランステーブル（旧 balance_patch.js） ───────────────────────────────
+const BALANCE=[
+  {name:"Stage 1",enemyHpMul:0.70,enemyAtkMul:0.55,enemySpeedMul:0.68,
+   enemyAggro:135,enemyGiveUp:195,enemyContactInv:92,
+   bossHpMul:0.78,bossAtkMul:0.55,bossShotMul:1.55,coinBonus:1.00},
+  {name:"Stage 2",enemyHpMul:0.90,enemyAtkMul:0.75,enemySpeedMul:0.82,
+   enemyAggro:155,enemyGiveUp:220,enemyContactInv:84,
+   bossHpMul:0.95,bossAtkMul:0.78,bossShotMul:1.30,coinBonus:1.00},
+  {name:"Stage 3",enemyHpMul:1.08,enemyAtkMul:0.95,enemySpeedMul:0.96,
+   enemyAggro:178,enemyGiveUp:250,enemyContactInv:78,
+   bossHpMul:1.12,bossAtkMul:1.00,bossShotMul:1.12,coinBonus:1.00},
+  {name:"Stage 4",enemyHpMul:1.32,enemyAtkMul:1.15,enemySpeedMul:1.06,
+   enemyAggro:205,enemyGiveUp:285,enemyContactInv:72,
+   bossHpMul:1.35,bossAtkMul:1.18,bossShotMul:1.00,coinBonus:1.05},
+  {name:"Stage 5",enemyHpMul:1.62,enemyAtkMul:1.35,enemySpeedMul:1.16,
+   enemyAggro:230,enemyGiveUp:320,enemyContactInv:66,
+   bossHpMul:1.60,bossAtkMul:1.35,bossShotMul:0.92,coinBonus:1.08},
+  {name:"Stage 6",enemyHpMul:1.95,enemyAtkMul:1.55,enemySpeedMul:1.26,
+   enemyAggro:255,enemyGiveUp:355,enemyContactInv:62,
+   bossHpMul:1.90,bossAtkMul:1.55,bossShotMul:0.84,coinBonus:1.12},
+  {name:"Stage 7",enemyHpMul:2.30,enemyAtkMul:1.80,enemySpeedMul:1.34,
+   enemyAggro:285,enemyGiveUp:395,enemyContactInv:58,
+   bossHpMul:2.25,bossAtkMul:1.85,bossShotMul:0.76,coinBonus:1.15}
+];
+
+function getBalance(){
+  const i=Math.max(0,Math.min(BALANCE.length-1,G.stageIndex||0));
+  return BALANCE[i];
+}
+
+// ─── ダッシュ攻撃定数（旧 dash_attack_patch.js） ─────────────────────────
+const DASH_DURATION=10;
+const DASH_COOLDOWN=60;
+const DASH_KILL_RECOVER=30;
+const DASH_SPEED=7.6;
+const DASH_INVINCIBLE=18;
+const DASH_DAMAGE_RATE=0.95;
+const DASH_BOSS_DAMAGE_RATE=0.55;
+const DASH_PUSH_ENEMY=18;
+const DASH_PUSH_BOSS=8;
+let dashSerial=0;
+
+// ─── ステージ7ボス弱体化定数（旧 stage7_boss_nerf_patch.js） ────────────
+const S7_HP_RATE=0.85;
+const S7_ATK_RATE=0.82;
+const S7_SHOT_RATE=1.22;
+const S7_MOVE_RATE=0.88;
+
 const input={
   up:0,down:0,left:0,right:0,
   ax:0,ay:0,
@@ -124,28 +172,39 @@ function newP(x,y){
 }
 
 function mkE(e){
+  const b=getBalance();
+  const st=G.stageIndex||0;
+  let enemy;
+
   if(e.id==="wind_bat"){
-    return {
-      ...e,
-      type:"bat",
-      w:24,h:20,
-      hp:2,atk:2,
-      speed:1.25,
-      t:0,hitT:0,
-      color:"#8de7ff"
-    };
+    enemy={...e,type:"bat",w:24,h:20,hp:2,atk:2,speed:1.25,t:0,hitT:0,color:"#8de7ff"};
+  }else if(e.id==="fast"){
+    enemy={...e,type:"fast",w:24,h:22,hp:2,atk:2,speed:1.55,t:0,hitT:0,color:"#ffcc66"};
+  }else{
+    enemy={...e,type:"slime",w:24,h:22,hp:3,atk:2,speed:.9,t:0,hitT:0,color:"#78df72"};
   }
 
-  return {
-    ...e,
-    type:e.id==="fast"?"fast":"slime",
-    w:24,h:22,
-    hp:e.id==="fast"?2:3,
-    atk:2,
-    speed:e.id==="fast"?1.55:.9,
-    t:0,hitT:0,
-    color:e.id==="fast"?"#ffcc66":"#78df72"
-  };
+  // バランス倍率適用
+  enemy.hp=Math.max(1,Math.round(enemy.hp*b.enemyHpMul));
+  enemy.maxHp=enemy.hp;
+  enemy.atk=Math.max(1,Math.round(enemy.atk*b.enemyAtkMul));
+  enemy.speed=Math.max(0.45,enemy.speed*b.enemySpeedMul);
+
+  // ステージ1だけ追加抑制
+  if(st===0){
+    if(enemy.type==="fast"){enemy.speed*=0.82;enemy.hp=Math.max(1,enemy.hp-1);}
+    if(enemy.type==="bat"){enemy.speed*=0.78;enemy.atk=1;}
+  }
+  // 後半の雑魚を少し硬く
+  if(st>=4){
+    if(enemy.type==="fast")enemy.hp+=1;
+    if(enemy.type==="bat")enemy.speed*=1.05;
+  }
+
+  enemy.wake=false;
+  enemy.attackPause=0;
+  enemy.balanceApplied=true;
+  return enemy;
 }
 
 function load(s,keep=false){
@@ -193,6 +252,14 @@ function load(s,keep=false){
   flush();
   msg(s.name,100);
   cam();
+
+  // ステージ1だけプレイヤーのHP初期ボーナス
+  if(G.stageIndex===0&&!G.player.__balanceStartBoost){
+    G.player.__balanceStartBoost=true;
+    G.player.maxHp=Math.max(G.player.maxHp,18);
+    G.player.hp=G.player.maxHp;
+    G.player.inv=Math.max(G.player.inv||0,100);
+  }
 }
 
 function start(){
@@ -314,39 +381,109 @@ function updP(){
 
   if(p.comboT<=0)p.combo=0;
 
-  const mx=input.right-input.left;
-  const my=input.down-input.up;
+  // ジョイスティック入力を優先
+  let mx=input.right-input.left;
+  let my=input.down-input.up;
+  const jx=window.__mobileJoy?.active?window.__mobileJoy.ax:(input.ax||0);
+  const jy=window.__mobileJoy?.active?window.__mobileJoy.ay:(input.ay||0);
+  if(Math.hypot(jx,jy)>0.16){mx=jx;my=jy;}
+
   const nn=nrm(mx,my);
 
-  p.vx=nn.l>.001?nn.x:0;
-  p.vy=nn.l>.001?nn.y:0;
-
-  if(Math.abs(mx)+Math.abs(my)>0){
-    p.dir=Math.abs(mx)>Math.abs(my)
-      ? (mx>0?"right":"left")
-      : (my>0?"down":"up");
+  // ダッシュ中は向きを固定
+  if(nn.l>0.001&&!(p.dashT>0)){
+    p.dir=Math.abs(mx)>Math.abs(my)?(mx>0?"right":"left"):(my>0?"down":"up");
   }
 
-  let sp=p.speed;
-
+  // ダッシュ開始
   if(C("dash")&&p.dashCd<=0){
-    p.dashT=10;
-    p.dashCd=40;
-    p.inv=Math.max(p.inv,16);
+    // 入力なしなら向いている方向へ
+    let dvx=mx,dvy=my;
+    if(Math.abs(dvx)+Math.abs(dvy)<0.001){
+      const dv={up:{x:0,y:-1},down:{x:0,y:1},left:{x:-1,y:0},right:{x:1,y:0}};
+      const d=dv[p.dir||"down"];
+      dvx=d.x;dvy=d.y;
+    }
+    const dn=nrm(dvx,dvy);
+    p.__dashVX=dn.x;
+    p.__dashVY=dn.y;
+    p.__dashDir=Math.abs(dn.x)>Math.abs(dn.y)?(dn.x>0?"right":"left"):(dn.y>0?"down":"up");
+    p.dir=p.__dashDir;
+    p.dashT=DASH_DURATION;
+    p.dashCd=DASH_COOLDOWN;
+    p.inv=Math.max(p.inv||0,DASH_INVINCIBLE);
+    p.__dashActive=true;
+    dashSerial++;
+    p.__dashSerial=dashSerial;
+    ring(p.x+p.w/2,p.y+p.h/2,22,p.trueGold?"#ffd84d":"#9ef7ff");
   }
 
   if(p.dashT>0){
     p.dashT--;
-    sp=7.4;
-  }
-
-  if(nn.l>.001){
-    move(p,nn.x*sp,nn.y*sp);
+    const vx=p.__dashVX||0;
+    const vy=p.__dashVY||0;
+    move(p,vx*DASH_SPEED,vy*DASH_SPEED);
+    dashStrike();
+    if(p.dashT<=0){p.__dashActive=false;p.__dashVX=0;p.__dashVY=0;}
+  }else{
+    p.__dashActive=false;
+    if(nn.l>.001)move(p,nn.x*p.speed,nn.y*p.speed);
   }
 
   if(C("attack")&&p.attackCd<=0)attack();
   if(C("magic"))magic();
   if(C("action"))action();
+}
+
+// ダッシュ攻撃判定ボックス
+function dashAttackBox(){
+  const p=G.player;
+  const dir=p.__dashDir||p.dir||"down";
+  if(dir==="up")   return{x:p.x-8,y:p.y-42,w:p.w+16,h:54};
+  if(dir==="down") return{x:p.x-8,y:p.y+p.h-10,w:p.w+16,h:54};
+  if(dir==="left") return{x:p.x-42,y:p.y-8,w:54,h:p.h+16};
+  return{x:p.x+p.w-10,y:p.y-8,w:54,h:p.h+16};
+}
+
+// ダッシュ中の攻撃処理
+function dashStrike(){
+  const p=G.player;
+  if(!p.__dashActive||!p.__dashSerial)return;
+  const box=dashAttackBox();
+  const dx=p.__dashVX||0;
+  const dy=p.__dashVY||0;
+
+  for(let i=G.enemies.length-1;i>=0;i--){
+    const e=G.enemies[i];
+    if(!e||e.__dashHitSerial===p.__dashSerial)continue;
+    if(!hit(box,e))continue;
+    e.__dashHitSerial=p.__dashSerial;
+    const dmg=Math.max(1,Math.round(p.atk*DASH_DAMAGE_RATE));
+    const prevLen=G.enemies.length;
+    dmgE(e,dmg);
+    const killed=e.hp<=0||G.enemies.length<prevLen;
+    if(killed){
+      p.dashCd=Math.max(0,(p.dashCd||0)-DASH_KILL_RECOVER);
+    }else{
+      e.x+=dx*DASH_PUSH_ENEMY;
+      e.y+=dy*DASH_PUSH_ENEMY;
+    }
+    fx(e.x+e.w/2,e.y+e.h/2,killed?"#fff7a8":"#d9fbff",killed?16:12,killed?3:2.4);
+  }
+
+  if(G.boss&&G.boss.__dashHitSerial!==p.__dashSerial&&hit(box,G.boss)){
+    G.boss.__dashHitSerial=p.__dashSerial;
+    const dmg=Math.max(1,Math.round(p.atk*DASH_BOSS_DAMAGE_RATE));
+    dmgB(dmg);
+    if(G.boss){
+      G.boss.x+=dx*DASH_PUSH_BOSS;
+      G.boss.y+=dy*DASH_PUSH_BOSS;
+      fx(G.boss.x+G.boss.w/2,G.boss.y+G.boss.h/2,"#fff7a8",14,2.8);
+    }
+  }
+
+  // 軌跡エフェクト
+  if(G.time%3===0)fx(p.x+p.w/2-dx*10,p.y+p.h/2-dy*10,p.trueGold?"#ffd84d":"#9ef7ff",9,1.4);
 }
 
 function atkBox(){
@@ -372,6 +509,7 @@ function distHit(a,cx,cy,r){
 
 function attack(){
   const p=G.player;
+  const st=G.stageIndex||0;
 
   p.combo=p.combo%3+1;
   p.comboT=38;
@@ -383,49 +521,46 @@ function attack(){
   p.attackCd=sweep?18:12;
 
   const a=atkBox();
-  const d=p.atk*(sweep?1.35:1);
+  // 後半は攻撃が強くなりすぎないよう少し抑制
+  const atkMul=st>=4?(p.trueGold?0.82:0.92):1;
+  const d=p.atk*atkMul*(sweep?1.35:1);
 
   if(sweep){
     const cx=p.x+p.w/2;
     const cy=p.y+p.h/2;
+    // 後半の金色時は範囲も少し抑制
+    const rr=st>=4&&p.trueGold?Math.round(r*0.90):r;
     let hits=0;
 
     for(let i=G.enemies.length-1;i>=0;i--){
       const e=G.enemies[i];
-      if(e&&distHit(e,cx,cy,r)){
-        dmgE(e,d);
-        hits++;
-      }
+      if(e&&distHit(e,cx,cy,rr)){dmgE(e,d);hits++;}
     }
-
-    if(G.boss&&distHit(G.boss,cx,cy,r)){
-      dmgB(d*.8);
-    }
-
-    ring(cx,cy,r,p.trueGold?"#ffd84d":"#9ef7ff");
+    if(G.boss&&distHit(G.boss,cx,cy,rr))dmgB(d*.8);
+    ring(cx,cy,rr,p.trueGold?"#ffd84d":"#9ef7ff");
     msg("なぎ払い！ x"+hits,36);
   }else{
     for(let i=G.enemies.length-1;i>=0;i--){
       const e=G.enemies[i];
       if(e&&hit(a,e))dmgE(e,d);
     }
-
     if(G.boss&&hit(a,G.boss))dmgB(d);
   }
 }
 
 function magic(){
   const p=G.player;
+  const st=G.stageIndex||0;
 
-  if(p.mp<=0){
-    msg("MPが足りない",40);
-    return;
-  }
-
+  if(p.mp<=0){msg("MPが足りない",40);return;}
   p.mp--;
 
-  let vx=0,vy=0;
+  // ステージ1は魔法を少し強く、後半は少し抑制
+  const magicBonus=st===0?1:0;
+  const magicMul=st>=5?0.94:1;
+  const effectiveMagic=Math.max(1,Math.round((p.magic+magicBonus)*magicMul));
 
+  let vx=0,vy=0;
   if(p.dir==="up")vy=-5.6;
   else if(p.dir==="down")vy=5.6;
   else if(p.dir==="left")vx=-5.6;
@@ -434,14 +569,10 @@ function magic(){
   const s=8+p.magicLv*3;
 
   G.bullets.push({
-    x:p.x+12-s/2,
-    y:p.y+14-s/2,
-    w:s,h:s,
-    vx,vy,
-    life:72,
-    dmg:p.magic+1,
-    magic:true,
-    radius:p.magicRadius,
+    x:p.x+12-s/2,y:p.y+14-s/2,
+    w:s,h:s,vx,vy,
+    life:72,dmg:effectiveMagic+1,
+    magic:true,radius:p.magicRadius,
     color:p.trueGold?"#ffd84d":p.magicLv>=3?"#b56bff":p.magicLv>=2?"#89ff9b":"#63d8ff"
   });
 }
@@ -523,69 +654,41 @@ function checkAwaken(){
 
   if(!p.curseLifted&&p.swordLv>=3&&p.shieldLv>=3){
     p.curseLifted=true;
-    p.maxHp+=14;
-    p.hp=p.maxHp;
-    p.maxMp+=6;
-    p.mp=p.maxMp;
-    p.atk+=6;
-    p.def+=4;
-    p.magic+=3;
-    p.speed+=.55;
+    p.maxHp+=8; p.hp=p.maxHp;
+    p.maxMp+=4; p.mp=p.maxMp;
+    p.atk+=3; p.def+=2; p.magic+=2; p.speed+=0.35;
     msg("たぬきの呪いが解けた！",150);
   }
 
   if(!p.trueGold&&p.curseLifted&&p.bookLv>=3){
     p.trueGold=true;
-    p.maxHp+=10;
-    p.hp=p.maxHp;
-    p.maxMp+=8;
-    p.mp=p.maxMp;
-    p.atk+=4;
-    p.def+=3;
-    p.magic+=6;
-    p.speed+=.35;
+    p.maxHp+=7; p.hp=p.maxHp;
+    p.maxMp+=5; p.mp=p.maxMp;
+    p.atk+=3; p.def+=2; p.magic+=4; p.speed+=0.22;
     msg("金色覚醒！",150);
   }
 }
 
 function shopItems(){
-  return [
+  const p=G.player;
+  return[
     {
       name:"剣を強化",
-      cost:60+G.player.swordLv*50,
-      desc:"攻撃力+1",
-      buy(){
-        G.player.swordLv++;
-        G.player.atk++;
-        checkAwaken();
-      }
+      cost:50+p.swordLv*65+Math.max(0,p.swordLv-2)*35,
+      desc:"攻撃力+1 / 後半も敵が強くなる",
+      buy(){p.swordLv++;p.atk++;checkAwaken();}
     },
     {
       name:"盾を強化",
-      cost:70+G.player.shieldLv*55,
-      desc:"防御力+1",
-      buy(){
-        G.player.shieldLv++;
-        G.player.armorLv=G.player.shieldLv;
-        G.player.def++;
-        G.player.maxHp++;
-        G.player.hp++;
-        checkAwaken();
-      }
+      cost:55+p.shieldLv*70+Math.max(0,p.shieldLv-2)*35,
+      desc:"防御力+1 HP+1",
+      buy(){p.shieldLv++;p.armorLv=p.shieldLv;p.def++;p.maxHp++;p.hp++;checkAwaken();}
     },
     {
       name:"魔法を強化",
-      cost:80+G.player.bookLv*70,
-      desc:"魔法Lv3で金色覚醒",
-      buy(){
-        G.player.bookLv++;
-        G.player.magic++;
-        G.player.magicLv++;
-        G.player.magicRadius+=10;
-        G.player.maxMp++;
-        G.player.mp++;
-        checkAwaken();
-      }
+      cost:65+p.bookLv*85+Math.max(0,p.bookLv-2)*45,
+      desc:"魔法+1 MP+1 / Lv3で金色覚醒",
+      buy(){p.bookLv++;p.magic++;p.magicLv++;p.magicRadius+=8;p.maxMp++;p.mp++;checkAwaken();}
     }
   ];
 }
@@ -667,6 +770,24 @@ function spawnBoss(){
   b.phase=1;
 
   G.boss=b;
+
+  // バランス倍率適用
+  const bl=getBalance();
+  const st=G.stageIndex||0;
+  b.maxHp=Math.max(8,Math.round(b.maxHp*bl.bossHpMul));
+  b.hp=Math.max(1,Math.round(b.hp*bl.bossHpMul));
+  if(b.hp>b.maxHp)b.hp=b.maxHp;
+  b.atk=Math.max(1,Math.round((b.atk||2)*bl.bossAtkMul));
+  b.shot=Math.max(30,Math.round(b.shot*bl.bossShotMul));
+
+  // ステージ7だけ追加弱体化
+  if(st===6){
+    b.maxHp=Math.max(40,Math.round(b.maxHp*S7_HP_RATE));
+    b.hp=Math.min(b.maxHp,Math.max(1,Math.round(b.hp*S7_HP_RATE)));
+    b.atk=Math.max(2,Math.round(b.atk*S7_ATK_RATE));
+    b.shot=Math.max(36,Math.round(b.shot*S7_SHOT_RATE));
+    b.__s7MoveRate=S7_MOVE_RATE;
+  }
 }
 
 function dmgE(e,d){
@@ -707,28 +828,57 @@ function dmgB(d){
 function updEnemies(){
   const p=G.player;
   const box=ph();
+  const b=getBalance();
+  const st=G.stageIndex||0;
 
   for(let i=G.enemies.length-1;i>=0;i--){
     const e=G.enemies[i];
+    if(!e){G.enemies.splice(i,1);continue;}
 
-    if(!e){
-      G.enemies.splice(i,1);
+    e.t=(e.t||0)+1;
+    if(e.hitT>0)e.hitT--;
+    if(e.attackPause>0)e.attackPause--;
+
+    const pcx=p.x+p.w/2,pcy=p.y+p.h/2;
+    const ecx=e.x+e.w/2,ecy=e.y+e.h/2;
+    const toP=nrm(pcx-ecx,pcy-ecy);
+    const d=toP.l;
+
+    if(d<b.enemyAggro)e.wake=true;
+    if(d>b.enemyGiveUp)e.wake=false;
+    if(st===0&&e.t<25)e.wake=false;
+
+    if(!e.wake){
+      const idleSpeed=st===0?0.16:0.24;
+      e.x+=Math.sin(e.t*0.025+i)*idleSpeed;
+      e.y+=Math.cos(e.t*0.021+i)*idleSpeed;
       continue;
     }
 
-    e.t++;
-    if(e.hitT>0)e.hitT--;
-
-    const nn=nrm(
-      p.x+p.w/2-(e.x+e.w/2),
-      p.y+p.h/2-(e.y+e.h/2)
-    );
-
-    e.x+=nn.x*e.speed+(e.type==="bat"?Math.sin(e.t*.12)*.7:0);
-    e.y+=nn.y*e.speed+(e.type==="bat"?Math.cos(e.t*.1)*.7:0);
+    if(e.hitT>0){
+      const stopRate=st<=1?0.18:0.35;
+      e.x+=toP.x*e.speed*stopRate;
+      e.y+=toP.y*e.speed*stopRate;
+    }else{
+      let sx=toP.x*e.speed;
+      let sy=toP.y*e.speed;
+      if(e.type==="bat"){
+        sx+=Math.sin(e.t*0.12)*(st===0?0.35:0.55);
+        sy+=Math.cos(e.t*0.10)*(st===0?0.35:0.55);
+      }
+      if(e.type==="fast"){
+        const pulse=1+Math.sin(e.t*0.08)*0.16;
+        sx*=pulse;sy*=pulse;
+      }
+      e.x+=sx;e.y+=sy;
+    }
 
     if(p.inv<=0&&hit(box,e)){
-      hurt(e.atk||2);
+      hurt(e.atk||1);
+      p.inv=Math.max(p.inv||0,b.enemyContactInv);
+      const push=st===0?18:10;
+      e.x-=toP.x*push;
+      e.y-=toP.y*push;
     }
   }
 }
@@ -738,11 +888,13 @@ function updBoss(){
   if(!b)return;
 
   b.t++;
-
   const r=G.map.bossRoom;
+  const mv=b.__s7MoveRate||1;
+  const ampX=Math.min(170,r.w*0.24)*mv;
+  const ampY=Math.min(62,r.h*0.25)*mv;
 
-  b.x=r.x+r.w/2-b.w/2+Math.cos(b.t*.024)*Math.min(170,r.w*.24);
-  b.y=r.y+r.h/2-b.h/2+Math.sin(b.t*.034)*Math.min(62,r.h*.25);
+  b.x=r.x+r.w/2-b.w/2+Math.cos(b.t*.024)*ampX;
+  b.y=r.y+r.h/2-b.h/2+Math.sin(b.t*.034)*ampY;
 }
 
 function updBullets(){
@@ -780,21 +932,15 @@ function updDrops(){
 
   for(let i=G.drops.length-1;i>=0;i--){
     const d=G.drops[i];
-
-    if(!d){
-      G.drops.splice(i,1);
-      continue;
-    }
+    if(!d){G.drops.splice(i,1);continue;}
 
     const nn=nrm(p.x+12-d.x,p.y+14-d.y);
-
-    if(nn.l<80){
-      d.x+=nn.x*3.4;
-      d.y+=nn.y*3.4;
-    }
+    if(nn.l<80){d.x+=nn.x*3.4;d.y+=nn.y*3.4;}
 
     if(nn.l<18){
-      p.coins+=5;
+      const base=5;
+      const bonus=Math.floor(base*(getBalance().coinBonus-1));
+      p.coins+=base+bonus;
       G.drops.splice(i,1);
     }
   }
@@ -802,19 +948,21 @@ function updDrops(){
 
 function hurt(d){
   const p=G.player;
-
   if(p.inv>0)return;
 
-  const t=Math.max(1,Math.round(d-p.def));
+  const st=G.stageIndex||0;
+  const b=getBalance();
+  let raw=Number(d||1)*b.enemyAtkMul;
+  const defPower=st<=1?1.10:st<=3?0.95:0.75;
+  let dmg=Math.max(st<=4?1:2,Math.round(raw-(p.def||0)*defPower));
+  if(st===0)dmg=Math.min(dmg,3);
+  else if(st===1)dmg=Math.min(dmg,4);
 
-  p.hp-=t;
-  p.inv=70;
-  msg("HIT -"+t,30);
+  p.hp-=dmg;
+  p.inv=b.enemyContactInv;
+  msg("HIT -"+dmg,30);
 
-  if(p.hp<=0){
-    p.hp=0;
-    G.state="gameover";
-  }
+  if(p.hp<=0){p.hp=0;G.state="gameover";}
 }
 
 function fx(x,y,color,life=20,spread=2){
@@ -1168,6 +1316,22 @@ function ui(){
     ctx.textAlign="left";
   }
 
+  // DASHクールタイムゲージ
+  if(p.dashCd>0){
+    const ratio=cl(1-p.dashCd/DASH_COOLDOWN,0,1);
+    ctx.fillStyle="rgba(8,25,45,.58)";
+    RR(22,84,124,8,999);ctx.fill();
+    ctx.fillStyle=p.trueGold?"#ffd84d":"#9ef7ff";
+    RR(22,84,Math.max(1,124*ratio),8,999);ctx.fill();
+    ctx.fillStyle="#fff";ctx.font="800 10px system-ui";
+    ctx.fillText("DASH",150,92);
+  }else{
+    ctx.fillStyle=p.trueGold?"#ffd84d":"#9ef7ff";
+    RR(22,84,70,8,999);ctx.fill();
+    ctx.fillStyle="#fff";ctx.font="800 10px system-ui";
+    ctx.fillText("DASH OK",98,92);
+  }
+
   if(G.state==="gameover"){
     ctx.fillStyle="rgba(0,0,0,.45)";
     ctx.fillRect(0,0,VW,VH);
@@ -1197,6 +1361,172 @@ function loop(){
 }
 
 loop();
+
+// ─── モバイル操作初期化 ──────────────────────────────────────────────────────
+(function(){
+  // ズーム・選択・長押し抑制
+  let meta=document.querySelector('meta[name="viewport"]');
+  if(!meta){meta=document.createElement("meta");meta.name="viewport";document.head.appendChild(meta);}
+  meta.setAttribute("content","width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover");
+
+  const styleEl=document.createElement("style");
+  styleEl.textContent=`
+    html,body,canvas,#game,#joystick,#stick,.actions,.tbtn{
+      touch-action:none!important;-webkit-user-select:none!important;
+      user-select:none!important;-webkit-touch-callout:none!important;
+      -webkit-tap-highlight-color:transparent!important;}
+    #actionBtn{background:rgba(46,190,100,.30)!important;color:#eaffd2!important;position:relative!important;}
+    #actionBtn::after{content:attr(data-count);position:absolute;right:7px;top:5px;
+      min-width:18px;height:18px;padding:0 4px;border-radius:999px;
+      background:rgba(8,25,45,.72);color:#fff7a8;font-size:11px;line-height:18px;
+      text-align:center;pointer-events:none;}
+    #attackBtn{position:relative!important;}
+  `;
+  document.head.appendChild(styleEl);
+
+  ["gesturestart","gesturechange","gestureend"].forEach(t=>{
+    document.addEventListener(t,e=>e.preventDefault(),{passive:false});
+  });
+  let lastTouchEnd=0;
+  document.addEventListener("touchend",e=>{
+    const now=Date.now();
+    if(now-lastTouchEnd<=350)e.preventDefault();
+    lastTouchEnd=now;
+  },{passive:false});
+
+  // ─ ジョイスティック ─
+  const JOY_RADIUS=54,STICK_MAX=42,DEAD_ZONE=0.16;
+  const joy=document.getElementById("joystick");
+  const stick=document.getElementById("stick");
+
+  window.__mobileJoy={active:false,pointerId:null,centerX:0,centerY:0,ax:0,ay:0};
+  const joyState=window.__mobileJoy;
+
+  function updateCenter(){
+    if(!joy)return;
+    const r=joy.getBoundingClientRect();
+    joyState.centerX=r.left+r.width/2;joyState.centerY=r.top+r.height/2;
+  }
+  function setStickVisual(nx,ny){
+    if(!stick)return;
+    stick.style.transform=`translate(calc(-50% + ${nx*STICK_MAX}px), calc(-50% + ${ny*STICK_MAX}px))`;
+  }
+  function resetJoy(){
+    joyState.active=false;joyState.pointerId=null;joyState.ax=0;joyState.ay=0;
+    input.ax=0;input.ay=0;setStickVisual(0,0);
+  }
+  function applyJoy(cx,cy){
+    let dx=cx-joyState.centerX,dy=cy-joyState.centerY;
+    const len=Math.hypot(dx,dy);
+    if(len>JOY_RADIUS){dx=dx/len*JOY_RADIUS;dy=dy/len*JOY_RADIUS;}
+    let nx=dx/JOY_RADIUS,ny=dy/JOY_RADIUS;
+    if(Math.hypot(nx,ny)<DEAD_ZONE){nx=0;ny=0;}
+    joyState.ax=nx;joyState.ay=ny;input.ax=nx;input.ay=ny;
+    setStickVisual(nx,ny);
+  }
+
+  if(joy&&stick){
+    joy.addEventListener("pointerdown",e=>{
+      e.preventDefault();e.stopPropagation();
+      joyState.active=true;joyState.pointerId=e.pointerId;
+      updateCenter();try{joy.setPointerCapture(e.pointerId);}catch(err){}
+      applyJoy(e.clientX,e.clientY);
+    },{passive:false});
+    joy.addEventListener("pointermove",e=>{
+      if(!joyState.active||joyState.pointerId!==e.pointerId)return;
+      e.preventDefault();applyJoy(e.clientX,e.clientY);
+    },{passive:false});
+    joy.addEventListener("pointerup",e=>{
+      if(joyState.pointerId!==e.pointerId)return;
+      e.preventDefault();try{joy.releasePointerCapture(e.pointerId);}catch(err){}
+      resetJoy();
+    },{passive:false});
+    joy.addEventListener("pointercancel",e=>{
+      if(joyState.pointerId!==e.pointerId)return;resetJoy();
+    },{passive:false});
+    joy.addEventListener("lostpointercapture",()=>{if(joyState.active)resetJoy();});
+  }
+
+  document.addEventListener("pointerup",e=>{
+    if(!joyState.active||joyState.pointerId!==e.pointerId)return;resetJoy();
+  },{passive:true});
+  window.addEventListener("blur",resetJoy);
+  document.addEventListener("visibilitychange",()=>{if(document.hidden)resetJoy();});
+  window.addEventListener("orientationchange",resetJoy);
+
+  // 右ボタンがジョイスティックに干渉しないようにする
+  ["attackBtn","magicBtn","dashBtn","actionBtn"].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el)return;
+    ["pointerdown","pointermove","pointerup","pointercancel","touchstart","touchend"].forEach(t=>{
+      el.addEventListener(t,e=>{e.preventDefault();e.stopPropagation();},{passive:false,capture:true});
+    });
+  });
+
+  // ─ HERBボタン（ACTボタンを流用） ─
+  const actionBtn=document.getElementById("actionBtn");
+  const attackBtn=document.getElementById("attackBtn");
+
+  if(actionBtn){
+    actionBtn.textContent="HERB";
+    actionBtn.title="薬草を使う";
+    actionBtn.setAttribute("data-count","0");
+  }
+
+  function herbCount(){
+    if(!G.player)return 0;
+    return(G.player.inventory||[]).reduce((s,v)=>
+      s+(typeof v==="object"&&v&&v.id==="small_herb"?(v.count||0):0),0);
+  }
+  function updateHerbBadge(){
+    if(!actionBtn)return;
+    const c=herbCount();
+    actionBtn.setAttribute("data-count",String(c));
+    actionBtn.style.opacity=c>0?"0.66":"0.34";
+  }
+
+  if(actionBtn){
+    actionBtn.addEventListener("pointerdown",e=>{
+      e.preventDefault();e.stopPropagation();
+      if(G.state!=="field")return;
+      const p=G.player;if(!p)return;
+      if(herbCount()<=0){msg("薬草を持っていない",50);return;}
+      if(p.hp>=p.maxHp){msg("HPは満タンだ",45);return;}
+      herb();
+    },{capture:true,passive:false});
+  }
+
+  if(attackBtn){
+    attackBtn.addEventListener("pointerdown",e=>{
+      e.preventDefault();e.stopPropagation();
+      if(G.lock>0)return;
+      input.attack=1;input.action=1;input.start=1;
+    },{capture:true,passive:false});
+  }
+
+  // ショップのタップ購入
+  const SHOP_Y0=305,SHOP_H=48,SHOP_GAP=60;
+  cvs.addEventListener("pointerdown",e=>{
+    if(G.state!=="shop")return;
+    const rect=cvs.getBoundingClientRect();
+    const cy=(e.clientY-rect.top)*(cvs.height/rect.height);
+    for(let i=0;i<3;i++){
+      const y=SHOP_Y0+i*SHOP_GAP;
+      if(cy>=y&&cy<=y+SHOP_H){buy(i);return;}
+    }
+  },{passive:true});
+
+  // 毎フレームjoy状態をinputに同期 & HERBバッジ更新
+  const _origUpdate=update;
+  update=function(){
+    if(joyState.active){input.ax=joyState.ax;input.ay=joyState.ay;}
+    _origUpdate();
+    if(joyState.active){input.ax=joyState.ax;input.ay=joyState.ay;}
+    updateHerbBadge();
+  };
+
+  updateHerbBadge();
+})();
 /* === NPC 2人化・会話安定化 完全版 ===
    貼る場所:
    - game.js の一番下
