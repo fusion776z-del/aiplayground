@@ -4,10 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>AI Playground</title>
-
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-
   <style>
     *{
       margin:0;
@@ -277,15 +275,12 @@
       .title{
         font-size:3rem;
       }
-
       .subtitle{
         font-size:1rem;
       }
-
       .cards{
         grid-template-columns:1fr;
       }
-
       .card{
         text-align:center;
       }
@@ -295,7 +290,6 @@
 
 <body>
   <canvas id="bgCanvas"></canvas>
-
   <div class="bg"></div>
   <div class="grid"></div>
   <div class="glow g1"></div>
@@ -397,11 +391,20 @@
         </p>
       </a>
 
+      <!-- CUBE REVERSI 3D -->
+      <a href="index (4).html" class="card">
+        <div class="icon">🧊</div>
+        <h3>CUBE REVERSI 3D</h3>
+        <p>
+          6面キューブで戦う立体リバーシ。<br>
+          面をまたいで石を返す戦略ゲーム。
+        </p>
+      </a>
+
     </div>
   </section>
 
   <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-
   <script>
     // ===== THREE BG =====
     const canvas = document.getElementById("bgCanvas");
