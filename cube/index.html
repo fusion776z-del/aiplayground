@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>キューブリバーシ 3D CPU難易度版</title>
+<title>キューブリバーシ 3D パルスFX 完全版</title>
 <style>
 :root{
   --size:min(68vw,68vh,520px);
@@ -188,6 +188,74 @@ button.secondary{
   background:#475569;
   color:#fff;
 }
+
+button.magic{
+  background:linear-gradient(135deg,#a78bfa,#67e8f9);
+  color:#06111f;
+}
+button.magic.ready{
+  box-shadow:0 0 18px #67e8f9aa;
+}
+.energy{
+  height:12px;
+  background:#020617;
+  border:1px solid #334155;
+  border-radius:999px;
+  overflow:hidden;
+  margin-top:4px;
+}
+.energy span{
+  display:block;
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,#a78bfa,#67e8f9);
+}
+.cell.pulseTarget{
+  outline:4px solid #67e8f9;
+  outline-offset:-7px;
+  box-shadow:0 0 18px #67e8f9aa;
+}
+.cell.justFlipped .disc{
+  animation:flipPop .58s cubic-bezier(.2,1.55,.35,1);
+}
+.cell.pulseFlipped{
+  animation:pulseCellFlash .72s ease-out;
+}
+.cell.pulseFlipped .disc{
+  animation:pulseFlipPop .72s cubic-bezier(.18,1.65,.35,1);
+}
+.cell.pulseFlipped:after{
+  content:"";
+  position:absolute;
+  inset:9%;
+  border:3px solid #67e8f9;
+  border-radius:50%;
+  animation:pulseRing .72s ease-out forwards;
+  pointer-events:none;
+  z-index:3;
+}
+@keyframes flipPop{
+  0%{transform:rotateY(0deg) scale(.72);filter:brightness(1.8)}
+  45%{transform:rotateY(92deg) scale(1.14);filter:brightness(2.15)}
+  100%{transform:rotateY(180deg) scale(1);filter:brightness(1)}
+}
+@keyframes pulseFlipPop{
+  0%{transform:scale(.45) rotateZ(-18deg);filter:brightness(2.4) saturate(1.6)}
+  38%{transform:scale(1.28) rotateZ(10deg);filter:brightness(2.8) saturate(1.9)}
+  72%{transform:scale(.92) rotateZ(-4deg);filter:brightness(1.4)}
+  100%{transform:scale(1) rotateZ(0deg);filter:brightness(1)}
+}
+@keyframes pulseRing{
+  0%{opacity:.95;transform:scale(.15);box-shadow:0 0 0 0 #67e8f9cc}
+  70%{opacity:.65;transform:scale(1.45);box-shadow:0 0 24px 8px #67e8f988}
+  100%{opacity:0;transform:scale(1.9);box-shadow:0 0 0 0 #67e8f900}
+}
+@keyframes pulseCellFlash{
+  0%{background:#67e8f980}
+  45%{background:#a78bfa80}
+  100%{background:#ffffff1f}
+}
+
 button:disabled{
   opacity:.45;
 }
@@ -273,7 +341,7 @@ select{
 <div class="app">
   <main class="stage" id="stage">
     <div class="title">
-      <h1>キューブリバーシ 3D</h1>
+      <h1>キューブリバーシ 3D パルスFX</h1>
       <p>空いている場所をドラッグで回転。黄色マスをタップで着手。</p>
     </div>
 
@@ -283,7 +351,7 @@ select{
       <div class="cube" id="cube"></div>
     </div>
 
-    <div class="tip">CPU対戦と難易度を追加済み</div>
+    <div class="tip">パルスFX完全版：石を置ける状態を復旧し、反転エフェクトを追加</div>
   </main>
 
   <aside class="side">
@@ -296,6 +364,13 @@ select{
       </div>
     </section>
 
+
+    <section class="card">
+      <div class="muted"><b>パルス</b></div>
+      <div class="muted">エネルギー6で使用可能。<b>パルス使用可能</b>を押してONにしてから置くと、置いたマスの周囲8方向の相手石を追加で奪います。パルスで奪った石は水色リングで光ります。</div>
+      <div style="margin-top:10px">黒エネルギー <b id="blackEnergy">0</b>/6<div class="energy"><span id="blackBar"></span></div></div>
+      <div style="margin-top:8px">白エネルギー <b id="whiteEnergy">0</b>/6<div class="energy"><span id="whiteBar"></span></div></div>
+    </section>
     <section class="card">
       <div class="muted"><b>CPU設定</b></div>
       <div class="setting-grid">
@@ -331,6 +406,7 @@ select{
     </section>
 
     <section class="card buttons">
+      <button id="pulseBtn" class="magic">パルス充電中</button>
       <button id="passBtn">パス</button>
       <button id="undoBtn" class="secondary">1手戻す</button>
       <button id="resetBtn" class="secondary">リセット</button>
@@ -343,7 +419,7 @@ select{
       <div class="muted">
         <b>仕様</b><br>
         6面×4×4。上下左右の辺越え有効、斜めの面越え無効。<br>
-        CPU難易度：やさしい＝ランダム、ふつう＝反転数重視、むずかしい＝先読み評価。
+        CPU難易度：やさしい＝ランダム、ふつう＝反転数重視、むずかしい＝先読み評価。<br>パルス：エネルギー6でONにしてから着手。周囲8方向の相手石を追加で奪う。パルス反転時は水色リングのエフェクト付き。
       </div>
     </section>
 
@@ -410,6 +486,10 @@ let cpuEnabled=true;
 let cpuColor=WHITE;
 let difficulty='normal';
 let cpuThinking=false;
+let energy;
+let pulseArmed=false;
+let lastFlipped=new Set();
+let lastPulseFlipped=new Set();
 
 const add=(a,b)=>a.map((v,i)=>v+b[i]);
 const mul=(a,k)=>a.map(v=>v*k);
@@ -565,6 +645,32 @@ function legalMoves(p){
   return ms;
 }
 
+
+function pulseTargets(f,x,y,p){
+  const out=[];
+  for(let dy=-1;dy<=1;dy++){
+    for(let dx=-1;dx<=1;dx++){
+      if(!dx&&!dy)continue;
+      // 斜めは同じ面内、上下左右は面越えも有効
+      if(dx&&dy){
+        const nx=x+dx;
+        const ny=y+dy;
+        if(nx>=0&&nx<N&&ny>=0&&ny<N && board[f][ny][nx]===opp(p)){
+          out.push({f,x:nx,y:ny});
+        }
+      }else{
+        const s=crossStep(f,x,y,dx,dy);
+        if(s.ok && board[s.f][s.y][s.x]===opp(p)){
+          out.push({f:s.f,x:s.x,y:s.y});
+        }
+      }
+    }
+  }
+  return out;
+}
+function pulseGain(flips,extra){
+  return Math.min(6,Math.max(1,Math.ceil((flips+extra)/2)));
+}
 function counts(){
   let black=0;
   let white=0;
@@ -610,6 +716,16 @@ function render(){
         if(showLegal && legal.has(`${f},${x},${y}`)){
           cell.classList.add('legal');
         }
+        if(pulseArmed && board[f][y][x]===opp(turn)){
+          cell.classList.add('pulseTarget');
+        }
+        const key=`${f},${x},${y}`;
+        if(lastFlipped.has(key)){
+          cell.classList.add('justFlipped');
+        }
+        if(lastPulseFlipped.has(key)){
+          cell.classList.add('pulseFlipped');
+        }
 
         const v=board[f][y][x];
 
@@ -638,6 +754,12 @@ function render(){
 
   $('blackScore').textContent=c.black;
   $('whiteScore').textContent=c.white;
+  if(energy){
+    $('blackEnergy').textContent=energy[BLACK];
+    $('whiteEnergy').textContent=energy[WHITE];
+    $('blackBar').style.width=(energy[BLACK]/6*100)+'%';
+    $('whiteBar').style.width=(energy[WHITE]/6*100)+'%';
+  }
 
   if(gameOver || c.empty===0){
     gameOver=true;
@@ -652,13 +774,18 @@ function render(){
       $('hint').textContent='CPUが考えています。';
     }else{
       $('hint').textContent=lm.length
-        ?`合法手は ${lm.length} 手。黄色のマスをタップ。`
+        ?(pulseArmed?`パルスON：黄色マスに置くと、水色の相手石も追加で奪います。`:`合法手は ${lm.length} 手。黄色のマスをタップ。`)
         :'置ける場所がありません。パスしてください。';
     }
 
     $('passBtn').disabled=!!lm.length || isCpuTurn();
   }
 
+  if($('pulseBtn')){
+    $('pulseBtn').textContent=pulseArmed?'パルスON：置くと発動':(energy&&energy[turn]>=6?'パルス使用可能':'パルス充電中');
+    $('pulseBtn').disabled=isCpuTurn() || !energy || energy[turn]<6 || !legalMoves(turn).length;
+    $('pulseBtn').classList.toggle('ready', !!energy && energy[turn]>=6 && !pulseArmed && !isCpuTurn());
+  }
   $('undoBtn').disabled=!history.length || cpuThinking;
 
   applyTransform();
@@ -670,26 +797,47 @@ function saveHistory(){
     board:clone(board),
     turn,
     passStreak,
-    log:logEl.textContent
+    log:logEl.textContent,
+    energy:energy?{1:energy[1],2:energy[2]}:{1:0,2:0},
+    pulseArmed
   });
 }
 
 function play(f,x,y,byCpu){
   if(gameOver)return;
-
   const flips=flipsFor(f,x,y,turn);
   if(!flips.length)return;
 
   saveHistory();
-
   board[f][y][x]=turn;
 
   for(const q of flips){
     board[q.f][q.y][q.x]=turn;
   }
 
+  let extra=[];
+  const usePulse=pulseArmed && energy && energy[turn]>=6;
+  if(usePulse){
+    extra=pulseTargets(f,x,y,turn);
+    const uniq=new Map(extra.map(q=>[`${q.f},${q.x},${q.y}`,q]));
+    extra=[...uniq.values()];
+    for(const q of extra){
+      board[q.f][q.y][q.x]=turn;
+    }
+    energy[turn]=0;
+  }
+
+  lastFlipped=new Set(flips.map(q=>`${q.f},${q.x},${q.y}`));
+  lastPulseFlipped=new Set(extra.map(q=>`${q.f},${q.x},${q.y}`));
+
+  if(energy){
+    energy[turn]=Math.min(6,energy[turn]+pulseGain(flips.length,extra.length));
+  }
+  pulseArmed=false;
+
   const actor=byCpu?'CPU ':'';
-  logEl.textContent=`${actor}${name(turn)} ${coord(f,x,y)}：${flips.length}枚反転\n`+logEl.textContent;
+  logEl.textContent=`${actor}${name(turn)} ${coord(f,x,y)}：${flips.length}枚反転${extra.length?` +パルス${extra.length}枚`:''}${usePulse&&!extra.length?' / パルス空振り':''}
+`+logEl.textContent;
 
   turn=opp(turn);
   passStreak=0;
@@ -699,6 +847,11 @@ function play(f,x,y,byCpu){
   }
 
   render();
+  setTimeout(()=>{
+    lastFlipped.clear();
+    lastPulseFlipped.clear();
+    if(!gameOver)render();
+  },760);
   scheduleCpu();
 }
 
@@ -706,9 +859,13 @@ function pass(byCpu=false){
   if(gameOver || legalMoves(turn).length)return;
 
   saveHistory();
+  pulseArmed=false;
+  lastFlipped.clear();
+  lastPulseFlipped.clear();
 
   const actor=byCpu?'CPU ':'';
-  logEl.textContent=`${actor}${name(turn)} パス\n`+logEl.textContent;
+  logEl.textContent=`${actor}${name(turn)} パス
+`+logEl.textContent;
 
   turn=opp(turn);
 
@@ -728,6 +885,10 @@ function undo(){
   turn=h.turn;
   passStreak=h.passStreak;
   logEl.textContent=h.log;
+  energy=h.energy||{1:0,2:0};
+  pulseArmed=!!h.pulseArmed;
+  lastFlipped.clear();
+  lastPulseFlipped.clear();
   gameOver=false;
   cpuThinking=false;
 
@@ -744,6 +905,10 @@ function reset(){
   showLegal=true;
   gameOver=false;
   cpuThinking=false;
+  energy={1:0,2:0};
+  pulseArmed=false;
+  lastFlipped.clear();
+  lastPulseFlipped.clear();
   logEl.textContent='';
 
   render();
@@ -899,6 +1064,7 @@ function scheduleCpu(){
     cpuThinking=false;
 
     if(m){
+      pulseArmed=!!(energy && energy[turn]>=6 && pulseTargets(m.f,m.x,m.y,turn).length>=2);
       play(m.f,m.x,m.y,true);
     }else{
       render();
@@ -940,6 +1106,13 @@ $('stage').addEventListener('wheel',e=>{
   applyTransform();
 },{passive:false});
 
+$('pulseBtn').onclick=()=>{
+  if(energy && energy[turn]>=6 && !isCpuTurn()){
+    pulseArmed=!pulseArmed;
+    logEl.textContent=(pulseArmed?`${name(turn)} パルス準備：次の着手で発動\n`:`${name(turn)} パルス解除\n`)+logEl.textContent;
+    render();
+  }
+};
 $('passBtn').onclick=()=>pass(false);
 $('undoBtn').onclick=undo;
 $('resetBtn').onclick=reset;
