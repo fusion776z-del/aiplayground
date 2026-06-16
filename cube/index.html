@@ -6,10 +6,11 @@
 <title>キューブリバーシ 3D パルスFX 完全版</title>
 <style>
 :root{
-  --size:min(68vw,68vh,520px);
+  --size:min(47.6vw,47.6vh,364px);
   --text:#f8fafc;
   --muted:#cbd5e1;
   --legal:#facc15;
+  --cube-offset-y:-10vh;
 }
 *{box-sizing:border-box}
 body{
@@ -691,7 +692,7 @@ function counts(){
 }
 
 function applyTransform(){
-  scene.style.transform=`rotateX(${rx}deg) rotateY(${ry}deg) scale(${scale})`;
+  scene.style.transform=`translateY(var(--cube-offset-y)) rotateX(${rx}deg) rotateY(${ry}deg) scale(${scale})`;
   $('zoomLabel').textContent=Math.round(scale*100)+'%';
 }
 
