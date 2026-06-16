@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>キューブリバーシ 3D パルスFX 完全版</title>
+<title>キューブリバーシ 3D パルス切替版</title>
 <style>
 :root{
   --size:min(47.6vw,47.6vh,364px);
   --text:#f8fafc;
   --muted:#cbd5e1;
   --legal:#facc15;
-  --cube-offset-y:-10vh;
+  --cube-offset-y:10vh;
 }
 *{box-sizing:border-box}
 body{
@@ -257,6 +257,17 @@ button.magic.ready{
   100%{background:#ffffff1f}
 }
 
+
+body.pulse-off #pulseBtn,
+body.pulse-off .energy,
+body.pulse-off #blackEnergy,
+body.pulse-off #whiteEnergy{
+  display:none!important;
+}
+body.pulse-off .cell.pulseTarget{
+  outline:none;
+  box-shadow:none;
+}
 button:disabled{
   opacity:.45;
 }
@@ -342,7 +353,7 @@ select{
 <div class="app">
   <main class="stage" id="stage">
     <div class="title">
-      <h1>キューブリバーシ 3D パルスFX</h1>
+      <h1>キューブリバーシ 3D パルス切替版</h1>
       <p>空いている場所をドラッグで回転。黄色マスをタップで着手。</p>
     </div>
 
@@ -352,7 +363,7 @@ select{
       <div class="cube" id="cube"></div>
     </div>
 
-    <div class="tip">パルスFX完全版：石を置ける状態を復旧し、反転エフェクトを追加</div>
+    <div class="tip">パルスあり／なしをモード変更できます</div>
   </main>
 
   <aside class="side">
@@ -367,7 +378,7 @@ select{
 
 
     <section class="card">
-      <div class="muted"><b>パルス</b></div>
+      <div class="muted"><b>パルス</b> <span id="pulseModeInfo" class="cpu-pill">あり</span></div>
       <div class="muted">エネルギー6で使用可能。<b>パルス使用可能</b>を押してONにしてから置くと、置いたマスの周囲8方向の相手石を追加で奪います。パルスで奪った石は水色リングで光ります。</div>
       <div style="margin-top:10px">黒エネルギー <b id="blackEnergy">0</b>/6<div class="energy"><span id="blackBar"></span></div></div>
       <div style="margin-top:8px">白エネルギー <b id="whiteEnergy">0</b>/6<div class="energy"><span id="whiteBar"></span></div></div>
@@ -399,6 +410,13 @@ select{
             <option value="hard">むずかしい</option>
           </select>
         </label>
+        <label>
+          パルスモード
+          <select id="pulseModeSelect">
+            <option value="on" selected>あり</option>
+            <option value="off">なし</option>
+          </select>
+        </label>
       </div>
       <div id="cpuInfo" class="cpu-pill">CPU：白 / ふつう</div>
       <div class="muted" style="margin-top:8px">
@@ -420,7 +438,7 @@ select{
       <div class="muted">
         <b>仕様</b><br>
         6面×4×4。上下左右の辺越え有効、斜めの面越え無効。<br>
-        CPU難易度：やさしい＝ランダム、ふつう＝反転数重視、むずかしい＝先読み評価。<br>パルス：エネルギー6でONにしてから着手。周囲8方向の相手石を追加で奪う。パルス反転時は水色リングのエフェクト付き。
+        CPU難易度：やさしい＝ランダム、ふつう＝反転数重視、むずかしい＝先読み評価。<br>パルスモード：あり／なしを設定で切替可能。ありの場合、エネルギー6でONにしてから着手すると周囲8方向の相手石を追加で奪います。
       </div>
     </section>
 
@@ -489,6 +507,7 @@ let difficulty='normal';
 let cpuThinking=false;
 let energy;
 let pulseArmed=false;
+let pulseEnabled=true;
 let lastFlipped=new Set();
 let lastPulseFlipped=new Set();
 
@@ -506,6 +525,16 @@ function difficultyName(v){
   return'ふつう';
 }
 
+function updatePulseMode(){
+  const sel=$('pulseModeSelect');
+  pulseEnabled=!sel || sel.value==='on';
+  document.body.classList.toggle('pulse-off', !pulseEnabled);
+  if(!pulseEnabled){
+    pulseArmed=false;
+  }
+  const info=$('pulseModeInfo');
+  if(info)info.textContent=pulseEnabled?'あり':'なし';
+}
 function updateCpuSettings(){
   cpuEnabled=$('modeSelect').value==='cpu';
   cpuColor=Number($('cpuColorSelect').value);
@@ -697,6 +726,7 @@ function applyTransform(){
 }
 
 function render(){
+  updatePulseMode();
   cube.innerHTML='';
 
   const legal=new Set(
@@ -717,7 +747,7 @@ function render(){
         if(showLegal && legal.has(`${f},${x},${y}`)){
           cell.classList.add('legal');
         }
-        if(pulseArmed && board[f][y][x]===opp(turn)){
+        if(pulseEnabled && pulseArmed && board[f][y][x]===opp(turn)){
           cell.classList.add('pulseTarget');
         }
         const key=`${f},${x},${y}`;
@@ -775,7 +805,7 @@ function render(){
       $('hint').textContent='CPUが考えています。';
     }else{
       $('hint').textContent=lm.length
-        ?(pulseArmed?`パルスON：黄色マスに置くと、水色の相手石も追加で奪います。`:`合法手は ${lm.length} 手。黄色のマスをタップ。`)
+        ?(!pulseEnabled?`パルスなし：合法手は ${lm.length} 手。黄色のマスをタップ。`:(pulseArmed?`パルスON：黄色マスに置くと、水色の相手石も追加で奪います。`:`合法手は ${lm.length} 手。黄色のマスをタップ。`))
         :'置ける場所がありません。パスしてください。';
     }
 
@@ -783,9 +813,9 @@ function render(){
   }
 
   if($('pulseBtn')){
-    $('pulseBtn').textContent=pulseArmed?'パルスON：置くと発動':(energy&&energy[turn]>=6?'パルス使用可能':'パルス充電中');
-    $('pulseBtn').disabled=isCpuTurn() || !energy || energy[turn]<6 || !legalMoves(turn).length;
-    $('pulseBtn').classList.toggle('ready', !!energy && energy[turn]>=6 && !pulseArmed && !isCpuTurn());
+    $('pulseBtn').textContent=!pulseEnabled?'パルスなし':(pulseArmed?'パルスON：置くと発動':(energy&&energy[turn]>=6?'パルス使用可能':'パルス充電中'));
+    $('pulseBtn').disabled=!pulseEnabled || isCpuTurn() || !energy || energy[turn]<6 || !legalMoves(turn).length;
+    $('pulseBtn').classList.toggle('ready', pulseEnabled && !!energy && energy[turn]>=6 && !pulseArmed && !isCpuTurn());
   }
   $('undoBtn').disabled=!history.length || cpuThinking;
 
@@ -817,7 +847,7 @@ function play(f,x,y,byCpu){
   }
 
   let extra=[];
-  const usePulse=pulseArmed && energy && energy[turn]>=6;
+  const usePulse=pulseEnabled && pulseArmed && energy && energy[turn]>=6;
   if(usePulse){
     extra=pulseTargets(f,x,y,turn);
     const uniq=new Map(extra.map(q=>[`${q.f},${q.x},${q.y}`,q]));
@@ -831,7 +861,7 @@ function play(f,x,y,byCpu){
   lastFlipped=new Set(flips.map(q=>`${q.f},${q.x},${q.y}`));
   lastPulseFlipped=new Set(extra.map(q=>`${q.f},${q.x},${q.y}`));
 
-  if(energy){
+  if(energy && pulseEnabled){
     energy[turn]=Math.min(6,energy[turn]+pulseGain(flips.length,extra.length));
   }
   pulseArmed=false;
@@ -898,6 +928,8 @@ function undo(){
 
 function reset(){
   updateCpuSettings();
+  updatePulseMode();
+  updatePulseMode();
 
   board=newBoard();
   turn=BLACK;
@@ -1065,7 +1097,7 @@ function scheduleCpu(){
     cpuThinking=false;
 
     if(m){
-      pulseArmed=!!(energy && energy[turn]>=6 && pulseTargets(m.f,m.x,m.y,turn).length>=2);
+      pulseArmed=!!(pulseEnabled && energy && energy[turn]>=6 && pulseTargets(m.f,m.x,m.y,turn).length>=2);
       play(m.f,m.x,m.y,true);
     }else{
       render();
@@ -1108,7 +1140,7 @@ $('stage').addEventListener('wheel',e=>{
 },{passive:false});
 
 $('pulseBtn').onclick=()=>{
-  if(energy && energy[turn]>=6 && !isCpuTurn()){
+  if(pulseEnabled && energy && energy[turn]>=6 && !isCpuTurn()){
     pulseArmed=!pulseArmed;
     logEl.textContent=(pulseArmed?`${name(turn)} パルス準備：次の着手で発動\n`:`${name(turn)} パルス解除\n`)+logEl.textContent;
     render();
@@ -1149,6 +1181,11 @@ $('difficultySelect').onchange=()=>{
   updateCpuSettings();
   render();
 };
+$('pulseModeSelect').onchange=()=>{
+  updatePulseMode();
+  render();
+};
+
 
 reset();
 
