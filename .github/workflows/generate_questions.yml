@@ -1,0 +1,70 @@
+name: Generate AI English Questions
+
+on:
+  workflow_dispatch:
+    inputs:
+      grades:
+        description: "Comma-separated grades: 3,pre2,2,pre1"
+        required: true
+        default: "3,pre2,2,pre1"
+      skill:
+        description: "Skill shelf: all, tense, modal, prep, conj, comp, qneg, pron, verbprep, rel, passive, subj, inv, part, emph, usage"
+        required: true
+        default: "all"
+      count_per_grade:
+        description: "Number of questions to generate per grade"
+        required: true
+        default: "10"
+  schedule:
+    # Runs every Sunday at 18:00 UTC. Change or remove this if you only want manual generation.
+    - cron: "0 18 * * 0"
+
+permissions:
+  contents: write
+
+jobs:
+  generate-questions:
+    runs-on: ubuntu-latest
+
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OPENAI_MODEL: gpt-4.1-mini
+      GRADES: ${{ github.event.inputs.grades || '3,pre2,2,pre1' }}
+      SKILL: ${{ github.event.inputs.skill || 'all' }}
+      COUNT_PER_GRADE: ${{ github.event.inputs.count_per_grade || '10' }}
+      OUTPUT_FILE: questions_ai.json
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install openai
+
+      - name: Generate questions_ai.json
+        run: python scripts/generate_questions.py
+
+      - name: Show generated file summary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('questions_ai.json')
+          data = json.loads(p.read_text(encoding='utf-8'))
+          print(f"Generated file: {p}")
+          print(f"Total questions: {len(data.get('items', []))}")
+          print(f"Grades: {sorted(set(x.get('grade') for x in data.get('items', [])))}")
+          PY
+
+      - name: Commit generated questions
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: generate AI English questions"
+          file_pattern: questions_ai.json
