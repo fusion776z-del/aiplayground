@@ -86,31 +86,36 @@ function generateProblem(level){
       ];
     }
 
-    else if(level === "pre2"){
-      const adj = pick(base.adj);
-      const risk = pick(base.risk);
-      const reason = pick(base.reason);
+else if(level === "pre2"){
+  const adj = pick(base.adj);
+  const risk = pick(base.risk);
+  const reason = pick(base.reason);
 
-      passage += " Some people have different opinions.";
+  passage += " Some people have different opinions.";
 
-      question = `Do you think ${topic} is useful for students?`;
-      instruction = "bankから単語を選び、理由をふくめて英語で2文作りなさい。";
+  if(topic === "getting enough sleep"){
+    question = `Do you think ${topic} is important for students?`;
+  }else{
+    question = `Do you think ${topic} is useful for students?`;
+  }
 
-      const first = [
-        `${firstLead} ${topic} is ${adj}.`,
-        `${firstLead} ${topic} is very ${adj}.`
-      ];
+  instruction = "bankから単語を選び、理由をふくめて英語で2文作りなさい。";
 
-      const second = [
-        `${secondLead} it is ${risk} for ${reason}.`,
-        `${secondLead} it can affect ${reason}.`
-      ];
+  const first = [
+    `${connectors.first} ${topic} is ${adj}.`,
+    `${connectors.first} ${topic} is very ${adj}.`
+  ];
 
-      answers = [
-        pick(first),
-        pick(second)
-      ];
-    }
+  const second = [
+    `${connectors.second} it is ${risk} for ${reason}.`,
+    `${connectors.second} it can affect ${reason}.`
+  ];
+
+  answers = [
+    pick(first),
+    pick(second)
+  ];
+}
 
     else{
       const adj = pick(base.adj);
