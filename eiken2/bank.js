@@ -52,6 +52,7 @@ function makeBank(correct){
 
     else if(level === "pre2"){
       filler = [
+        "First,","Second,",
         "One","Another","reason","is","that",
         "because","also","important",
         "more","less","convenient",
@@ -61,6 +62,7 @@ function makeBank(correct){
 
     else{
       filler = [
+        "First,","Second,",
         "To","begin","with,",
         "In","addition,",
         "however","therefore","although",
