@@ -16,10 +16,11 @@ function pickPair(pairs){
 
 /*
   級ごとの接続表現。
-  準2級・2級でも First, / Second, を使えるようにする。
+  4級・3級は First / Second 固定。
+  準2級は First / Second または One reason / Another reason。
+  2級は First / Second または To begin with / In addition。
 */
 function getConnectors(level){
-
   if(level === "4" || level === "3"){
     return {
       first: "First,",
@@ -39,7 +40,6 @@ function getConnectors(level){
     };
   }
 
-  // 2級
   const pair = pickPair([
     ["First,", "Second,"],
     ["To begin with,", "In addition,"]
@@ -68,6 +68,68 @@ function questionAdjectiveFor(topic){
   return "useful";
 }
 
+/*
+  紹介型問題。
+  例:
+  Introduce your town. Write two things about it.
+  First, my town has a beautiful park.
+  Second, people are kind.
+*/
+function generateIntroProblem(level, base, connectors){
+  const firstLead = connectors.first;
+  const secondLead = connectors.second;
+
+  const place = pick(base.places);
+  const feature = pick(base.features);
+
+  return {
+    passage: base.text || "Please introduce something.",
+    question: base.question || "Introduce it. Write two things about it.",
+    instruction: "bankから単語を選び、2つのことがらについて英語で紹介しなさい。",
+    answers: [
+      `${firstLead} ${base.topic || "it"} has ${place}.`,
+      `${secondLead} ${feature}.`
+    ]
+  };
+}
+
+/*
+  賛成・反対型問題。
+  例:
+  Do you agree with using smartphones?
+  First, it is convenient.
+  Second, it helps communication.
+*/
+function generateOpinionProblem(level, base, connectors){
+  const firstLead = connectors.first;
+  const secondLead = connectors.second;
+
+  const adj = pick(base.adj);
+  const reason = pick(base.reason);
+
+  if(base.stance === "agree"){
+    return {
+      passage: base.text || "",
+      question: base.question || `Do you agree with ${base.topic || "this idea"}?`,
+      instruction: "bankから単語を選び、賛成の理由を英語で2つ作りなさい。",
+      answers: [
+        `${firstLead} it is ${adj}.`,
+        `${secondLead} it helps ${reason}.`
+      ]
+    };
+  }
+
+  return {
+    passage: base.text || "",
+    question: base.question || `Do you disagree with ${base.topic || "this idea"}?`,
+    instruction: "bankから単語を選び、反対の理由を英語で2つ作りなさい。",
+    answers: [
+      `${firstLead} it is ${adj}.`,
+      `${secondLead} it can affect ${reason}.`
+    ]
+  };
+}
+
 function generateProblem(level){
   try{
     if(!LEVELS[level] || LEVELS[level].length === 0){
@@ -83,9 +145,23 @@ function generateProblem(level){
     let answers = [];
 
     const connectors = getConnectors(level);
-    const firstLead = connectors.first;
-    const secondLead = connectors.second;
 
+    /*
+      type付き問題を先に処理する。
+      これにより、3級・準2級・2級すべてで
+      intro / opinion 型が使える。
+    */
+    if(base.type === "intro"){
+      return generateIntroProblem(level, base, connectors);
+    }
+
+    if(base.type === "opinion"){
+      return generateOpinionProblem(level, base, connectors);
+    }
+
+    /*
+      通常問題：4級
+    */
     if(level === "4"){
       const adj = pick(base.adj);
 
@@ -93,11 +169,14 @@ function generateProblem(level){
       instruction = "bankから単語を選び、英語で2文作りなさい。";
 
       answers = [
-        `${firstLead} I like ${topic}.`,
-        `${secondLead} it is ${adj}.`
+        `${connectors.first} I like ${topic}.`,
+        `${connectors.second} it is ${adj}.`
       ];
     }
 
+    /*
+      通常問題：3級
+    */
     else if(level === "3"){
       const adj = pick(base.adj);
       const reason = pick(base.reason);
@@ -106,13 +185,13 @@ function generateProblem(level){
       instruction = "bankから単語を選び、あなたの考えを英語で2文作りなさい。";
 
       const first = [
-        `${firstLead} I think ${topic} is ${adj}.`,
-        `${firstLead} I think ${topic} is very ${adj}.`
+        `${connectors.first} I think ${topic} is ${adj}.`,
+        `${connectors.first} I think ${topic} is very ${adj}.`
       ];
 
       const second = [
-        `${secondLead} it is good for ${reason}.`,
-        `${secondLead} it helps ${reason}.`
+        `${connectors.second} it is good for ${reason}.`,
+        `${connectors.second} it helps ${reason}.`
       ];
 
       answers = [
@@ -121,6 +200,9 @@ function generateProblem(level){
       ];
     }
 
+    /*
+      通常問題：準2級
+    */
     else if(level === "pre2"){
       const adj = pick(base.adj);
       const risk = pick(base.risk);
@@ -132,13 +214,13 @@ function generateProblem(level){
       instruction = "bankから単語を選び、理由をふくめて英語で2文作りなさい。";
 
       const first = [
-        `${firstLead} ${topic} is ${adj}.`,
-        `${firstLead} ${topic} is very ${adj}.`
+        `${connectors.first} ${topic} is ${adj}.`,
+        `${connectors.first} ${topic} is very ${adj}.`
       ];
 
       const second = [
-        `${secondLead} it is ${risk} for ${reason}.`,
-        `${secondLead} it can affect ${reason}.`
+        `${connectors.second} it is ${risk} for ${reason}.`,
+        `${connectors.second} it can affect ${reason}.`
       ];
 
       answers = [
@@ -147,6 +229,9 @@ function generateProblem(level){
       ];
     }
 
+    /*
+      通常問題：2級
+    */
     else{
       const adj = pick(base.adj);
       const risk = pick(base.risk);
@@ -158,13 +243,13 @@ function generateProblem(level){
       instruction = "bankから単語を選び、理由または対比をふくめて英語で2文作りなさい。";
 
       const first = [
-        `${firstLead} ${topic} is ${adj}.`,
-        `${firstLead} ${topic} is very ${adj}.`
+        `${connectors.first} ${topic} is ${adj}.`,
+        `${connectors.first} ${topic} is very ${adj}.`
       ];
 
       const second = [
-        `${secondLead} it can be a ${risk} in ${field}.`,
-        `${secondLead} it may cause a ${risk} in ${field}.`
+        `${connectors.second} it can be a ${risk} in ${field}.`,
+        `${connectors.second} it may cause a ${risk} in ${field}.`
       ];
 
       answers = [
