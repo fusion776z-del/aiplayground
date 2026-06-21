@@ -96,7 +96,7 @@ else if(level === "pre2"){
   if(topic === "getting enough sleep"){
     question = `Do you think ${topic} is important for students?`;
   }else{
-    question = `Do you think ${topic} is useful for students?`;
+    question = `Do you think ${topic} is ${questionAdjectiveFor(topic)} for students?`;
   }
 
   instruction = "bankから単語を選び、理由をふくめて英語で2文作りなさい。";
