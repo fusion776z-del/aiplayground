@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>英検 英作文アプリ</title>
+<style>
+body{margin:0;font-family:sans-serif;background:#0f172a;color:white}
+.header{background:#1e293b;padding:15px;text-align:center}
+.container{padding:15px}
+.card{background:#1e293b;border-radius:12px;padding:15px;margin-bottom:10px}
+.bank button{margin:5px;padding:10px;border:none;border-radius:10px;background:#334155;color:white;font-size:14px}
+.answer{min-height:50px;margin:10px 0}
+.answer button{
+  margin:5px;
+  padding:8px 10px;
+  border:none;
+  border-radius:10px;
+  background:#2563eb;
+  color:white;
+  font-size:14px;
+}
+.score{font-size:22px}.good{color:#22c55e}.mid{color:#facc15}.bad{color:#ef4444}
+button.main{width:100%;padding:12px;margin-top:10px;border:none;border-radius:10px;background:#3b82f6;color:white}
+select{padding:10px;border-radius:10px;margin-top:8px}.small{font-size:13px;color:#cbd5e1}
+</style>
+</head>
+<body>
+<div class="header">英検 級別英作文アプリ<br>
+<select id="levelSelect" onchange="setLevel(this.value)">
+<option value="4">4級</option>
+<option value="3">3級</option>
+<option value="pre2">準2級</option>
+<option value="2">2級</option>
+</select>
+</div>
+<div class="container">
+<div class="card" id="reading"></div>
+<div class="card">
+  <div class="answer" id="answer"></div>
+  <div class="bank" id="bank"></div>
+  <div class="small">回答内の単語をタップすると削除できます。ダブルタップで左へ移動。</div>
+</div>
+<div class="card">
+  <button class="main" onclick="safe(check)">採点</button>
+  <button class="main" onclick="safe(next)">次へ</button>
+  <button class="main" onclick="safe(undo)">1つ戻る</button>
+  <button class="main" onclick="safe(clearAll)">リセット</button>
+</div>
+<div class="card" id="result"></div>
+</div>
+<script src="data.js"></script>
+<script src="generator.js"></script>
+<script src="bank.js"></script>
+<script src="scoring.js"></script>
+<script src="ui.js"></script>
+</body>
+</html>
