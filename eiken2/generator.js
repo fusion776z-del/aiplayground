@@ -10,27 +10,62 @@ function pick(value){
   return "good";
 }
 
+function pickPair(pairs){
+  return pairs[Math.floor(Math.random() * pairs.length)];
+}
+
+/*
+  級ごとの接続表現。
+  準2級・2級でも First, / Second, を使えるようにする。
+*/
 function getConnectors(level){
+
   if(level === "4" || level === "3"){
     return {
-
       first: "First,",
       second: "Second,"
-
     };
   }
 
   if(level === "pre2"){
+    const pair = pickPair([
+      ["First,", "Second,"],
+      ["One reason is that", "Another reason is that"]
+    ]);
+
     return {
-      first: "One reason is that",
-      second: "Another reason is that"
+      first: pair[0],
+      second: pair[1]
     };
   }
 
+  // 2級
+  const pair = pickPair([
+    ["First,", "Second,"],
+    ["To begin with,", "In addition,"]
+  ]);
+
   return {
-    first: "To begin with",
-    second: "In addition"
+    first: pair[0],
+    second: pair[1]
   };
+}
+
+/*
+  質問文で useful / important を使い分ける。
+  sleep や exercise は useful より important の方が自然。
+*/
+function questionAdjectiveFor(topic){
+  const importantTopics = [
+    "getting enough sleep",
+    "exercising"
+  ];
+
+  if(importantTopics.includes(topic)){
+    return "important";
+  }
+
+  return "useful";
 }
 
 function generateProblem(level){
@@ -86,36 +121,31 @@ function generateProblem(level){
       ];
     }
 
-else if(level === "pre2"){
-  const adj = pick(base.adj);
-  const risk = pick(base.risk);
-  const reason = pick(base.reason);
+    else if(level === "pre2"){
+      const adj = pick(base.adj);
+      const risk = pick(base.risk);
+      const reason = pick(base.reason);
 
-  passage += " Some people have different opinions.";
+      passage += " Some people have different opinions.";
 
-  if(topic === "getting enough sleep"){
-    question = `Do you think ${topic} is important for students?`;
-  }else{
-    question = `Do you think ${topic} is ${questionAdjectiveFor(topic)} for students?`;
-  }
+      question = `Do you think ${topic} is ${questionAdjectiveFor(topic)} for students?`;
+      instruction = "bankから単語を選び、理由をふくめて英語で2文作りなさい。";
 
-  instruction = "bankから単語を選び、理由をふくめて英語で2文作りなさい。";
+      const first = [
+        `${firstLead} ${topic} is ${adj}.`,
+        `${firstLead} ${topic} is very ${adj}.`
+      ];
 
-  const first = [
-    `${connectors.first} ${topic} is ${adj}.`,
-    `${connectors.first} ${topic} is very ${adj}.`
-  ];
+      const second = [
+        `${secondLead} it is ${risk} for ${reason}.`,
+        `${secondLead} it can affect ${reason}.`
+      ];
 
-  const second = [
-    `${connectors.second} it is ${risk} for ${reason}.`,
-    `${connectors.second} it can affect ${reason}.`
-  ];
-
-  answers = [
-    pick(first),
-    pick(second)
-  ];
-}
+      answers = [
+        pick(first),
+        pick(second)
+      ];
+    }
 
     else{
       const adj = pick(base.adj);
@@ -158,8 +188,8 @@ else if(level === "pre2"){
       question: "What do you think?",
       instruction: "bankから単語を選び、英語で2文作りなさい。",
       answers: [
-        "First I think it is good.",
-        "Second it is important."
+        "First, I think it is good.",
+        "Second, it is important."
       ]
     };
   }
