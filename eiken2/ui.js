@@ -93,13 +93,31 @@ function check(){
 
   let cls = "bad";
   let txt = "不合格";
-  if(r.score >= 80){ cls = "good"; txt = "合格"; }
-  else if(r.score >= 60){ cls = "mid"; txt = "あと少し"; }
+
+  if(r.score >= 80){
+    cls = "good";
+    txt = "合格";
+  }else if(r.score >= 60){
+    cls = "mid";
+    txt = "あと少し";
+  }
+
+  const wordFeedbackHtml =
+    r.wordFeedback && r.wordFeedback.length
+      ? `
+        <br><br>
+        <b>なぜ減点された？</b><br>
+        ${r.wordFeedback.map(x => `・${x}`).join("<br>")}
+      `
+      : "";
 
   document.getElementById("result").innerHTML = `
-    <div class="score ${cls}"><b>${r.score}点 - ${txt}</b></div>
+    <div class="score ${cls}">
+      <b>${r.score}点 - ${txt}</b>
+    </div>
     <br>
     ${r.comments.join(" / ") || "OK！"}
+    ${wordFeedbackHtml}
     <br><br>
     <b>正解:</b><br>
     ${model}
