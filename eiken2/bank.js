@@ -11,10 +11,11 @@ function makeBank(correct){
         "Second, it is good."
       ]
 
-      ここでは、
+      処理方針:
       - カンマは残す
       - ピリオドは単語として残す
-      - ? ! は削除
+      - ? と ! は削除
+      - First と First, のような重複は整理
     */
     let words = correct
       .filter(x => typeof x === "string")
@@ -27,7 +28,7 @@ function makeBank(correct){
     // 重複削除
     words = [...new Set(words)];
 
-    // First と First, のような重複を整理
+    // First / First, などを整理
     words = removePlainConnectorDuplicates(words);
 
     let filler;
@@ -37,7 +38,12 @@ function makeBank(correct){
         "First,","Second,",
         "I","you","he","she",
         "like","love","have","is",
-        "good","fun","nice","a","the"
+        "good","fun","nice","a","the",
+
+        // 追加語
+        "town","park","library","shops",
+        "people","kind","beautiful","interesting",
+        "agree","disagree","helpful","affect"
       ];
     }
 
@@ -46,7 +52,12 @@ function makeBank(correct){
         "First,","Second,",
         "and","but","because","very",
         "good","important","useful",
-        "students","people","every"
+        "students","people","every",
+
+        // 追加語
+        "town","park","library","shops",
+        "people","kind","beautiful","interesting",
+        "agree","disagree","helpful","affect"
       ];
     }
 
@@ -56,7 +67,12 @@ function makeBank(correct){
         "One","Another","reason","is","that",
         "because","also","important",
         "more","less","convenient",
-        "health","study","problem","useful"
+        "health","study","problem","useful",
+
+        // 追加語
+        "town","park","library","shops",
+        "people","kind","beautiful","interesting",
+        "agree","disagree","helpful","affect"
       ];
     }
 
@@ -68,7 +84,12 @@ function makeBank(correct){
         "however","therefore","although",
         "society","problem","risk",
         "education","communication",
-        "useful","important"
+        "useful","important",
+
+        // 追加語
+        "town","park","library","shops",
+        "people","kind","beautiful","interesting",
+        "agree","disagree","helpful","affect"
       ];
     }
 
@@ -84,7 +105,7 @@ function makeBank(correct){
       safety++;
     }
 
-    // filler追加後にも念のためもう一度整理
+    // filler追加後にも念のため整理
     words = [...new Set(words)];
     words = removePlainConnectorDuplicates(words);
 
@@ -93,11 +114,13 @@ function makeBank(correct){
   }catch(e){
     console.error("bank error:", e);
 
+    // 失敗してもbankが空にならないようにする
     return [
       "First,","Second,",
       "I","think","it","is","good",
       ".","because","important","students",
-      "study","health"
+      "study","health",
+      "town","park","people","kind"
     ];
   }
 }
