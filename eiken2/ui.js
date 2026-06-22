@@ -89,7 +89,7 @@ function clearAll(){
 function check(){
   const input = answer.join(" ");
   const model = current.answers.join(" ");
-  const r = scoreAnswer(input, model);
+  const r = scoreAnswer(input, model, level);
 
   let cls = "bad";
   let txt = "不合格";
