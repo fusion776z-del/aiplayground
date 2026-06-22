@@ -16,7 +16,8 @@ function pickPair(pairs){
 
 /*
   級ごとの接続表現。
-  4級・3級は First / Second 固定。
+  4級は通常問題では1文回答なので、通常問題では使わない。
+  3級は First / Second 固定。
   準2級は First / Second または One reason / Another reason。
   2級は First / Second または To begin with / In addition。
 */
@@ -161,16 +162,18 @@ function generateProblem(level){
 
     /*
       通常問題：4級
+      4級だけは1文で答える。
     */
     if(level === "4"){
-      const adj = pick(base.adj);
+      const questionTopic = base.questionTopic || topic;
 
-      question = `What do you think about ${topic}?`;
-      instruction = "bankから単語を選び、英語で2文作りなさい。";
+      passage = base.text || "";
+
+      question = `Make one sentence about ${questionTopic}.`;
+      instruction = "bankから単語を選び、英語で1文作りなさい。";
 
       answers = [
-        `${connectors.first} I like ${topic}.`,
-        `${connectors.second} it is ${adj}.`
+        `I like ${topic}.`
       ];
     }
 
