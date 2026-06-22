@@ -4,19 +4,6 @@ function makeBank(correct){
       throw new Error("correct must be array");
     }
 
-    /*
-      correct 例:
-      [
-        "First, I like baseball.",
-        "Second, it is good."
-      ]
-
-      処理方針:
-      - カンマは残す
-      - ピリオドは単語として残す
-      - ? と ! は削除
-      - First と First, のような重複は整理
-    */
     let words = correct
       .filter(x => typeof x === "string")
       .join(" ")
@@ -25,38 +12,19 @@ function makeBank(correct){
       .split(/\s+/)
       .filter(Boolean);
 
-    // 重複削除
     words = [...new Set(words)];
-
-    // First / First, などを整理
     words = removePlainConnectorDuplicates(words);
 
     let filler;
 
-    if(level === "4"){
-      filler = [
-        "First,","Second,",
-        "I","you","he","she",
-        "like","love","have","is",
-        "good","fun","nice","a","the",
-
-        // 追加語
-        "town","park","library","shops",
-        "people","kind","beautiful","interesting",
-        "agree","disagree","helpful","affect"
-      ];
-    }
-
-    else if(level === "3"){
+    if(level === "3"){
       filler = [
         "First,","Second,",
         "and","but","because","very",
         "good","important","useful",
         "students","people","every",
-
-        // 追加語
         "town","park","library","shops",
-        "people","kind","beautiful","interesting",
+        "kind","beautiful","interesting",
         "agree","disagree","helpful","affect"
       ];
     }
@@ -68,8 +36,6 @@ function makeBank(correct){
         "because","also","important",
         "more","less","convenient",
         "health","study","problem","useful",
-
-        // 追加語
         "town","park","library","shops",
         "people","kind","beautiful","interesting",
         "agree","disagree","helpful","affect"
@@ -85,8 +51,6 @@ function makeBank(correct){
         "society","problem","risk",
         "education","communication",
         "useful","important",
-
-        // 追加語
         "town","park","library","shops",
         "people","kind","beautiful","interesting",
         "agree","disagree","helpful","affect"
@@ -105,7 +69,6 @@ function makeBank(correct){
       safety++;
     }
 
-    // filler追加後にも念のため整理
     words = [...new Set(words)];
     words = removePlainConnectorDuplicates(words);
 
@@ -114,27 +77,15 @@ function makeBank(correct){
   }catch(e){
     console.error("bank error:", e);
 
-    // 失敗してもbankが空にならないようにする
     return [
       "First,","Second,",
       "I","think","it","is","good",
       ".","because","important","students",
-      "study","health",
-      "town","park","people","kind"
+      "study","health"
     ];
   }
 }
 
-/*
-  カンマ付きの接続語がある場合、
-  カンマなし版を削る。
-
-  例:
-  ["First,", "First"] → ["First,"]
-  ["Second,", "Second"] → ["Second,"]
-  ["with,", "with"] → ["with,"]
-  ["addition,", "addition"] → ["addition,"]
-*/
 function removePlainConnectorDuplicates(words){
   const hasFirstComma = words.includes("First,");
   const hasSecondComma = words.includes("Second,");
@@ -144,11 +95,8 @@ function removePlainConnectorDuplicates(words){
   return words.filter(w => {
     if(hasFirstComma && w === "First") return false;
     if(hasSecondComma && w === "Second") return false;
-
-    // 2級用: To begin with, / In addition,
     if(hasWithComma && w === "with") return false;
     if(hasAdditionComma && w === "addition") return false;
-
     return true;
   });
 }

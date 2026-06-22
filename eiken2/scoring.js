@@ -18,19 +18,11 @@ function scoreAnswer(input, model, level){
     .split(".")
     .filter(s => s.trim()).length;
 
-  // 4級は1文でOK、3級以上は2文必要
-  if(level === "4"){
-    if(sentenceCount >= 1){
-      score += 20;
-    }else{
-      comments.push("1文作ろう");
-    }
+  // 3級以上のみ対応：2文必要
+  if(sentenceCount >= 2){
+    score += 20;
   }else{
-    if(sentenceCount >= 2){
-      score += 20;
-    }else{
-      comments.push("2文必要");
-    }
+    comments.push("2文必要");
   }
 
   // 内容点

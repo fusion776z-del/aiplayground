@@ -14,15 +14,8 @@ function pickPair(pairs){
   return pairs[Math.floor(Math.random() * pairs.length)];
 }
 
-/*
-  級ごとの接続表現。
-  4級は通常問題では1文回答なので、通常問題では使わない。
-  3級は First / Second 固定。
-  準2級は First / Second または One reason / Another reason。
-  2級は First / Second または To begin with / In addition。
-*/
 function getConnectors(level){
-  if(level === "4" || level === "3"){
+  if(level === "3"){
     return {
       first: "First,",
       second: "Second,"
@@ -52,10 +45,6 @@ function getConnectors(level){
   };
 }
 
-/*
-  質問文で useful / important を使い分ける。
-  sleep や exercise は useful より important の方が自然。
-*/
 function questionAdjectiveFor(topic){
   const importantTopics = [
     "getting enough sleep",
@@ -69,13 +58,6 @@ function questionAdjectiveFor(topic){
   return "useful";
 }
 
-/*
-  紹介型問題。
-  例:
-  Introduce your town. Write two things about it.
-  First, my town has a beautiful park.
-  Second, people are kind.
-*/
 function generateIntroProblem(level, base, connectors){
   const firstLead = connectors.first;
   const secondLead = connectors.second;
@@ -94,13 +76,6 @@ function generateIntroProblem(level, base, connectors){
   };
 }
 
-/*
-  賛成・反対型問題。
-  例:
-  Do you agree with using smartphones?
-  First, it is convenient.
-  Second, it helps communication.
-*/
 function generateOpinionProblem(level, base, connectors){
   const firstLead = connectors.first;
   const secondLead = connectors.second;
@@ -147,11 +122,6 @@ function generateProblem(level){
 
     const connectors = getConnectors(level);
 
-    /*
-      type付き問題を先に処理する。
-      これにより、3級・準2級・2級すべてで
-      intro / opinion 型が使える。
-    */
     if(base.type === "intro"){
       return generateIntroProblem(level, base, connectors);
     }
@@ -160,27 +130,7 @@ function generateProblem(level){
       return generateOpinionProblem(level, base, connectors);
     }
 
-    /*
-      通常問題：4級
-      4級だけは1文で答える。
-    */
-    if(level === "4"){
-      const questionTopic = base.questionTopic || topic;
-
-      passage = base.text || "";
-
-      question = `Make one sentence about ${questionTopic}.`;
-      instruction = "bankから単語を選び、英語で1文作りなさい。";
-
-      answers = [
-        `I like ${topic}.`
-      ];
-    }
-
-    /*
-      通常問題：3級
-    */
-    else if(level === "3"){
+    if(level === "3"){
       const adj = pick(base.adj);
       const reason = pick(base.reason);
 
@@ -203,9 +153,6 @@ function generateProblem(level){
       ];
     }
 
-    /*
-      通常問題：準2級
-    */
     else if(level === "pre2"){
       const adj = pick(base.adj);
       const risk = pick(base.risk);
@@ -232,9 +179,6 @@ function generateProblem(level){
       ];
     }
 
-    /*
-      通常問題：2級
-    */
     else{
       const adj = pick(base.adj);
       const risk = pick(base.risk);

@@ -1,10 +1,14 @@
-let level = "4";
+let level = "3";
 let current = generateProblem(level);
 let answer = [];
 
 function safe(fn){
-  try{ fn(); }
-  catch(e){ console.error(e); alert("エラーが発生しました"); }
+  try{
+    fn();
+  }catch(e){
+    console.error(e);
+    alert("エラーが発生しました");
+  }
 }
 
 function setLevel(l){
@@ -15,6 +19,7 @@ function setLevel(l){
 
 function show(){
   answer = [];
+
   if(!current || !current.answers){
     current = generateProblem(level);
   }
@@ -37,10 +42,14 @@ function show(){
 function renderBank(correct){
   const bankDiv = document.getElementById("bank");
   bankDiv.innerHTML = "";
+
   makeBank(correct).forEach(w => {
     const b = document.createElement("button");
     b.textContent = w;
-    b.onclick = () => { answer.push(w); updateAnswer(); };
+    b.onclick = () => {
+      answer.push(w);
+      updateAnswer();
+    };
     bankDiv.appendChild(b);
   });
 }
@@ -51,17 +60,13 @@ function updateAnswer(){
 
   answer.forEach((word, i) => {
     const b = document.createElement("button");
-
-    // 表示は単語だけにする
     b.textContent = word;
 
-    // タップで削除
     b.onclick = () => {
       answer.splice(i, 1);
       updateAnswer();
     };
 
-    // ダブルタップで左へ移動
     b.ondblclick = () => {
       if(i > 0){
         const tmp = answer[i];
@@ -72,10 +77,10 @@ function updateAnswer(){
     };
 
     b.title = "タップで削除 / ダブルタップで左へ移動";
-
     div.appendChild(b);
   });
 }
+
 function undo(){
   answer.pop();
   updateAnswer();
@@ -102,19 +107,16 @@ function check(){
     txt = "あと少し";
   }
 
-  const wordFeedbackHtml =
-    r.wordFeedback && r.wordFeedback.length
-      ? `
-        <br><br>
-        <b>なぜ減点された？</b><br>
-        ${r.wordFeedback.map(x => `・${x}`).join("<br>")}
-      `
-      : "";
+  const wordFeedbackHtml = r.wordFeedback && r.wordFeedback.length
+    ? `
+      <br><br>
+      <b>なぜ減点された？</b><br>
+      ${r.wordFeedback.map(x => `・${x}`).join("<br>")}
+    `
+    : "";
 
   document.getElementById("result").innerHTML = `
-    <div class="score ${cls}">
-      <b>${r.score}点 - ${txt}</b>
-    </div>
+    <div class="score ${cls}"><b>${r.score}点 - ${txt}</b></div>
     <br>
     ${r.comments.join(" / ") || "OK！"}
     ${wordFeedbackHtml}
