@@ -174,15 +174,31 @@ function newP(x,y){
 function mkE(e){
   const b=getBalance();
   const st=G.stageIndex||0;
-  let enemy;
 
-  if(e.id==="wind_bat"){
-    enemy={...e,type:"bat",w:24,h:20,hp:2,atk:2,speed:1.25,t:0,hitT:0,color:"#8de7ff"};
+  // enemyTypes.js が読み込まれていれば、敵性能は EnemyTypes 側から作る。
+  // 読み込まれていない場合でも旧処理相当で動くようにフォールバックする。
+  let enemy;
+  if(typeof createEnemyFromPlacement === "function"){
+    enemy=createEnemyFromPlacement(e);
+  }else if(e.id==="wind_bat"){
+    enemy={...e,type:"bat",w:24,h:20,hp:2,maxHp:2,atk:2,speed:1.25,t:0,hitT:0,color:"#8de7ff"};
   }else if(e.id==="fast"){
-    enemy={...e,type:"fast",w:24,h:22,hp:2,atk:2,speed:1.55,t:0,hitT:0,color:"#ffcc66"};
+    enemy={...e,type:"fast",w:24,h:22,hp:2,maxHp:2,atk:2,speed:1.55,t:0,hitT:0,color:"#ffcc66"};
   }else{
-    enemy={...e,type:"slime",w:24,h:22,hp:3,atk:2,speed:.9,t:0,hitT:0,color:"#78df72"};
+    enemy={...e,type:"slime",w:24,h:22,hp:3,maxHp:3,atk:2,speed:.9,t:0,hitT:0,color:"#78df72"};
   }
+
+  // 必須値の保険。EnemyTypes 側に未定義の敵IDが来ても落ちないようにする。
+  enemy.type=enemy.type||enemy.id||"slime";
+  enemy.w=enemy.w||24;
+  enemy.h=enemy.h||22;
+  enemy.hp=enemy.hp||1;
+  enemy.maxHp=enemy.maxHp||enemy.hp;
+  enemy.atk=enemy.atk||enemy.touchDamage||1;
+  enemy.speed=enemy.speed||0.9;
+  enemy.t=enemy.t||0;
+  enemy.hitT=enemy.hitT||0;
+  enemy.color=enemy.color||"#78df72";
 
   // バランス倍率適用
   enemy.hp=Math.max(1,Math.round(enemy.hp*b.enemyHpMul));
@@ -192,12 +208,23 @@ function mkE(e){
 
   // ステージ1だけ追加抑制
   if(st===0){
-    if(enemy.type==="fast"){enemy.speed*=0.82;enemy.hp=Math.max(1,enemy.hp-1);}
-    if(enemy.type==="bat"){enemy.speed*=0.78;enemy.atk=1;}
+    if(enemy.type==="fast"){
+      enemy.speed*=0.82;
+      enemy.hp=Math.max(1,enemy.hp-1);
+      enemy.maxHp=enemy.hp;
+    }
+    if(enemy.type==="bat"){
+      enemy.speed*=0.78;
+      enemy.atk=1;
+    }
   }
+
   // 後半の雑魚を少し硬く
   if(st>=4){
-    if(enemy.type==="fast")enemy.hp+=1;
+    if(enemy.type==="fast"){
+      enemy.hp+=1;
+      enemy.maxHp=enemy.hp;
+    }
     if(enemy.type==="bat")enemy.speed*=1.05;
   }
 
