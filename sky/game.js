@@ -9890,3 +9890,316 @@ loop();
   updateHerbCountBadge();
 
 })();
+
+/* =========================================================
+   FINAL FIX: 幅広・アニメーション付き波動砲 v2
+   目的:
+   - 波動砲の当たり判定と見た目を広くする
+   - 光る楕円、残像、中心線、粒子でアニメーション感を追加
+   - 既存のスマホ操作パッチ/ボスラッシュパッチより後ろで最終上書きする
+========================================================= */
+(function(){
+  if(window.__wideAnimatedWaveCannonV2Applied)return;
+  window.__wideAnimatedWaveCannonV2Applied=true;
+
+  function hitSafe(a,b){
+    return a&&b&&a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
+  }
+  function distHitSafe(a,cx,cy,r){
+    if(!a)return false;
+    const ex=a.x+a.w/2;
+    const ey=a.y+a.h/2;
+    return (ex-cx)*(ex-cx)+(ey-cy)*(ey-cy)<=r*r;
+  }
+  function canUseEightWayWave(){
+    const p=G.player;
+    return !!p && (p.swordLv||0)>=5 && (p.shieldLv||0)>=5 && (p.bookLv||0)>=5;
+  }
+  function directionAngle(dx,dy){
+    return Math.atan2(dy,dx);
+  }
+  function waveSizeForDir(dx,dy,wideLevel){
+    // 直線方向は横長/縦長、斜めは正方形寄りにして広く当てる。
+    const diag=Math.abs(dx)>0 && Math.abs(dy)>0;
+    if(diag){
+      return {
+        w:wideLevel>=2?44:38,
+        h:wideLevel>=2?44:38,
+        visualLen:wideLevel>=2?78:64,
+        visualThick:wideLevel>=2?30:24
+      };
+    }
+    if(Math.abs(dx)>0){
+      return {
+        w:wideLevel>=2?58:46,
+        h:wideLevel>=2?28:22,
+        visualLen:wideLevel>=2?92:74,
+        visualThick:wideLevel>=2?34:26
+      };
+    }
+    return {
+      w:wideLevel>=2?28:22,
+      h:wideLevel>=2?58:46,
+      visualLen:wideLevel>=2?92:74,
+      visualThick:wideLevel>=2?34:26
+    };
+  }
+  function pushWaveParticle(x,y,color,angle,spread){
+    if(!Array.isArray(G.effects))G.effects=[];
+    const back=angle+Math.PI;
+    for(let i=0;i<4;i++){
+      const a=back+(Math.random()-0.5)*(spread||0.8);
+      const sp=0.8+Math.random()*1.8;
+      G.effects.push({
+        type:"wave_spark",
+        x:x+(Math.random()-0.5)*18,
+        y:y+(Math.random()-0.5)*18,
+        vx:Math.cos(a)*sp,
+        vy:Math.sin(a)*sp,
+        life:18+Math.floor(Math.random()*10),
+        max:28,
+        color:color||"#9ef7ff",
+        size:2+Math.random()*2
+      });
+    }
+  }
+  function shootWaveDir(dx,dy,opt){
+    const p=G.player;
+    if(!p)return;
+    opt=opt||{};
+    const n=nrm(dx,dy);
+    const wideLevel=opt.wideLevel||1;
+    const size=waveSizeForDir(dx,dy,wideLevel);
+    const color=opt.color||(p.trueGold?"#ffd84d":"#9ef7ff");
+    const x=p.x+p.w/2-size.w/2;
+    const y=p.y+p.h/2-size.h/2;
+    const angle=directionAngle(n.x,n.y);
+
+    G.bullets.push({
+      x,
+      y,
+      w:size.w,
+      h:size.h,
+      vx:n.x*(opt.speed||7.2),
+      vy:n.y*(opt.speed||7.2),
+      life:opt.life||82,
+      maxLife:opt.life||82,
+      dmg:opt.dmg||Math.max(2,Math.round((p.atk||3)*0.8)),
+      magic:true,
+      wave:true,
+      wideWave:true,
+      animatedWave:true,
+      angle,
+      visualLen:size.visualLen,
+      visualThick:size.visualThick,
+      radius:opt.radius||38,
+      color,
+      pulseSeed:Math.random()*Math.PI*2
+    });
+
+    pushWaveParticle(p.x+p.w/2,p.y+p.h/2,color,angle,0.9);
+  }
+  function shootForwardWave(baseDamage){
+    const p=G.player;
+    if(!p)return;
+    const wideLevel=p.trueGold?2:1;
+    const opt={
+      speed:p.trueGold?7.8:6.9,
+      life:p.trueGold?90:74,
+      dmg:Math.max(2,Math.round((baseDamage||p.atk||3)*(p.trueGold?1.02:0.78))),
+      radius:p.trueGold?44:34,
+      color:p.trueGold?"#ffd84d":"#9ef7ff",
+      wideLevel
+    };
+    if(p.dir==="up")shootWaveDir(0,-1,opt);
+    else if(p.dir==="down")shootWaveDir(0,1,opt);
+    else if(p.dir==="left")shootWaveDir(-1,0,opt);
+    else shootWaveDir(1,0,opt);
+  }
+  function shootEightWayWave(baseDamage){
+    const p=G.player;
+    if(!p)return;
+    const dirs=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+    const color="#fff7a8";
+    const dmg=Math.max(3,Math.round((baseDamage||p.atk||3)*0.88));
+    for(const d of dirs){
+      shootWaveDir(d[0],d[1],{
+        speed:7.8,
+        life:90,
+        dmg,
+        radius:46,
+        color,
+        wideLevel:2
+      });
+    }
+    if(typeof ring==="function")ring(p.x+p.w/2,p.y+p.h/2,130,color);
+    msg("八方向・幅広波動砲！",58);
+  }
+
+  // attack() を再度、最終上書き。後ろの操作パッチで消されないよう、このパッチを一番最後に置く。
+  attack=function(){
+    const p=G.player;
+    if(!p)return;
+    const st=G.stageIndex||0;
+    p.combo=p.combo%3+1;
+    p.comboT=38;
+    const sweep=p.combo===3;
+    const r=sweep?(p.trueGold?94:p.curseLifted?82:70):0;
+    p.attackT=sweep?18:12;
+    p.attackCd=sweep?18:12;
+    const a=atkBox();
+    const atkMul=st>=4?(p.trueGold?0.82:0.92):1;
+    const d=p.atk*atkMul*(sweep?1.35:1);
+
+    if(sweep&&canUseEightWayWave()){
+      shootEightWayWave(d);
+    }else if(p.curseLifted||p.trueGold){
+      shootForwardWave(d);
+    }
+
+    if(sweep){
+      const cx=p.x+p.w/2;
+      const cy=p.y+p.h/2;
+      const rr=st>=4&&p.trueGold?Math.round(r*0.90):r;
+      let hits=0;
+      for(let i=G.enemies.length-1;i>=0;i--){
+        const e=G.enemies[i];
+        if(e&&distHitSafe(e,cx,cy,rr)){dmgE(e,d);hits++;}
+      }
+      if(G.boss&&distHitSafe(G.boss,cx,cy,rr))dmgB(d*.8);
+      if(typeof ring==="function")ring(cx,cy,rr,p.trueGold?"#ffd84d":"#9ef7ff");
+      if(!canUseEightWayWave())msg("なぎ払い！ x"+hits,36);
+    }else{
+      for(let i=G.enemies.length-1;i>=0;i--){
+        const e=G.enemies[i];
+        if(e&&hitSafe(a,e))dmgE(e,d);
+      }
+      if(G.boss&&hitSafe(a,G.boss))dmgB(d);
+    }
+  };
+
+  // 波動砲をボスにも確実に当てる。
+  const oldUpdBullets=updBullets;
+  updBullets=function(){
+    oldUpdBullets();
+    if(!G||!Array.isArray(G.bullets))return;
+    for(let i=G.bullets.length-1;i>=0;i--){
+      const b=G.bullets[i];
+      if(!b||!b.wave)continue;
+      if(G.boss&&hitSafe(b,G.boss)){
+        dmgB(Math.max(1,Math.round(b.dmg||3)));
+        const x=b.x+b.w/2;
+        const y=b.y+b.h/2;
+        if(typeof fx==="function")fx(x,y,b.color||"#fff7a8",18,3.5);
+        if(typeof ring==="function")ring(x,y,b.radius||38,b.color||"#fff7a8");
+        G.bullets.splice(i,1);
+      }
+    }
+  };
+
+  function drawAnimatedWaveBullet(b){
+    if(!b||!b.wave)return;
+    const x=wx(b.x+b.w/2);
+    const y=wy(b.y+b.h/2);
+    const age=(b.maxLife||b.life||1)-(b.life||0);
+    const max=b.maxLife||80;
+    const t=age/max;
+    const pulse=1+Math.sin((G.time||0)*0.35+(b.pulseSeed||0))*0.10;
+    const fade=Math.max(0.20,Math.min(1,(b.life||0)/max));
+    const len=(b.visualLen||70)*(1+0.18*t)*pulse;
+    const thick=(b.visualThick||26)*(1+0.10*Math.sin((G.time||0)*0.5));
+    const angle=b.angle||0;
+
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.rotate(angle);
+
+    // 後ろの残像
+    for(let i=3;i>=1;i--){
+      ctx.globalAlpha=0.10*fade*i;
+      ctx.fillStyle=b.color||"#9ef7ff";
+      ctx.shadowBlur=18;
+      ctx.shadowColor=b.color||"#9ef7ff";
+      ctx.beginPath();
+      ctx.ellipse(-i*13,0,len*(0.45+i*0.08),thick*(0.50+i*0.10),0,0,Math.PI*2);
+      ctx.fill();
+    }
+
+    // 外側の光
+    ctx.globalAlpha=0.30*fade;
+    ctx.fillStyle=b.color||"#9ef7ff";
+    ctx.shadowBlur=28;
+    ctx.shadowColor=b.color||"#9ef7ff";
+    ctx.beginPath();
+    ctx.ellipse(0,0,len*0.62,thick*0.82,0,0,Math.PI*2);
+    ctx.fill();
+
+    // 本体
+    const grad=ctx.createLinearGradient(-len/2,0,len/2,0);
+    grad.addColorStop(0,"rgba(255,255,255,0.05)");
+    grad.addColorStop(0.22,b.color||"#9ef7ff");
+    grad.addColorStop(0.55,"#ffffff");
+    grad.addColorStop(0.82,b.color||"#9ef7ff");
+    grad.addColorStop(1,"rgba(255,255,255,0.10)");
+    ctx.globalAlpha=0.82*fade;
+    ctx.fillStyle=grad;
+    ctx.beginPath();
+    ctx.ellipse(0,0,len*0.46,thick*0.48,0,0,Math.PI*2);
+    ctx.fill();
+
+    // 中心線
+    ctx.globalAlpha=0.92*fade;
+    ctx.strokeStyle="#ffffff";
+    ctx.lineWidth=3;
+    ctx.lineCap="round";
+    ctx.beginPath();
+    ctx.moveTo(-len*0.36,0);
+    ctx.lineTo(len*0.42,0);
+    ctx.stroke();
+
+    // 回転する小リング
+    ctx.globalAlpha=0.55*fade;
+    ctx.strokeStyle=b.color||"#9ef7ff";
+    ctx.lineWidth=2;
+    for(let i=0;i<3;i++){
+      const ox=-len*0.20+i*len*0.20;
+      ctx.beginPath();
+      ctx.ellipse(ox,0,thick*(0.42+i*0.08),thick*(0.16+i*0.03),Math.sin((G.time||0)*0.12+i)*0.45,0,Math.PI*2);
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+
+  function drawWaveSparks(){
+    if(!G||!Array.isArray(G.effects))return;
+    for(const e of G.effects){
+      if(!e||e.type!=="wave_spark")continue;
+      const rate=Math.max(0,Math.min(1,e.life/(e.max||e.life||1)));
+      ctx.save();
+      ctx.globalAlpha=rate;
+      ctx.fillStyle=e.color||"#9ef7ff";
+      ctx.shadowBlur=12;
+      ctx.shadowColor=e.color||"#9ef7ff";
+      ctx.beginPath();
+      ctx.arc(wx(e.x),wy(e.y),e.size||2,0,Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  // 既存drawの後に、幅広波動砲の見た目を上乗せする。
+  const oldDraw=draw;
+  draw=function(){
+    oldDraw();
+    if(!G||G.state==="title")return;
+    if(Array.isArray(G.bullets)){
+      for(const b of G.bullets){
+        if(b&&b.wave)drawAnimatedWaveBullet(b);
+      }
+    }
+    drawWaveSparks();
+  };
+
+  msg("波動砲が幅広く進化した！",110);
+})();

@@ -1,52 +1,60 @@
 /* =========================================================
  enemyTypes.js
  敵の性能定義と、ステージ上の配置データから敵オブジェクトを作るための補助関数。
-
- 目的:
- - stage1.js〜stage7.js は敵の「配置」だけを持つ
- - 敵のHP/攻撃/速度/サイズ/色などはこのファイルで一元管理する
- - game.js は createEnemyFromPlacement() で配置 + 性能を合成する
 ========================================================= */
 
 const EnemyTypes = {
   slime: {
-    type: "slime",
-    w: 24,
-    h: 22,
-    hp: 3,
-    maxHp: 3,
-    atk: 2,
-    speed: 0.9,
-    color: "#78df72",
-    coin: 5,
-    touchDamage: 2
+    type: "slime", w: 24, h: 22, hp: 3, maxHp: 3,
+    atk: 2, speed: 0.9, color: "#78df72", coin: 5, touchDamage: 2
   },
 
   fast: {
-    type: "fast",
-    w: 24,
-    h: 22,
-    hp: 2,
-    maxHp: 2,
-    atk: 2,
-    speed: 1.55,
-    color: "#ffcc66",
-    coin: 5,
-    touchDamage: 2
+    type: "fast", w: 24, h: 22, hp: 2, maxHp: 2,
+    atk: 2, speed: 1.55, color: "#ffcc66", coin: 5, touchDamage: 2
   },
 
   wind_bat: {
-    type: "bat",
-    w: 24,
-    h: 20,
-    hp: 2,
-    maxHp: 2,
-    atk: 2,
-    speed: 1.25,
-    color: "#8de7ff",
-    coin: 5,
-    touchDamage: 2,
+    type: "bat", w: 24, h: 20, hp: 2, maxHp: 2,
+    atk: 2, speed: 1.25, color: "#8de7ff", coin: 5, touchDamage: 2,
     flying: true
+  },
+
+  blue_slime: {
+    type: "slime", w: 24, h: 22, hp: 5, maxHp: 5,
+    atk: 2, speed: 0.75, color: "#4aa3ff", coin: 8, touchDamage: 2
+  },
+
+  red_fast: {
+    type: "fast", w: 24, h: 22, hp: 3, maxHp: 3,
+    atk: 3, speed: 1.85, color: "#ff4444", coin: 12, touchDamage: 3
+  },
+
+  dark_bat: {
+    type: "bat", w: 25, h: 20, hp: 4, maxHp: 4,
+    atk: 3, speed: 1.35, color: "#6633cc", coin: 12, touchDamage: 3,
+    flying: true
+  },
+
+  armored_slime: {
+    type: "slime", w: 28, h: 24, hp: 9, maxHp: 9,
+    atk: 3, speed: 0.55, color: "#8fa3ad", coin: 15, touchDamage: 3
+  },
+
+  fire_bat: {
+    type: "bat", w: 26, h: 20, hp: 5, maxHp: 5,
+    atk: 4, speed: 1.25, color: "#ff7048", coin: 16, touchDamage: 4,
+    flying: true
+  },
+
+  crystal_slime: {
+    type: "slime", w: 26, h: 23, hp: 7, maxHp: 7,
+    atk: 3, speed: 0.8, color: "#72f7ff", coin: 14, touchDamage: 3
+  },
+
+  void_fast: {
+    type: "fast", w: 25, h: 22, hp: 5, maxHp: 5,
+    atk: 4, speed: 2.0, color: "#8b5cff", coin: 18, touchDamage: 4
   }
 };
 
@@ -56,16 +64,12 @@ function createEnemyFromPlacement(placement) {
   let y;
   let options = {};
 
-  // 形式1: { id: "slime", x: 100, y: 200, options: { hp: 20 } }
   if (!Array.isArray(placement)) {
     id = placement.id;
     x = placement.x;
     y = placement.y;
     options = placement.options || {};
-  }
-
-  // 形式2: ["slime", 100, 200, { hp: 20 }]
-  if (Array.isArray(placement)) {
+  } else {
     id = placement[0];
     x = placement[1];
     y = placement[2];
@@ -75,17 +79,11 @@ function createEnemyFromPlacement(placement) {
   const base = EnemyTypes[id] || EnemyTypes.slime;
 
   return {
+    ...base,
+    ...options,
     id,
     x,
     y,
-
-    // EnemyTypes 側の標準性能
-    ...base,
-
-    // ステージ配置側の個別上書き
-    ...options,
-
-    // ランタイム用状態
     hp: options.hp ?? base.hp,
     maxHp: options.maxHp ?? base.maxHp ?? base.hp,
     atk: options.atk ?? base.atk ?? base.touchDamage ?? 1,
@@ -93,6 +91,8 @@ function createEnemyFromPlacement(placement) {
     vy: 0,
     t: 0,
     hitT: 0,
+    wake: false,
+    attackPause: 0,
     dead: false
   };
 }
