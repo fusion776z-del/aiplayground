@@ -1,85 +1,35 @@
-// =========================
-// グローバル状態
-// =========================
 const G = {
   stageIndex: 0,
   enemies: [],
-  map: null
+  map: null,
+  player: {
+    x: 180,
+    y: 1000,
+    w: 24,
+    h: 32,
+    dir: "down",
+    trueGold: false, // 覚醒フラグ
+    attackT: 0
+  },
+  bullets: []
 };
 
 // =========================
-// バランス（そのまま流用）
-// =========================
-function getBalance(){
-  return {
-    enemyHpMul: 1,
-    enemyAtkMul: 1,
-    enemySpeedMul: 1
-  };
-}
-
-// =========================
-// ★ここが最重要：敵生成
+// Enemy生成
 // =========================
 function mkE(e){
 
-  const b = getBalance();
-  const st = G.stageIndex || 0;
-
-  // ✅ EnemyTypes使用（なければフォールバック）
   let enemy;
 
   if (typeof createEnemyFromPlacement === "function") {
     enemy = createEnemyFromPlacement(e);
   } else {
-    // fallback
-    if (e.id === "wind_bat") {
-      enemy = { ...e, type:"bat", w:24, h:20, hp:2, maxHp:2, atk:2, speed:1.25, color:"#8de7ff" };
-    } else if (e.id === "fast") {
-      enemy = { ...e, type:"fast", w:24, h:22, hp:2, maxHp:2, atk:2, speed:1.55, color:"#ffcc66" };
-    } else {
-      enemy = { ...e, type:"slime", w:24, h:22, hp:3, maxHp:3, atk:2, speed:0.9, color:"#78df72" };
-    }
+    enemy = { ...e, hp: 3 };
   }
-
-  // ===== 安全補正 =====
-  enemy.type = enemy.type || enemy.id || "slime";
-  enemy.w = enemy.w || 24;
-  enemy.h = enemy.h || 22;
-  enemy.hp = enemy.hp || 1;
-  enemy.maxHp = enemy.maxHp || enemy.hp;
-  enemy.atk = enemy.atk || 1;
-  enemy.speed = enemy.speed || 0.9;
 
   enemy.vx = 0;
   enemy.vy = 0;
-  enemy.t = 0;
   enemy.hitT = 0;
-
-  // ===== バランス適用 =====
-  enemy.hp = Math.max(1, Math.round(enemy.hp * b.enemyHpMul));
-  enemy.maxHp = enemy.hp;
-  enemy.atk = Math.max(1, Math.round(enemy.atk * b.enemyAtkMul));
-  enemy.speed = Math.max(0.45, enemy.speed * b.enemySpeedMul);
-
-  // ===== ステージ補正 =====
-  if (st === 0) {
-    if (enemy.type === "fast") {
-      enemy.speed *= 0.8;
-      enemy.hp -= 1;
-    }
-    if (enemy.type === "bat") {
-      enemy.speed *= 0.75;
-      enemy.atk = 1;
-    }
-  }
-
-  if (st >= 4) {
-    if (enemy.type === "fast") {
-      enemy.hp += 1;
-      enemy.maxHp = enemy.hp;
-    }
-  }
 
   return enemy;
 }
@@ -88,55 +38,157 @@ function mkE(e){
 // ステージ読み込み
 // =========================
 function loadStage(stage){
-
   G.map = stage;
 
-  // ✅ 絶対落ちない書き方
+  // ✅ 完全安全
   G.enemies = (stage.enemies || []).map(mkE);
-
-  console.log("loaded enemies:", G.enemies);
 }
 
 // =========================
-// ステージ初期化
+// 波動砲
 // =========================
-function start(){
+function shootWave(){
 
-  const stages = [
-    Stage1,
-    Stage2,
-    Stage3,
-    Stage4,
-    Stage5,
-    Stage6,
-    Stage7
-  ];
+  const p = G.player;
+  const speed = 6;
 
-  loadStage(stages[G.stageIndex]);
+  let vx = 0;
+  let vy = 0;
+
+  if (p.dir === "up") vy = -speed;
+  if (p.dir === "down") vy = speed;
+  if (p.dir === "left") vx = -speed;
+  if (p.dir === "right") vx = speed;
+
+  G.bullets.push({
+    x: p.x + p.w/2,
+    y: p.y + p.h/2,
+    vx,
+    vy,
+    life: 60,
+    size: 6
+  });
 }
 
 // =========================
-// 更新（超簡易）
+// 攻撃処理
+// =========================
+function attack(){
+
+  const p = G.player;
+
+  p.attackT = 20;
+
+  // ✅ 覚醒してたら波動砲
+  if (p.trueGold){
+    shootWave();
+  }
+}
+
+// =========================
+// 更新
 // =========================
 function update(){
 
-  for (const e of G.enemies){
-    e.x += 0;
+  const p = G.player;
+
+  // 攻撃タイマー
+  if (p.attackT > 0) p.attackT--;
+
+  // 弾更新
+  for (const b of G.bullets){
+    b.x += b.vx;
+    b.y += b.vy;
+    b.life--;
   }
 
+  // 弾削除
+  G.bullets = G.bullets.filter(b => b.life > 0);
+
+  // 敵との当たり判定
+  for (const b of G.bullets){
+    for (const e of G.enemies){
+
+      if (e.hp <= 0) continue;
+
+      if (hit(b, e)){
+        e.hp -= 2;
+        b.life = 0;
+      }
+    }
+  }
 }
+
+// =========================
+// 当たり判定
+// =========================
+function hit(a, b){
+  return (
+    a.x < b.x + b.w &&
+    a.x + a.size > b.x &&
+    a.y < b.y + b.h &&
+    a.y + a.size > b.y
+  );
+}
+
+// =========================
+// 描画
+// =========================
+function draw(ctx){
+
+  // 弾
+  for (const b of G.bullets){
+    ctx.fillStyle = "#00ffff";
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, b.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // 敵
+  for (const e of G.enemies){
+    ctx.fillStyle = e.color || "#f00";
+    ctx.fillRect(e.x, e.y, e.w, e.h);
+  }
+
+  // プレイヤー
+  const p = G.player;
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(p.x, p.y, p.w, p.h);
+}
+
+// =========================
+// 入力（テスト用）
+// =========================
+document.addEventListener("keydown", e => {
+  if (e.key === "z"){
+    attack();
+  }
+
+  if (e.key === "c"){
+    // 覚醒トグル
+    G.player.trueGold = !G.player.trueGold;
+    console.log("覚醒:", G.player.trueGold);
+  }
+});
 
 // =========================
 // ループ
 // =========================
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
 function loop(){
 
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
   update();
+  draw(ctx);
+
   requestAnimationFrame(loop);
 }
 
 // =========================
 // 起動
 // =========================
-start();
+loadStage(Stage1);
 loop();
