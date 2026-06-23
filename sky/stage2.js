@@ -1,1 +1,177 @@
-const Stage2={"id": "stage2", "name": "風車の森島", "width": 760, "height": 1400, "spawn": {"x": 190, "y": 1200}, "objective": "案内人に話す", "terrain": [{"x": 0, "y": 0, "w": 760, "h": 30, "type": "cliff"}, {"x": 0, "y": 0, "w": 30, "h": 1400, "type": "cliff"}, {"x": 730, "y": 0, "w": 30, "h": 1400, "type": "cliff"}, {"x": 0, "y": 1370, "w": 760, "h": 30, "type": "cliff"}, {"x": 30, "y": 270, "w": 302, "h": 44, "type": "stone"}, {"x": 458, "y": 270, "w": 272, "h": 44, "type": "stone"}, {"x": 80, "y": 1100, "w": 86, "h": 76, "type": "tree"}, {"x": 520, "y": 1100, "w": 98, "h": 78, "type": "tree"}, {"x": 90, "y": 880, "w": 100, "h": 78, "type": "tree"}, {"x": 235, "y": 850, "w": 92, "h": 74, "type": "tree"}, {"x": 474, "y": 860, "w": 104, "h": 80, "type": "tree"}, {"x": 360, "y": 1010, "w": 78, "h": 56, "type": "rock"}, {"x": 190, "y": 760, "w": 74, "h": 54, "type": "rock"}], "npcs": [{"id": "guide", "name": "案内人", "x": 168, "y": 1194, "w": 26, "h": 30, "color": "#89ff9b", "lines": ["ここは風車の森島。", "森の鍵を探して北の扉へ向かおう。", "Z連打で通常斬り、3段目は広範囲なぎ払い！"], "onTalk": function(g){g.map.objective="森の鍵を探す";}}], "shops": [{"id": "shop", "name": "森の強化祭壇", "x": 520, "y": 1165, "w": 34, "h": 34, "color": "#ffb347"}], "chests": [{"id": "key", "x": 620, "y": 735, "w": 30, "h": 24, "opened": false, "item": {"type": "key", "id": "forest_key", "name": "森の鍵"}}, {"id": "coin", "x": 105, "y": 620, "w": 30, "h": 24, "opened": false, "item": {"type": "coin", "amount": 320}}, {"id": "herb", "x": 585, "y": 1040, "w": 30, "h": 24, "opened": false, "item": {"type": "item", "id": "small_herb", "name": "小さな薬草", "count": 1}}], "enemies": [{"id": "fast", "x": 70, "y": 1050}, {"id": "wind_bat", "x": 167, "y": 967}, {"id": "slime", "x": 264, "y": 884}, {"id": "slime", "x": 361, "y": 801}, {"id": "slime", "x": 458, "y": 718}, {"id": "wind_bat", "x": 555, "y": 635}, {"id": "slime", "x": 652, "y": 552}, {"id": "slime", "x": 129, "y": 469}, {"id": "slime", "x": 226, "y": 386}, {"id": "wind_bat", "x": 323, "y": 1003}, {"id": "fast", "x": 420, "y": 920}, {"id": "slime", "x": 517, "y": 837}, {"id": "slime", "x": 614, "y": 754}, {"id": "wind_bat", "x": 91, "y": 671}, {"id": "slime", "x": 188, "y": 588}, {"id": "fast", "x": 285, "y": 505}, {"id": "slime", "x": 382, "y": 422}, {"id": "wind_bat", "x": 479, "y": 1039}, {"id": "slime", "x": 576, "y": 956}, {"id": "slime", "x": 673, "y": 873}, {"id": "fast", "x": 150, "y": 790}, {"id": "wind_bat", "x": 247, "y": 707}, {"id": "slime", "x": 344, "y": 624}, {"id": "slime", "x": 441, "y": 541}, {"id": "slime", "x": 538, "y": 458}, {"id": "wind_bat", "x": 635, "y": 375}, {"id": "slime", "x": 112, "y": 992}, {"id": "slime", "x": 209, "y": 909}, {"id": "slime", "x": 306, "y": 826}, {"id": "wind_bat", "x": 403, "y": 743}, {"id": "fast", "x": 500, "y": 660}, {"id": "slime", "x": 597, "y": 577}, {"id": "slime", "x": 74, "y": 494}, {"id": "wind_bat", "x": 171, "y": 411}, {"id": "slime", "x": 268, "y": 1028}, {"id": "fast", "x": 365, "y": 945}, {"id": "slime", "x": 462, "y": 862}, {"id": "wind_bat", "x": 559, "y": 779}], "doors": [{"id": "boss_door", "x": 302, "y": 270, "w": 156, "h": 44, "locked": true, "requiredItem": "forest_key", "label": "森の扉"}], "boss": {"id": "boss", "name": "エルダートレント", "x": 380, "y": 165, "w": 118, "h": 102, "hp": 76, "maxHp": 76, "color": "#46c66a"}, "bossRoom": {"x": 42, "y": 42, "w": 676, "h": 228},"onClear":function(g){g.message="森の古代コアを手に入れた！";if(!g.player.cores.includes("forest_core"))g.player.cores.push("forest_core");g.map.objective="風車の森島クリア！";}};
+const Stage2 = (() => {
+
+  const enemyData = [
+    ["fast", 70, 1050],
+    ["wind_bat", 167, 967],
+    ["slime", 264, 884],
+    ["slime", 361, 801],
+    ["slime", 458, 718],
+    ["wind_bat", 555, 635],
+    ["slime", 652, 552],
+    ["slime", 129, 469],
+    ["slime", 226, 386],
+    ["wind_bat", 323, 1003],
+    ["fast", 420, 920],
+    ["slime", 517, 837],
+    ["slime", 614, 754],
+    ["wind_bat", 91, 671],
+    ["slime", 188, 588],
+    ["fast", 285, 505],
+    ["slime", 382, 422],
+    ["wind_bat", 479, 1039],
+    ["slime", 576, 956],
+    ["slime", 673, 873],
+    ["fast", 150, 790],
+    ["wind_bat", 247, 707],
+    ["slime", 344, 624],
+    ["slime", 441, 541],
+    ["slime", 538, 458],
+    ["wind_bat", 635, 375],
+    ["slime", 112, 992],
+    ["slime", 209, 909],
+    ["slime", 306, 826],
+    ["wind_bat", 403, 743],
+    ["fast", 500, 660],
+    ["slime", 597, 577],
+    ["slime", 74, 494],
+    ["wind_bat", 171, 411],
+    ["slime", 268, 1028],
+    ["fast", 365, 945],
+    ["slime", 462, 862],
+    ["wind_bat", 559, 779]
+  ];
+
+  // ✅ これがないと絶対クラッシュする
+  const makeEnemy = ([id, x, y]) => ({
+    id,
+    x,
+    y
+  });
+
+  return {
+    id: "stage2",
+    name: "風車の森島",
+    width: 760,
+    height: 1400,
+
+    spawn: { x: 190, y: 1200 },
+    objective: "案内人に話す",
+
+    terrain: [
+      { x: 0, y: 0, w: 760, h: 30, type: "cliff" },
+      { x: 0, y: 0, w: 30, h: 1400, type: "cliff" },
+      { x: 730, y: 0, w: 30, h: 1400, type: "cliff" },
+      { x: 0, y: 1370, w: 760, h: 30, type: "cliff" },
+      { x: 30, y: 270, w: 302, h: 44, type: "stone" },
+      { x: 458, y: 270, w: 272, h: 44, type: "stone" },
+      { x: 80, y: 1100, w: 86, h: 76, type: "tree" },
+      { x: 520, y: 1100, w: 98, h: 78, type: "tree" },
+      { x: 90, y: 880, w: 100, h: 78, type: "tree" },
+      { x: 235, y: 850, w: 92, h: 74, type: "tree" },
+      { x: 474, y: 860, w: 104, h: 80, type: "tree" },
+      { x: 360, y: 1010, w: 78, h: 56, type: "rock" },
+      { x: 190, y: 760, w: 74, h: 54, type: "rock" }
+    ],
+
+    npcs: [
+      {
+        id: "guide",
+        name: "案内人",
+        x: 168,
+        y: 1194,
+        w: 26,
+        h: 30,
+        color: "#89ff9b",
+        lines: [
+          "ここは風車の森島。",
+          "森の鍵を探して北の扉へ向かおう。",
+          "Z連打で通常斬り、3段目は広範囲なぎ払い！"
+        ],
+        onTalk: function (g) {
+          g.map.objective = "森の鍵を探す";
+        }
+      }
+    ],
+
+    shops: [
+      {
+        id: "shop",
+        name: "森の強化祭壇",
+        x: 520,
+        y: 1165,
+        w: 34,
+        h: 34,
+        color: "#ffb347"
+      }
+    ],
+
+    chests: [
+      {
+        id: "key",
+        x: 620,
+        y: 735,
+        w: 30,
+        h: 24,
+        opened: false,
+        item: { type: "key", id: "forest_key", name: "森の鍵" }
+      },
+      {
+        id: "coin",
+        x: 105,
+        y: 620,
+        w: 30,
+        h: 24,
+        opened: false,
+        item: { type: "coin", amount: 320 }
+      },
+      {
+        id: "herb",
+        x: 585,
+        y: 1040,
+        w: 30,
+        h: 24,
+        opened: false,
+        item: { type: "item", id: "small_herb", name: "小さな薬草", count: 1 }
+      }
+    ],
+
+    // ✅ ここが最重要（これでクラッシュ防止）
+    enemies: enemyData.map(makeEnemy),
+
+    doors: [
+      {
+        id: "boss_door",
+        x: 302,
+        y: 270,
+        w: 156,
+        h: 44,
+        locked: true,
+        requiredItem: "forest_key",
+        label: "森の扉"
+      }
+    ],
+
+    boss: {
+      id: "boss",
+      name: "エルダートレント",
+      x: 380,
+      y: 165,
+      w: 118,
+      h: 102,
+      hp: 76,
+      maxHp: 76,
+      color: "#46c66a"
+    },
+
+    bossRoom: { x: 42, y: 42, w: 676, h: 228 },
+
+    onClear: function (g) {
+      g.message = "森の古代コアを手に入れた！";
+      if (!g.player.cores.includes("forest_core")) {
+        g.player.cores.push("forest_core");
+      }
+      g.map.objective = "風車の森島クリア！";
+    }
+  };
+
+})();
