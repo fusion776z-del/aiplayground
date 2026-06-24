@@ -965,7 +965,9 @@ function updDrops(){
     if(nn.l<80){d.x+=nn.x*3.4;d.y+=nn.y*3.4;}
 
     if(nn.l<18){
-      const base=5;
+      // 雑魚敵からドロップしたコイン取得量を2倍にする。
+      // 旧: base=5 → 新: base=10
+      const base=10;
       const bonus=Math.floor(base*(getBalance().coinBonus-1));
       p.coins+=base+bonus;
       G.drops.splice(i,1);
@@ -10202,4 +10204,394 @@ loop();
   };
 
   msg("波動砲が幅広く進化した！",110);
+})();
+
+
+/* =========================================================
+   FINAL FIX: クリア後/タイトル画面のBOSS RUSH表示消去
+   原因:
+   - Stage7ボスラッシュ用の __stage7RushArena フラグが、
+     clear/title画面に戻ったあとも G.map に残っていた。
+   - drawRushBadge() がそのフラグを見て、タイトル画面の上にも
+     "BOSS RUSH 6/6 真の魔法陣へ" を描いていた。
+
+   対策:
+   - clear / title / gameover ではボスラッシュ表示用フラグを消す。
+   - 念のため draw の最後でも、title中に残った表示を再描画で消す。
+========================================================= */
+(function(){
+  if(window.__hideBossRushBadgeAfterClearPatchApplied)return;
+  window.__hideBossRushBadgeAfterClearPatchApplied=true;
+
+  function clearStage7RushUiFlags(){
+    if(!G||!G.map)return;
+    G.map.__stage7RushArena=false;
+    G.map.__stage7AbyssPortal=null;
+    G.map.__stage7RushDone=false;
+    G.map.__stage7RushIndex=0;
+    G.__stage7NextRushBossT=0;
+    G.__stage7NextRushBossIndex=0;
+  }
+
+  const oldUpdate=update;
+  update=function(){
+    oldUpdate();
+
+    // クリア画面、タイトル画面、ゲームオーバーではボスラッシュUIを出さない。
+    if(G&&(G.state==="clear"||G.state==="title"||G.state==="gameover")){
+      clearStage7RushUiFlags();
+    }
+  };
+
+  const oldDraw=draw;
+  draw=function(){
+    oldDraw();
+
+    // タイトルに戻ったあと、古いdrawRushBadgeが後乗せされても見えないよう、
+    // 最終的にタイトル画面をもう一度きれいに描く。
+    if(G&&G.state==="title"){
+      ctx.save();
+      ctx.setTransform(1,0,0,1,0,0);
+      ctx.fillStyle="#8fe8ff";
+      ctx.fillRect(0,0,VW,VH);
+      ctx.fillStyle="#fff";
+      ctx.textAlign="center";
+      ctx.font="900 34px system-ui";
+      ctx.fillText("SKY ISLAND",VW/2,210);
+      ctx.fillText("ADVENTURE",VW/2,250);
+      ctx.font="800 15px system-ui";
+      ctx.fillText("TAP / Z TO START",VW/2,326);
+      ctx.fillText("direction fixed",VW/2,360);
+      ctx.textAlign="left";
+      ctx.restore();
+    }
+  };
+})();
+
+
+/* =========================================================
+   FINAL RESTORE v3: Stage7 Boss Rush + Attack Link
+   直近仕様の復元:
+   - Stage7の鍵扉を開けると歴代ボスラッシュ開始
+   - Stage1〜Stage6ボスを順番に出す
+   - 各ボスの攻撃AIを元ステージにリンク
+   - 全員撃破後、真の魔法陣が出現
+   - 魔法陣に乗るとStage7ボス/アビス戦
+   - clear/title/gameover ではBOSS RUSH表示を消す
+========================================================= */
+(function(){
+  if(window.__stage7BossRushAttackLinkedRestoreV3Applied)return;
+  window.__stage7BossRushAttackLinkedRestoreV3Applied=true;
+
+  const ARENA_W=920;
+  const ARENA_H=1180;
+  const ROOM={x:70,y:90,w:780,h:860};
+  const PLAYER_START={x:ARENA_W/2-12,y:ARENA_H-210};
+
+  function isStage7(){return typeof G!=="undefined"&&G.stageIndex===6;}
+  function hitSafe(a,b){return a&&b&&a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;}
+  function center(o){return {x:o.x+o.w/2,y:o.y+o.h/2};}
+  function isBossDoor(d){return !!d&&(d.id==="boss_door"||String(d.id||"").includes("boss")||String(d.label||"").includes("扉")||String(d.requiredItem||"").includes("key"));}
+  function hasItemSafe(id){
+    if(!G||!G.player||!id)return false;
+    if(typeof hasItem==="function"){
+      try{if(hasItem(id))return true;}catch(e){}
+    }
+    for(const v of G.player.inventory||[]){
+      if(v===id)return true;
+      if(typeof v==="object"&&v&&v.id===id&&(v.count==null||v.count>0))return true;
+    }
+    return false;
+  }
+  function playerRect(extra){
+    const p=G.player;if(!p)return null;
+    const e=extra==null?12:extra;
+    return {x:p.x-e,y:p.y-e,w:p.w+e*2,h:p.h+e*2};
+  }
+  function touchedDoor(){
+    if(!G||!Array.isArray(G.doors))return null;
+    const r=playerRect(38);if(!r)return null;
+    for(const d of G.doors){if(d&&hitSafe(r,d))return d;}
+    return null;
+  }
+  function clearRushUiFlags(){
+    if(!G||!G.map)return;
+    G.map.__stage7AbyssPortal=null;
+    if(G.state==="clear"||G.state==="title"||G.state==="gameover"){
+      G.map.__stage7RushArena=false;
+      G.map.__stage7RushDone=false;
+    }
+  }
+  function arenaTerrain(){
+    return [
+      {x:0,y:0,w:ARENA_W,h:34,type:"cliff"},
+      {x:0,y:0,w:34,h:ARENA_H,type:"cliff"},
+      {x:ARENA_W-34,y:0,w:34,h:ARENA_H,type:"cliff"},
+      {x:0,y:ARENA_H-34,w:ARENA_W,h:34,type:"cliff"},
+      {x:78,y:90,w:190,h:30,type:"stone"},
+      {x:ARENA_W-268,y:90,w:190,h:30,type:"stone"},
+      {x:92,y:250,w:76,h:56,type:"rock"},
+      {x:ARENA_W-168,y:250,w:76,h:56,type:"rock"},
+      {x:112,y:ARENA_H-360,w:76,h:56,type:"rock"},
+      {x:ARENA_W-188,y:ARENA_H-360,w:76,h:56,type:"rock"},
+      {x:90,y:ARENA_H-160,w:130,h:32,type:"stone"},
+      {x:ARENA_W-220,y:ARENA_H-160,w:130,h:32,type:"stone"}
+    ];
+  }
+
+  const RUSH_VISUALS=[
+    {main:"#73df78",sub:"#b7ff9a",dark:"#1e6b45",glow:"#9effa1",shape:"griffin"},
+    {main:"#46c66a",sub:"#b9ff9a",dark:"#1f6f3a",glow:"#a8ff86",shape:"tree"},
+    {main:"#72f7ff",sub:"#d8ffff",dark:"#237e9a",glow:"#b9fbff",shape:"crystal"},
+    {main:"#ff7048",sub:"#ffd84d",dark:"#8b2d22",glow:"#ffb347",shape:"wyvern"},
+    {main:"#ffd84d",sub:"#fff7a8",dark:"#8c6d35",glow:"#fff2a5",shape:"guardian"},
+    {main:"#9b7cff",sub:"#cfd8ff",dark:"#35266f",glow:"#b8a8ff",shape:"leviathan"},
+    {main:"#8b5cff",sub:"#efe7ff",dark:"#171026",glow:"#b56bff",shape:"void"}
+  ];
+  function visual(i){return RUSH_VISUALS[Math.max(0,Math.min(RUSH_VISUALS.length-1,i||0))]||RUSH_VISUALS[0];}
+
+  function rushList(){
+    const titles=["一番目の守護者","二番目の守護者","三番目の守護者","四番目の守護者","五番目の守護者","六番目の守護者"];
+    const list=[];
+    for(let i=0;i<6;i++){
+      const src=STAGES[i]&&STAGES[i].boss?STAGES[i].boss:null;
+      if(src)list.push({...src,__rushIndex:i,__sourceStageIndex:i,rushTitle:titles[i]||"守護者"});
+    }
+    return list;
+  }
+  function rushHp(src,index){
+    const base=Math.max(1,src.maxHp||src.hp||60);
+    const mult=[1.25,1.35,1.50,1.65,1.85,2.10][index]||1.5;
+    const min=[90,130,190,280,420,620][index]||120;
+    return Math.max(min,Math.round(base*mult));
+  }
+  function createBossFromSource(src,index,kind){
+    const sourceIndex=kind==="abyss"?6:(src.__sourceStageIndex??index);
+    const w=src.w||128,h=src.h||108;
+    const hp=kind==="abyss"?Math.max(1600,Math.round((src.maxHp||src.hp||450)*3.0)):rushHp(src,index);
+    return {
+      ...src,
+      x:ROOM.x+ROOM.w/2-w/2,y:ROOM.y+110,w,h,
+      hp,maxHp:hp,t:0,shot:82,phase:1,aiT:0,patternT:0,nextAttack:40,enraged:false,
+      duelBoss:true,
+      __stage7RushLinkedBoss:true,
+      __sourceStageIndex:sourceIndex,
+      __rushIndex:index,
+      __rushKind:kind,
+      __rushMaxHp:hp,
+      __baseBossMaxHp:hp,
+      __bossHpScaleApplied:true,
+      __bossHpScaleStageIndex:6,
+      __lastRushHp:hp,
+      __lastRushMax:hp
+    };
+  }
+  function setupArena(){
+    G.map.name="虚空王城・歴代守護者の間";
+    G.map.objective="歴代ボスをすべて倒す";
+    G.map.width=ARENA_W;G.map.height=ARENA_H;
+    G.map.bossRoom={...ROOM};
+    G.map.__duelSpace=true;
+    G.map.__stage7RushArena=true;
+    G.map.terrain=arenaTerrain();G.terrain=G.map.terrain;
+    G.npcs=[];G.shops=[];G.chests=[];G.doors=[];G.enemies=[];G.drops=[];
+    G.map.npcs=[];G.map.shops=[];G.map.chests=[];G.map.doors=[];G.map.enemies=[];
+    G.bullets=[];G.bossBullets=[];G.bossZones=[];G.enemyBullets=[];G.effects=[];
+    G.player.x=PLAYER_START.x;G.player.y=PLAYER_START.y;G.player.dir="up";
+    G.player.hp=G.player.maxHp;G.player.mp=G.player.maxMp;G.player.inv=Math.max(G.player.inv||0,130);
+    G.state="field";G.lock=70;
+    G.duelTransitionT=90;G.duelTransitionMax=90;G.duelIntroText="歴代守護者オンパレード";
+    flush();cam();
+  }
+  function startRush(){
+    if(!isStage7()||!G.map||G.map.__stage7RushStarted)return;
+    const finalSource={...(STAGES[6]&&STAGES[6].boss?STAGES[6].boss:G.map.boss)};
+    G.map.__stage7RushStarted=true;
+    G.map.__stage7RushDone=false;
+    G.map.__stage7AbyssStarted=false;
+    G.map.__stage7AbyssCleared=false;
+    G.map.__stage7AbyssPortal=null;
+    G.map.__stage7FinalBossSource=finalSource;
+    G.map.__stage7RushList=rushList();
+    G.map.__stage7RushIndex=0;
+    setupArena();spawnRushBoss(0);
+    msg("歴代ボスラッシュ開始！",140);
+  }
+  function spawnRushBoss(index){
+    const list=G.map.__stage7RushList||rushList();G.map.__stage7RushList=list;
+    if(index>=list.length){createAbyssPortal();return;}
+    const src=list[index];
+    G.boss=createBossFromSource(src,index,"rush");
+    G.map.boss={...G.boss};G.map.__stage7RushIndex=index;
+    G.map.objective=(index+1)+"/"+list.length+" "+(src.name||"BOSS")+"を倒す";
+    G.bullets=[];G.bossBullets=[];G.bossZones=[];G.enemyBullets=[];
+    if(typeof ring==="function")ring(center(G.boss).x,center(G.boss).y,120,visual(G.boss.__sourceStageIndex).glow);
+    msg((src.rushTitle||"守護者")+"「"+(src.name||"BOSS")+"」出現！",130);
+  }
+  function createAbyssPortal(){
+    G.boss=null;G.bullets=[];G.bossBullets=[];G.bossZones=[];G.enemyBullets=[];
+    G.map.__stage7RushDone=true;
+    G.map.__stage7AbyssPortal={x:ARENA_W/2-54,y:ROOM.y+ROOM.h/2-34,w:108,h:68,cx:ARENA_W/2,cy:ROOM.y+ROOM.h/2,r:62,active:true};
+    G.map.objective="真の魔法陣に入る";
+    if(typeof ring==="function")ring(ARENA_W/2,ROOM.y+ROOM.h/2,150,"#ffffff");
+    msg("歴代守護者を突破した！ 真の魔法陣が現れた！",180);
+  }
+  function onAbyssPortal(){
+    const c=G.map&&G.map.__stage7AbyssPortal;if(!c||!c.active||!G.player)return false;
+    const pc=center(G.player),dx=pc.x-c.cx,dy=pc.y-c.cy;
+    return dx*dx+dy*dy<=c.r*c.r;
+  }
+  function startAbyss(){
+    if(!isStage7()||!G.map||G.map.__stage7AbyssStarted)return;
+    const src=G.map.__stage7FinalBossSource||STAGES[6].boss||G.map.boss;
+    G.map.__stage7AbyssStarted=true;if(G.map.__stage7AbyssPortal)G.map.__stage7AbyssPortal.active=false;
+    G.map.name="虚空王城・真の最終決戦";G.map.objective="アビス・オーバーロードを倒す";
+    G.player.x=PLAYER_START.x;G.player.y=PLAYER_START.y;G.player.dir="up";
+    G.player.hp=G.player.maxHp;G.player.mp=G.player.maxMp;G.player.inv=Math.max(G.player.inv||0,150);
+    G.bullets=[];G.bossBullets=[];G.bossZones=[];G.enemyBullets=[];
+    G.boss=createBossFromSource(src,6,"abyss");G.boss.name=src.name||"アビス・オーバーロード";G.map.boss={...G.boss};
+    G.duelTransitionT=100;G.duelTransitionMax=100;G.duelIntroText="真の最終決戦";G.lock=70;
+    flush();cam();msg("アビス・オーバーロードが現れた！",160);
+  }
+  function lockRushHp(){
+    const b=G&&G.boss;if(!b||!b.__stage7RushLinkedBoss)return;
+    const desired=b.__rushMaxHp||b.maxHp||1;
+    if(b.maxHp!==desired){
+      const oldMax=Math.max(1,b.__lastRushMax||desired),oldHp=Math.max(1,b.__lastRushHp||b.hp||desired);
+      const ratio=Math.max(0.001,Math.min(1,oldHp/oldMax));
+      b.maxHp=desired;b.hp=Math.max(1,Math.min(desired,Math.round(desired*ratio)));
+    }
+    b.__baseBossMaxHp=desired;b.__bossHpScaleApplied=true;b.__bossHpScaleStageIndex=6;b.__lastRushHp=b.hp;b.__lastRushMax=b.maxHp;
+  }
+
+  const oldAction=action;
+  action=function(){
+    if(typeof G==="undefined")return;
+    if(!isStage7()||!G.map||G.map.__stage7RushArena){oldAction();return;}
+    if(G.state==="title"){start();return;}
+    if(G.talk){talkNext();return;}
+    if(G.state!=="field"){if(G.state==="shop")closeShop();else oldAction();return;}
+    const pr=playerRect(12);
+    for(const s of G.shops||[]){if(hitSafe(pr,s)){G.shop={shop:s};G.state="shop";flush();return;}}
+    for(const n of G.npcs||[]){if(hitSafe(pr,n)){if(window.beginTalk)window.beginTalk(n);else{G.talk={npc:n,index:0};G.state="talk";}return;}}
+    for(const c of G.chests||[]){if(!c.opened&&hitSafe(pr,c)){openChest(c);flush();return;}}
+    const d=touchedDoor();
+    if(d&&isBossDoor(d)){
+      if(d.requiredItem&&!hasItemSafe(d.requiredItem)){msg("鍵が必要だ",70);flush();return;}
+      d.locked=false;startRush();return;
+    }
+    oldAction();
+  };
+
+  const oldTryDoor=tryDoor;
+  tryDoor=function(d){
+    if(isStage7()&&d&&isBossDoor(d)&&!G.map.__stage7RushArena){
+      if(d.requiredItem&&!hasItemSafe(d.requiredItem)){msg("鍵が必要だ",70);return;}
+      d.locked=false;startRush();return;
+    }
+    oldTryDoor(d);
+  };
+
+  const oldDmgB=dmgB;
+  dmgB=function(damage){
+    const b=G&&G.boss?G.boss:null;
+    if(b&&b.__stage7RushLinkedBoss){
+      b.hp-=damage;b.__lastRushHp=b.hp;b.__lastRushMax=b.maxHp;
+      if(b.hp<=0){
+        const defeated={...b};
+        G.boss=null;G.bullets=[];G.bossBullets=[];G.bossZones=[];G.enemyBullets=[];
+        if(typeof fx==="function")fx(center(defeated).x,center(defeated).y,visual(defeated.__sourceStageIndex).glow,28,5);
+        if(defeated.__rushKind==="rush"){
+          const next=(defeated.__rushIndex||0)+1,list=G.map.__stage7RushList||[];
+          if(next<list.length){
+            msg((defeated.name||"BOSS")+"撃破！ 次の守護者が現れる…",120);
+            G.__stage7NextRushBossT=85;G.__stage7NextRushBossIndex=next;G.lock=Math.max(G.lock||0,45);
+          }else createAbyssPortal();
+        }else{
+          G.map.__stage7AbyssCleared=true;G.state="bossDefeat";G.bossDefeatT=120;msg("アビス・オーバーロード撃破！",180);
+        }
+      }
+      return;
+    }
+    oldDmgB(damage);
+  };
+
+  // 攻撃AIリンク: 既存ボスAIが G.stageIndex を見て攻撃を選ぶため、
+  // ボスラッシュ中だけ一時的に元ステージ番号へ差し替える。
+  const oldUpdBoss=updBoss;
+  updBoss=function(){
+    const b=G&&G.boss?G.boss:null;
+    if(b&&b.__stage7RushLinkedBoss&&typeof b.__sourceStageIndex==="number"){
+      const realStageIndex=G.stageIndex;
+      G.stageIndex=b.__sourceStageIndex;
+      try{oldUpdBoss();}finally{G.stageIndex=realStageIndex;}
+      return;
+    }
+    oldUpdBoss();
+  };
+
+  const oldUpdate=update;
+  update=function(){
+    const b=G&&G.boss&&G.boss.__stage7RushLinkedBoss?G.boss:null;
+    if(b){b.__lastRushHp=b.hp;b.__lastRushMax=b.maxHp;}
+    oldUpdate();
+    lockRushHp();
+    if(G&&G.__stage7NextRushBossT>0){
+      G.__stage7NextRushBossT--;
+      if(G.__stage7NextRushBossT<=0){spawnRushBoss(G.__stage7NextRushBossIndex||0);G.__stage7NextRushBossIndex=0;}
+    }
+    if(G&&isStage7()&&G.state==="field"&&G.map&&G.map.__stage7RushDone&&!G.map.__stage7AbyssStarted&&onAbyssPortal())startAbyss();
+    if(G&&(G.state==="clear"||G.state==="title"||G.state==="gameover"))clearRushUiFlags();
+  };
+
+  function drawAbyssPortal(){
+    if(!G||!G.map||!G.map.__stage7AbyssPortal||G.state!=="field")return;
+    const c=G.map.__stage7AbyssPortal;if(!c.active)return;
+    const x=wx(c.cx),y=wy(c.cy),t=G.time||0,pulse=1+Math.sin(t*0.11)*0.10;
+    ctx.save();
+    ctx.globalAlpha=0.32;ctx.fillStyle="#ffffff";ctx.shadowBlur=34;ctx.shadowColor="#ffffff";ctx.beginPath();ctx.ellipse(x,y+4,82*pulse,44*pulse,0,0,Math.PI*2);ctx.fill();
+    ctx.globalAlpha=0.95;ctx.strokeStyle="#fff7a8";ctx.lineWidth=4;ctx.beginPath();ctx.ellipse(x,y,62*pulse,32*pulse,0,0,Math.PI*2);ctx.stroke();
+    ctx.strokeStyle="#b56bff";ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(x,y,40*pulse,21*pulse,0,0,Math.PI*2);ctx.stroke();
+    ctx.strokeStyle="#ffffff";
+    for(let i=0;i<14;i++){const a=t*0.035+i/14*Math.PI*2;ctx.beginPath();ctx.moveTo(x+Math.cos(a)*12,y+Math.sin(a)*6);ctx.lineTo(x+Math.cos(a)*66*pulse,y+Math.sin(a)*34*pulse);ctx.stroke();}
+    ctx.fillStyle="#fff";ctx.font="900 12px system-ui";ctx.textAlign="center";ctx.fillText("真の魔法陣",x,y-58);ctx.fillText("乗るとアビス戦へ",x,y-42);ctx.textAlign="left";ctx.restore();
+  }
+  function drawRushBadge(){
+    if(!G||!G.map||!G.map.__stage7RushArena||G.state!=="field")return;
+    const list=G.map.__stage7RushList||[],isAbyss=G.boss&&G.boss.__rushKind==="abyss";
+    const idx=G.boss&&G.boss.__rushKind==="rush"?G.boss.__rushIndex:(G.map.__stage7RushIndex||0);
+    ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle="rgba(8,25,45,.76)";RR(10,186,VW-20,40,13);ctx.fill();
+    ctx.fillStyle=isAbyss?"#ffd84d":"#fff7a8";ctx.font="900 12px system-ui";ctx.fillText(isAbyss?"TRUE FINAL BOSS":"BOSS RUSH "+Math.min(idx+1,list.length)+"/"+list.length,22,208);
+    if(G.boss){ctx.fillStyle="#fff";ctx.fillText(G.boss.name||"BOSS",150,208);}else if(G.map.__stage7RushDone){ctx.fillStyle="#fff";ctx.fillText("真の魔法陣へ",150,208);}
+    ctx.restore();
+  }
+  const oldDraw=draw;
+  draw=function(){oldDraw();drawAbyssPortal();drawRushBadge();};
+
+  const oldDrawBoss3D=drawBoss3D;
+  drawBoss3D=function(ctxArg,b,wxArg,wyArg,t){
+    if(!b||!b.__stage7RushLinkedBoss){oldDrawBoss3D(ctxArg,b,wxArg,wyArg,t);return;}
+    const th=visual(b.__sourceStageIndex),x=wxArg(b.x),y=wyArg(b.y),w=b.w||120,h=b.h||100;
+    const cx=x+w/2,cy=y+h/2+Math.sin((t||0)*0.05)*3,hpRate=Math.max(0,Math.min(1,(b.hp||1)/(b.maxHp||1)));
+    ctx.save();ctx.globalAlpha=.35;ctx.fillStyle="rgba(0,20,30,.45)";ctx.beginPath();ctx.ellipse(cx,y+h*.86,w*.48,h*.16,0,0,Math.PI*2);ctx.fill();
+    ctx.globalAlpha=.25;ctx.fillStyle=th.glow;ctx.shadowBlur=24;ctx.shadowColor=th.glow;ctx.beginPath();ctx.ellipse(cx,cy,w*.72,h*.58,0,0,Math.PI*2);ctx.fill();
+    ctx.globalAlpha=1;ctx.shadowBlur=18;ctx.shadowColor=th.glow;ctx.translate(cx,cy);ctx.fillStyle=th.main;ctx.strokeStyle=th.sub;ctx.lineWidth=3;
+    const shape=th.shape;
+    if(shape==="tree"){
+      ctx.fillStyle="#5b3922";RR(-w*.18,-h*.22,w*.36,h*.62,16);ctx.fill();ctx.stroke();ctx.fillStyle=th.main;ctx.beginPath();ctx.ellipse(0,-h*.35,w*.36,h*.28,0,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.ellipse(-w*.24,-h*.18,w*.24,h*.20,0,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.ellipse(w*.24,-h*.18,w*.24,h*.20,0,0,Math.PI*2);ctx.fill();
+    }else if(shape==="crystal"){
+      ctx.beginPath();ctx.moveTo(0,-h*.55);ctx.lineTo(w*.34,-h*.05);ctx.lineTo(w*.18,h*.45);ctx.lineTo(-w*.18,h*.45);ctx.lineTo(-w*.34,-h*.05);ctx.closePath();ctx.fill();ctx.stroke();
+    }else if(shape==="leviathan"){
+      ctx.lineWidth=12;ctx.lineCap="round";ctx.strokeStyle=th.sub;ctx.beginPath();for(let i=0;i<7;i++){const xx=-w*.36+i*w*.12,yy=Math.sin((t||0)*.05+i*.8)*18+i*5;if(i===0)ctx.moveTo(xx,yy);else ctx.lineTo(xx,yy);}ctx.stroke();ctx.fillStyle=th.main;ctx.beginPath();ctx.ellipse(w*.18,-h*.18,w*.26,h*.18,.1,0,Math.PI*2);ctx.fill();ctx.stroke();
+    }else if(shape==="void"){
+      ctx.fillStyle=th.main;ctx.beginPath();ctx.ellipse(0,0,w*.34,h*.40,0,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.strokeStyle=th.glow;for(let i=0;i<4;i++){const a=(t||0)*.025+i/4*Math.PI*2;ctx.beginPath();ctx.arc(Math.cos(a)*w*.40,Math.sin(a)*h*.32,12,0,Math.PI*2);ctx.stroke();}
+    }else{
+      ctx.beginPath();ctx.ellipse(-w*.38,0,w*.30,h*.20,-.55,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.ellipse(w*.38,0,w*.30,h*.20,.55,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.ellipse(0,5,w*.30,h*.34,0,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.beginPath();ctx.ellipse(0,-h*.26,w*.22,h*.17,0,0,Math.PI*2);ctx.fill();ctx.stroke();
+    }
+    ctx.fillStyle="#071018";ctx.beginPath();ctx.ellipse(-9,-h*.12,5,6,0,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.ellipse(9,-h*.12,5,6,0,0,Math.PI*2);ctx.fill();ctx.restore();
+    ctx.save();ctx.fillStyle="#fff";ctx.font="900 12px system-ui";ctx.textAlign="center";ctx.shadowBlur=8;ctx.shadowColor=th.dark;ctx.fillText(b.name||"BOSS",cx,y-10);ctx.restore();
+    ctx.save();ctx.fillStyle="rgba(8,25,45,.55)";RR(cx-48,y-5,96,6,999);ctx.fill();ctx.fillStyle=hpRate<=.33?"#ff6262":hpRate<=.66?"#ffd84d":th.glow;RR(cx-48,y-5,Math.max(2,96*hpRate),6,999);ctx.fill();ctx.restore();
+  };
+
+  msg("ボスラッシュ設定を復元した！",130);
 })();
