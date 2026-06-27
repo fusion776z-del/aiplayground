@@ -838,6 +838,8 @@ function dmgE(e,d){
 }
 
 function dmgB(d){
+  const hpScale = (typeof window !== "undefined") ? window.__applyStageBossHpScale : null;
+  if(typeof hpScale === "function") hpScale();
   const b=G.boss;
   if(!b)return;
 
@@ -848,6 +850,9 @@ function dmgB(d){
     G.bossDefeatT=120;
     G.state="bossDefeat";
     G.bullets=[];
+    G.bossBullets=[];
+    G.bossZones=[];
+    if(G.map)G.map.__bossDefeated=true;
     msg("ボス撃破！",120);
   }
 }
@@ -3163,8 +3168,12 @@ loop();
     扉を開けたら魔法陣を作る。
   */
   spawnBoss = function(){
+    const hpScale = (typeof window !== "undefined") ? window.__applyStageBossHpScale : null;
+    if(typeof hpScale === "function") hpScale();
+
     if(G && G.map && G.map.__duelSpace){
       createBossForDuel();
+      if(typeof hpScale === "function") hpScale();
       return;
     }
 
@@ -3172,6 +3181,7 @@ loop();
 
     if(d && isBossDoor(d)){
       createBossWarpCircleFromDoor(d);
+      if(typeof hpScale === "function") hpScale();
     }
   };
 
@@ -3563,24 +3573,6 @@ loop();
       ctx.restore();
     };
   }
-
-  /*
-    ボス撃破後の再出現防止。
-  */
-  if(typeof dmgB === "function"){
-    const __oldDmgBMagicCircleDuel = dmgB;
-
-    dmgB = function(damage){
-      const hadBoss = !!G.boss;
-
-      __oldDmgBMagicCircleDuel(damage);
-
-      if(hadBoss && !G.boss){
-        markBossDefeated();
-      }
-    };
-  }
-
 })();
 /* =========================================================
    ボス超強化グラフィック + ステージ別攻撃AI 完全版
@@ -5019,24 +5011,6 @@ loop();
       }
     };
   }
-
-  /*
-    ボスが消えた時に弾も掃除。
-  */
-  if(typeof dmgB === "function"){
-    const __oldDmgBSuperBoss = dmgB;
-
-    dmgB = function(damage){
-      const hadBoss = !!G.boss;
-
-      __oldDmgBSuperBoss(damage);
-
-      if(hadBoss && !G.boss){
-        clearBossProjectiles();
-      }
-    };
-  }
-
 })();
 /* =========================================================
    盾反射 + 魔法ボス命中 強化パッチ 完全版
@@ -5517,11 +5491,15 @@ loop();
     const __oldUpdBossShieldMagic = updBoss;
 
     updBoss = function(){
+      const hpScale = (typeof window !== "undefined") ? window.__applyStageBossHpScale : null;
+      if(typeof hpScale === "function") hpScale();
       __oldUpdBossShieldMagic();
       processShieldReflectionAndReflectedHits();
     };
   }else{
     updBoss = function(){
+      const hpScale = (typeof window !== "undefined") ? window.__applyStageBossHpScale : null;
+      if(typeof hpScale === "function") hpScale();
       processShieldReflectionAndReflectedHits();
     };
   }
@@ -5537,6 +5515,8 @@ loop();
       __oldUpdateShieldMagic();
       processShieldReflectionAndReflectedHits();
       updatePlayerBulletsAgainstBoss();
+      const hpScale = (typeof window !== "undefined") ? window.__applyStageBossHpScale : null;
+      if(typeof hpScale === "function") hpScale();
     };
   }
 
@@ -5966,6 +5946,12 @@ loop();
     applyHpScaleToActiveBoss();
   }
 
+
+  // spawnBoss/dmgB/update/updBossからHP補正を直接呼べるように公開する。
+  if(typeof window !== "undefined"){
+    window.__applyStageBossHpScale = applyStageBossHpScale;
+  }
+
   /*
     load を包む:
     ステージ読み込み直後に map.boss のHPを強化。
@@ -5978,72 +5964,7 @@ loop();
       applyStageBossHpScale();
     };
   }
-
-  /*
-    spawnBoss を包む:
-    通常のボス生成にも、決闘空間のボス生成にも対応。
-  */
-  if(typeof spawnBoss === "function"){
-    const __oldSpawnBossStageHpScale = spawnBoss;
-
-    spawnBoss = function(){
-      /*
-        生成前に map.boss を強化。
-      */
-      applyHpScaleToMapBoss();
-
-      __oldSpawnBossStageHpScale();
-
-      /*
-        生成後に G.boss を強化。
-      */
-      applyHpScaleToActiveBoss();
-    };
-  }
-
-  /*
-    dmgB を包む:
-    もし何らかの理由でHP強化前にダメージが入っても、
-    最初のダメージ時点で強化を保証する。
-  */
-  if(typeof dmgB === "function"){
-    const __oldDmgBStageHpScale = dmgB;
-
-    dmgB = function(damage){
-      applyStageBossHpScale();
-      __oldDmgBStageHpScale(damage);
-    };
-  }
-
-  /*
-    update を包む:
-    魔法陣ワープや他パッチが独自に G.boss を作った場合でも、
-    毎フレーム軽く確認してHP強化を取りこぼさない。
-    二重適用はフラグで防止済み。
-  */
-  if(typeof update === "function"){
-    const __oldUpdateStageBossHpScale = update;
-
-    update = function(){
-      __oldUpdateStageBossHpScale();
-      applyStageBossHpScale();
-    };
-  }
-
-  /*
-    updBoss も包む:
-    ボスAI開始時にもHP強化を保証する。
-  */
-  if(typeof updBoss === "function"){
-    const __oldUpdBossStageHpScale = updBoss;
-
-    updBoss = function(){
-      applyStageBossHpScale();
-      __oldUpdBossStageHpScale();
-    };
-  }
-
-  /*
+/*
     UIにボス強化倍率を少し表示する。
     既存UIを壊さず、画面下寄りに小さく出す。
   */
