@@ -965,9 +965,9 @@ function updDrops(){
     if(nn.l<80){d.x+=nn.x*3.4;d.y+=nn.y*3.4;}
 
     if(nn.l<18){
-      // 雑魚敵からドロップしたコイン取得量を2倍にする。
-      // 旧: base=5 → 新: base=10
-      const base=10;
+      // 雑魚敵からドロップしたコイン取得量を2.5倍にする。
+      // 旧: base=10 → 新: base=25
+      const base=30;
       const bonus=Math.floor(base*(getBalance().coinBonus-1));
       p.coins+=base+bonus;
       G.drops.splice(i,1);
@@ -10594,4 +10594,209 @@ loop();
   };
 
   msg("ボスラッシュ設定を復元した！",130);
+})();
+/* =========================================================
+   ゲームオーバー後リスタート時の背景・エフェクト残留修正パッチ
+   貼る場所:
+   - game.js の一番下
+   - 既存の全パッチよりさらに後ろ
+
+   修正内容:
+   - ゲームオーバー後にリスタートした時、
+     前回のボス戦背景・衝撃波・魔法陣・Stage7ラッシュ情報が残らないようにする
+   ========================================================= */
+(function(){
+  if(window.__restartVisualCleanupPatchApplied) return;
+  window.__restartVisualCleanupPatchApplied = true;
+
+  function clearInputSafe(){
+    if(typeof flush === "function"){
+      flush();
+      return;
+    }
+    if(typeof input !== "undefined"){
+      input.attack = 0;
+      input.action = 0;
+      input.start = 0;
+      input.magic = 0;
+      input.dash = 0;
+    }
+  }
+
+  function clearMapTemporaryFlags(map){
+    if(!map) return;
+
+    delete map.__duelSpace;
+    delete map.__duelOriginalName;
+    delete map.__bossWarpCircle;
+    delete map.__bossDoorOpened;
+    delete map.__bossSpawned;
+    delete map.__stage7Circle;
+    delete map.__stage7RushArena;
+    delete map.__stage7FinalArena;
+    delete map.__stage7AbyssArena;
+    delete map.__stage7SavedBoss;
+    delete map.__stage7FinalAbyssSource;
+  }
+
+  function clearGlobalTemporaryFlags(){
+    if(typeof G === "undefined") return;
+
+    /*
+      通常ゲーム本体の一時データ
+    */
+    G.boss = null;
+    G.bossDefeatT = 0;
+    G.talk = null;
+    G.shop = null;
+
+    G.drops = [];
+    G.effects = [];
+    G.bullets = [];
+
+    /*
+      ボスAI / 衝撃波 / ボス弾パッチ系
+      ここが残ると、次のステージで「衝撃波」やボス弾が出る
+    */
+    G.bossBullets = [];
+    G.bossZones = [];
+
+    /*
+      決闘空間・魔法陣ワープ系
+    */
+    G.duelTransitionT = 0;
+    G.duelTransitionMax = 0;
+    G.duelIntroText = "";
+    delete G.__duelOriginalStage;
+
+    /*
+      Stage7 ボスラッシュ系
+      ここが残ると、Stage1でも宇宙背景になることがある
+    */
+    delete G.__stage7Rush;
+    delete G.__stage7FinalAbyss;
+    delete G.__stage7RushBossSourceList;
+    delete G.__stage7FinalAbyssSource;
+    delete G.__stage7RushReturnMap;
+    delete G.__stage7RushReturnPlayer;
+
+    /*
+      全クリア演出系
+    */
+    G.__epicAllClear = false;
+    G.__epicAllClearT = 0;
+    G.__epicAllClearMax = 0;
+
+    /*
+      メッセージ連打防止・一時メッセージ系
+      message自体は start/load 後にステージ名を出したいので、
+      ここでは強制的に空にしない。
+    */
+    G.__lastShieldReflectMsg = 0;
+    G.__lastMagicBossHitMsg = 0;
+    G.__lastBossHpScaleMsgKey = "";
+
+    clearMapTemporaryFlags(G.map);
+  }
+
+  /*
+    start() を包む。
+    ゲームオーバー後の再スタート時に、
+    前回の背景・弾・衝撃波・ボスラッシュ情報を完全に消す。
+  */
+  if(typeof start === "function"){
+    const oldStartRestartCleanup = start;
+
+    start = function(){
+      clearGlobalTemporaryFlags();
+      clearInputSafe();
+
+      oldStartRestartCleanup.apply(this, arguments);
+
+      /*
+        start() 内の load() 後にも念のため掃除。
+        ただし load() が作った G.map / G.player は残す。
+      */
+      clearGlobalTemporaryFlags();
+      clearInputSafe();
+
+      if(G && G.player){
+        G.player.inv = Math.max(G.player.inv || 0, 90);
+        G.player.dashT = 0;
+        G.player.attackT = 0;
+        G.player.attackCd = 0;
+        G.player.combo = 0;
+        G.player.comboT = 0;
+      }
+
+      if(G){
+        G.state = "field";
+      }
+    };
+  }
+
+  /*
+    load() も包む。
+    ステージ移動時にも、前ステージの特殊演出が混ざらないようにする。
+  */
+  if(typeof load === "function"){
+    const oldLoadRestartCleanup = load;
+
+    load = function(s, keep){
+      clearGlobalTemporaryFlags();
+      clearInputSafe();
+
+      oldLoadRestartCleanup.apply(this, arguments);
+
+      clearGlobalTemporaryFlags();
+      clearInputSafe();
+
+      /*
+        load() 後の基本状態を保証
+      */
+      if(G){
+        G.boss = null;
+        G.bossDefeatT = 0;
+        G.bossBullets = [];
+        G.bossZones = [];
+        G.effects = [];
+        G.bullets = [];
+        G.drops = [];
+      }
+    };
+  }
+
+  /*
+    gameover -> title に戻った瞬間も掃除する。
+    これでタイトル画面を経由しても残留しない。
+  */
+  if(typeof update === "function"){
+    const oldUpdateRestartCleanup = update;
+
+    update = function(){
+      const beforeState = G ? G.state : null;
+
+      oldUpdateRestartCleanup.apply(this, arguments);
+
+      if(G && beforeState === "gameover" && G.state === "title"){
+        clearGlobalTemporaryFlags();
+        clearInputSafe();
+
+        /*
+          タイトルでは前回マップを参照しないようにする。
+          start() が呼ばれたら新しい Stage1 が load される。
+        */
+        G.map = null;
+        G.player = null;
+        G.enemies = [];
+        G.npcs = [];
+        G.shops = [];
+        G.chests = [];
+        G.doors = [];
+        G.terrain = [];
+      }
+    };
+  }
+
+  console.log("restartVisualCleanupPatch loaded");
 })();
