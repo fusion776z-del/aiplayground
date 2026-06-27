@@ -10392,7 +10392,8 @@ loop();
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
-    }else if(dir === "left" || dir === "right"){
+    }
+else if(dir === "left" || dir === "right"){
       const g = ctx.createLinearGradient(-34, -18, 8, 38);
       g.addColorStop(0, c.cape1);
       g.addColorStop(0.36, c.cape2);
@@ -10600,27 +10601,33 @@ loop();
     ctx.scale(flip, 1);
     ctx.scale(1, 0.86);
 
-    drawShadow(ctx);
+ drawShadow(ctx);
 
-    /*
-      Lv7のマントは本体と同じ座標系で描く。
-      背面は大きく、正面は外側だけ。
-    */
-    drawCape(ctx, p, c, dir, time);
+drawSlash(ctx, p, c, dir, combo, progress);
 
-    drawSlash(ctx, p, c, dir, combo, progress);
+if(view === "back"){
+  /*
+    上向き時だけ、マントを最後に描く。
+    Canvasでは後に描いたものが最前面になる。
+  */
+  drawArmsGear(ctx, c, pose, view);
+  drawLegs(ctx, c, pose, walk, view);
+  drawBody(ctx, c, pose, view);
+  drawHead(ctx, p, c, pose, view);
 
-    if(view === "back"){
-      drawArmsGear(ctx, c, pose, view);
-      drawLegs(ctx, c, pose, walk, view);
-      drawBody(ctx, c, pose, view);
-      drawHead(ctx, p, c, pose, view);
-    }else{
-      drawLegs(ctx, c, pose, walk, view);
-      drawBody(ctx, c, pose, view);
-      drawArmsGear(ctx, c, pose, view);
-      drawHead(ctx, p, c, pose, view);
-    }
+  // 上向き時はマントを最前面へ
+  drawCape(ctx, p, c, dir, time);
+
+}else{
+  /*
+    正面・横向きは今まで通り、マントを先に描く。
+  */
+  drawCape(ctx, p, c, dir, time);
+  drawLegs(ctx, c, pose, walk, view);
+  drawBody(ctx, c, pose, view);
+  drawArmsGear(ctx, c, pose, view);
+  drawHead(ctx, p, c, pose, view);
+}
 
     ctx.restore();
 
@@ -10697,4 +10704,894 @@ loop();
     syncAwakeningFinal(G.player);
   }
 
+})();
+/* =========================================================
+   攻撃ボタン押しっぱなし連射パッチ 修正版
+   貼る場所:
+   - game.js の一番下
+   - 古い連射パッチは必ず削除してから貼る
+
+   修正内容:
+   - PC: Z / Enter 押しっぱなしで連続攻撃
+   - スマホ: ATK押しっぱなしで連続攻撃
+   - NPC会話、宝箱、扉、ショップ操作を邪魔しない
+   - input.action / input.start を勝手に消さない
+   ========================================================= */
+
+(function(){
+  if(window.__autoAttackHoldPatchAppliedV2) return;
+  window.__autoAttackHoldPatchAppliedV2 = true;
+
+  const AUTO_ATTACK_INTERVAL = 2;
+
+  const hold = {
+    attack:false,
+    timer:0,
+    pointerId:null
+  };
+
+  function isAttackKey(e){
+    if(!e) return false;
+    const k = String(e.key || "").toLowerCase();
+    return k === "z" || e.key === "Enter";
+  }
+
+  function canAutoAttack(){
+    if(typeof G === "undefined") return false;
+    if(!G.player) return false;
+
+    // フィールド中だけ自動攻撃する
+    // talk / shop / title / clear / gameover では自動攻撃しない
+    if(G.state !== "field") return false;
+
+    // 入力ロック中は自動攻撃しない
+    if((G.lock || 0) > 0) return false;
+
+    return true;
+  }
+
+  function getPlayerAttackCooldown(){
+    if(typeof G === "undefined" || !G.player) return 999;
+    return G.player.attackCd || 0;
+  }
+
+  /*
+    PC:
+    既存の keydown 処理はそのまま使う。
+    ここでは「押しっぱなし状態」だけ管理する。
+  */
+  window.addEventListener("keydown", function(e){
+    if(!isAttackKey(e)) return;
+    hold.attack = true;
+  }, {passive:true});
+
+  window.addEventListener("keyup", function(e){
+    if(!isAttackKey(e)) return;
+    hold.attack = false;
+    hold.timer = 0;
+  }, {passive:true});
+
+  /*
+    スマホATKボタン:
+    pointerdownで押しっぱなし開始。
+    pointerup / pointercancelで停止。
+  */
+  function installAttackButtonHold(){
+    const btn = document.getElementById("attackBtn");
+    if(!btn) return false;
+
+    btn.addEventListener("pointerdown", function(e){
+      hold.attack = true;
+      hold.pointerId = e.pointerId;
+    }, {capture:true, passive:true});
+
+    btn.addEventListener("pointerup", function(e){
+      if(hold.pointerId !== null && e.pointerId !== hold.pointerId) return;
+      hold.attack = false;
+      hold.pointerId = null;
+      hold.timer = 0;
+    }, {capture:true, passive:true});
+
+    btn.addEventListener("pointercancel", function(e){
+      if(hold.pointerId !== null && e.pointerId !== hold.pointerId) return;
+      hold.attack = false;
+      hold.pointerId = null;
+      hold.timer = 0;
+    }, {capture:true, passive:true});
+
+    btn.addEventListener("lostpointercapture", function(){
+      hold.attack = false;
+      hold.pointerId = null;
+      hold.timer = 0;
+    }, {capture:true, passive:true});
+
+    btn.addEventListener("touchend", function(){
+      hold.attack = false;
+      hold.pointerId = null;
+      hold.timer = 0;
+    }, {capture:true, passive:true});
+
+    return true;
+  }
+
+  if(!installAttackButtonHold()){
+    window.addEventListener("DOMContentLoaded", installAttackButtonHold);
+  }
+
+  window.addEventListener("blur", function(){
+    hold.attack = false;
+    hold.pointerId = null;
+    hold.timer = 0;
+  });
+
+  document.addEventListener("visibilitychange", function(){
+    if(document.hidden){
+      hold.attack = false;
+      hold.pointerId = null;
+      hold.timer = 0;
+    }
+  });
+
+  /*
+    updateを包む。
+    既存の updP 内で C("attack") が input.attack を消費するので、
+    押しっぱなし中に必要なタイミングで input.attack だけ再投入する。
+    
+    注意:
+    input.action / input.start は絶対に消さない。
+    NPC会話・宝箱・扉・ショップ操作が死ぬため。
+  */
+  if(typeof update === "function"){
+    const oldUpdateAutoAttackHoldV2 = update;
+
+    update = function(){
+      if(hold.attack && canAutoAttack()){
+        if(hold.timer > 0){
+          hold.timer--;
+        }
+
+        if(hold.timer <= 0 && getPlayerAttackCooldown() <= 0){
+          input.attack = 1;
+
+          // ここでは input.action / input.start を触らない
+          // ATKボタンのACT機能を残すため
+
+          hold.timer = AUTO_ATTACK_INTERVAL;
+        }
+      }else{
+        hold.timer = 0;
+      }
+
+      oldUpdateAutoAttackHoldV2();
+    };
+  }
+
+  console.log("auto attack hold patch v2 loaded");
+})();
+/* =========================================================
+   主人公成長仕様 最終上書きパッチ v3
+   仕様:
+   - 剣盾本 Lv3以上:
+       青い人
+       波動砲なし
+   - 剣盾本 Lv5以上:
+       黄色い人
+       キラキラなし
+       マントなし
+       ステータスアップ
+       前方のみ波動砲
+   - 剣盾本 Lv7以上:
+       黄色い人
+       キラキラあり
+       背中にマントあり
+       全方向波動砲解禁
+   貼る場所:
+   - game.js の一番最後
+   ========================================================= */
+
+(function(){
+  if(window.__heroGrowthFinalSpecV3Applied) return;
+  window.__heroGrowthFinalSpecV3Applied = true;
+
+  const TWO_PI = Math.PI * 2;
+
+  function lv(v){
+    return Math.max(0, v | 0);
+  }
+
+  function gearMin(p){
+    if(!p) return 0;
+    return Math.min(
+      lv(p.swordLv),
+      lv(p.shieldLv),
+      lv(p.bookLv || p.magicLv)
+    );
+  }
+
+  function growthTier(p){
+    const m = gearMin(p);
+    if(m >= 7) return 7;
+    if(m >= 5) return 5;
+    if(m >= 3) return 3;
+    return 0;
+  }
+
+  function syncHeroGrowthFlags(p){
+    if(!p) return;
+
+    const tier = growthTier(p);
+
+    p.heroGrowthTier = tier;
+
+    /*
+      既存描画パッチとの互換用フラグ。
+      curseLifted = 人型化
+      trueGold = 黄色化
+      goldAwaken / trueGoldAwaken / legendAwaken = Lv7専用
+    */
+    p.curseLifted = tier >= 3;
+    p.trueGold = tier >= 5;
+
+    p.goldAwaken = tier >= 7;
+    p.trueGoldAwaken = tier >= 7;
+    p.legendAwaken = tier >= 7;
+
+    if(tier >= 7){
+      p.awakenTier = "gold_awaken";
+      p.awakenName = "黄金覚醒";
+    }else if(tier >= 5){
+      p.awakenTier = "pre_gold";
+      p.awakenName = "黄色い人";
+    }else if(tier >= 3){
+      p.awakenTier = "blue";
+      p.awakenName = "青い人";
+    }else{
+      p.awakenTier = "normal";
+      p.awakenName = "通常";
+    }
+  }
+
+  /*
+    ステータスアップ。
+    二重に加算されないよう、到達済み段階を保存する。
+  */
+  function applyGrowthStats(p){
+    if(!p) return;
+
+    const tier = growthTier(p);
+    p.__growthStatsAppliedTier = p.__growthStatsAppliedTier || 0;
+
+    /*
+      Lv3:
+      青い人化。ここでは軽めの基礎成長。
+    */
+    if(tier >= 3 && p.__growthStatsAppliedTier < 3){
+      p.maxHp += 6;
+      p.hp = p.maxHp;
+
+      p.maxMp += 3;
+      p.mp = p.maxMp;
+
+      p.atk += 2;
+      p.def += 1;
+      p.magic += 2;
+      p.speed += 0.20;
+
+      p.__growthStatsAppliedTier = 3;
+
+      if(typeof msg === "function"){
+        msg("青い力に目覚めた！", 130);
+      }
+    }
+
+    /*
+      Lv5:
+      黄色い人化。
+      キラキラなし / マントなし / 前方波動砲。
+      ここがメインのステータスアップ。
+    */
+    if(tier >= 5 && p.__growthStatsAppliedTier < 5){
+      p.maxHp += 10;
+      p.hp = p.maxHp;
+
+      p.maxMp += 5;
+      p.mp = p.maxMp;
+
+      p.atk += 4;
+      p.def += 3;
+      p.magic += 3;
+      p.speed += 0.22;
+
+      p.__growthStatsAppliedTier = 5;
+
+      if(typeof msg === "function"){
+        msg("黄色い力に覚醒！ 前方波動砲を習得した！", 150);
+      }
+    }
+
+    /*
+      Lv7:
+      完全覚醒。
+      キラキラ + マント + 全方向波動砲。
+      ステータスも少し追加。
+    */
+    if(tier >= 7 && p.__growthStatsAppliedTier < 7){
+      p.maxHp += 12;
+      p.hp = p.maxHp;
+
+      p.maxMp += 6;
+      p.mp = p.maxMp;
+
+      p.atk += 4;
+      p.def += 3;
+      p.magic += 4;
+      p.speed += 0.18;
+
+      p.__growthStatsAppliedTier = 7;
+
+      if(typeof msg === "function"){
+        msg("黄金完全覚醒！ マントと全方向波動砲が解放された！", 180);
+      }
+    }
+
+    syncHeroGrowthFlags(p);
+  }
+
+  /*
+    checkAwaken を新仕様に上書き。
+    ショップ強化時に呼ばれるので、ここで成長を反映する。
+  */
+  checkAwaken = function(){
+    if(typeof G === "undefined" || !G.player) return;
+    applyGrowthStats(G.player);
+  };
+
+  /*
+    色判定。
+    既存の drawHeroAdventurer3D をそのまま使う場合でも、
+    p.trueGold / p.goldAwaken のフラグで見た目が変わる。
+  */
+  function heroColor(p){
+    const tier = growthTier(p);
+    if(tier >= 5) return "#ffd84d";
+    if(tier >= 3) return "#63d8ff";
+    return "#9ef7ff";
+  }
+
+  function hitSafe(a,b){
+    return a && b &&
+      a.x < b.x + b.w &&
+      a.x + a.w > b.x &&
+      a.y < b.y + b.h &&
+      a.y + a.h > b.y;
+  }
+
+  function distHitSafe(a,cx,cy,r){
+    if(!a) return false;
+    const ex = a.x + a.w / 2;
+    const ey = a.y + a.h / 2;
+    return (ex - cx) * (ex - cx) + (ey - cy) * (ey - cy) <= r * r;
+  }
+
+  function waveAngle(dx,dy){
+    return Math.atan2(dy,dx);
+  }
+
+  function waveSize(dx,dy,tier){
+    const diagonal = Math.abs(dx) > 0 && Math.abs(dy) > 0;
+    const strong = tier >= 7;
+
+    if(diagonal){
+      return {
+        w: strong ? 44 : 36,
+        h: strong ? 44 : 36,
+        visualLen: strong ? 78 : 62,
+        visualThick: strong ? 30 : 24
+      };
+    }
+
+    if(Math.abs(dx) > 0){
+      return {
+        w: strong ? 58 : 48,
+        h: strong ? 28 : 24,
+        visualLen: strong ? 92 : 76,
+        visualThick: strong ? 34 : 28
+      };
+    }
+
+    return {
+      w: strong ? 28 : 24,
+      h: strong ? 58 : 48,
+      visualLen: strong ? 92 : 76,
+      visualThick: strong ? 34 : 28
+    };
+  }
+
+  function addWaveSpark(x,y,color,angle){
+    if(!Array.isArray(G.effects)) G.effects = [];
+
+    const back = angle + Math.PI;
+
+    for(let i=0;i<4;i++){
+      const a = back + (Math.random() - 0.5) * 0.8;
+      const sp = 0.8 + Math.random() * 1.8;
+
+      G.effects.push({
+        type:"growth_wave_spark",
+        x:x + (Math.random() - 0.5) * 18,
+        y:y + (Math.random() - 0.5) * 18,
+        vx:Math.cos(a) * sp,
+        vy:Math.sin(a) * sp,
+        life:18 + Math.floor(Math.random() * 10),
+        max:28,
+        color,
+        size:2 + Math.random() * 2
+      });
+    }
+  }
+
+  function shootWaveDir(dx,dy,opt){
+    const p = G.player;
+    if(!p) return;
+
+    opt = opt || {};
+
+    const tier = growthTier(p);
+    const n = nrm(dx,dy);
+    const s = waveSize(dx,dy,tier);
+    const color = opt.color || heroColor(p);
+    const angle = waveAngle(n.x,n.y);
+
+    G.bullets.push({
+      x:p.x + p.w / 2 - s.w / 2,
+      y:p.y + p.h / 2 - s.h / 2,
+      w:s.w,
+      h:s.h,
+      vx:n.x * (opt.speed || (tier >= 7 ? 7.8 : 7.0)),
+      vy:n.y * (opt.speed || (tier >= 7 ? 7.8 : 7.0)),
+      life:opt.life || (tier >= 7 ? 90 : 78),
+      maxLife:opt.life || (tier >= 7 ? 90 : 78),
+      dmg:opt.dmg || Math.max(2, Math.round((p.atk || 3) * (tier >= 7 ? 0.9 : 0.75))),
+      magic:true,
+      wave:true,
+      growthWave:true,
+      angle,
+      visualLen:s.visualLen,
+      visualThick:s.visualThick,
+      radius:opt.radius || (tier >= 7 ? 46 : 36),
+      color,
+      pulseSeed:Math.random() * TWO_PI
+    });
+
+    addWaveSpark(p.x + p.w / 2, p.y + p.h / 2, color, angle);
+  }
+
+  /*
+    Lv5:
+    前方のみ波動砲。
+  */
+  function shootForwardWave(baseDamage){
+    const p = G.player;
+    if(!p) return;
+
+    const color = "#ffd84d";
+
+    const opt = {
+      speed:7.1,
+      life:80,
+      dmg:Math.max(2, Math.round((baseDamage || p.atk || 3) * 0.82)),
+      radius:38,
+      color
+    };
+
+    if(p.dir === "up") shootWaveDir(0,-1,opt);
+    else if(p.dir === "down") shootWaveDir(0,1,opt);
+    else if(p.dir === "left") shootWaveDir(-1,0,opt);
+    else shootWaveDir(1,0,opt);
+  }
+
+  /*
+    Lv7:
+    全方向波動砲。
+  */
+  function shootAllDirectionWave(baseDamage){
+    const p = G.player;
+    if(!p) return;
+
+    const dirs = [
+      [1,0],
+      [-1,0],
+      [0,1],
+      [0,-1],
+      [1,1],
+      [1,-1],
+      [-1,1],
+      [-1,-1]
+    ];
+
+    const color = "#fff7a8";
+    const dmg = Math.max(3, Math.round((baseDamage || p.atk || 3) * 0.90));
+
+    for(const d of dirs){
+      shootWaveDir(d[0],d[1],{
+        speed:7.8,
+        life:92,
+        dmg,
+        radius:48,
+        color
+      });
+    }
+
+    if(typeof ring === "function"){
+      ring(p.x + p.w / 2, p.y + p.h / 2, 130, color);
+    }
+
+    if(typeof msg === "function"){
+      msg("全方向波動砲！", 58);
+    }
+  }
+
+  /*
+    attack を新仕様に最終上書き。
+    - Lv3: 青い人だけ。波動砲なし。
+    - Lv5: 前方波動砲。
+    - Lv7: 全方向波動砲。
+  */
+  attack = function(){
+    const p = G.player;
+    if(!p) return;
+
+    applyGrowthStats(p);
+
+    const tier = growthTier(p);
+    const st = G.stageIndex || 0;
+
+    p.combo = p.combo % 3 + 1;
+    p.comboT = 38;
+
+    const sweep = p.combo === 3;
+
+    const r = sweep
+      ? (tier >= 7 ? 96 : tier >= 5 ? 84 : tier >= 3 ? 74 : 70)
+      : 0;
+
+    p.attackT = sweep ? 18 : 12;
+    p.attackCd = sweep ? 18 : 12;
+
+    const a = atkBox();
+
+    const atkMul = st >= 4
+      ? (tier >= 7 ? 0.84 : tier >= 5 ? 0.88 : 0.92)
+      : 1;
+
+    const d = p.atk * atkMul * (sweep ? 1.35 : 1);
+
+    /*
+      波動砲条件:
+      Lv5以上で前方波動砲。
+      Lv7以上で全方向波動砲。
+      3段目だけ発射にすると強すぎにくい。
+    */
+    if(sweep){
+      if(tier >= 7){
+        shootAllDirectionWave(d);
+      }else if(tier >= 5){
+        shootForwardWave(d);
+      }
+    }
+
+    /*
+      既存の近接攻撃。
+    */
+    if(sweep){
+      const cx = p.x + p.w / 2;
+      const cy = p.y + p.h / 2;
+      const rr = st >= 4 && tier >= 7 ? Math.round(r * 0.90) : r;
+
+      let hits = 0;
+
+      for(let i=G.enemies.length-1;i>=0;i--){
+        const e = G.enemies[i];
+        if(e && distHitSafe(e,cx,cy,rr)){
+          dmgE(e,d);
+          hits++;
+        }
+      }
+
+      if(G.boss && distHitSafe(G.boss,cx,cy,rr)){
+        dmgB(d * 0.8);
+      }
+
+      if(typeof ring === "function"){
+        ring(cx,cy,rr,tier >= 5 ? "#ffd84d" : "#9ef7ff");
+      }
+
+      if(tier < 7 && typeof msg === "function"){
+        msg("なぎ払い！ x" + hits, 36);
+      }
+
+    }else{
+      for(let i=G.enemies.length-1;i>=0;i--){
+        const e = G.enemies[i];
+        if(e && hitSafe(a,e)){
+          dmgE(e,d);
+        }
+      }
+
+      if(G.boss && hitSafe(a,G.boss)){
+        dmgB(d);
+      }
+    }
+  };
+
+  /*
+    波動砲をボスにも確実に当てる。
+  */
+  if(typeof updBullets === "function" && !updBullets.__heroGrowthWaveWrappedV3){
+    const oldUpdBullets = updBullets;
+
+    updBullets = function(){
+      oldUpdBullets();
+
+      if(!G || !Array.isArray(G.bullets)) return;
+
+      for(let i=G.bullets.length-1;i>=0;i--){
+        const b = G.bullets[i];
+        if(!b || !b.growthWave) continue;
+
+        if(G.boss && hitSafe(b,G.boss)){
+          dmgB(Math.max(1, Math.round(b.dmg || 3)));
+
+          const x = b.x + b.w / 2;
+          const y = b.y + b.h / 2;
+
+          if(typeof fx === "function"){
+            fx(x,y,b.color || "#fff7a8",18,3.5);
+          }
+
+          if(typeof ring === "function"){
+            ring(x,y,b.radius || 38,b.color || "#fff7a8");
+          }
+
+          G.bullets.splice(i,1);
+        }
+      }
+    };
+
+    updBullets.__heroGrowthWaveWrappedV3 = true;
+  }
+
+  function drawGrowthWaveBullet(b){
+    if(!b || !b.growthWave) return;
+
+    const x = wx(b.x + b.w / 2);
+    const y = wy(b.y + b.h / 2);
+
+    const age = (b.maxLife || b.life || 1) - (b.life || 0);
+    const max = b.maxLife || 80;
+    const t = age / max;
+
+    const pulse = 1 + Math.sin((G.time || 0) * 0.35 + (b.pulseSeed || 0)) * 0.10;
+    const fade = Math.max(0.20, Math.min(1, (b.life || 0) / max));
+
+    const len = (b.visualLen || 70) * (1 + 0.18 * t) * pulse;
+    const thick = (b.visualThick || 26) * (1 + 0.10 * Math.sin((G.time || 0) * 0.5));
+    const angle = b.angle || 0;
+
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.rotate(angle);
+
+    /*
+      残像
+    */
+    for(let i=3;i>=1;i--){
+      ctx.globalAlpha = 0.10 * fade * i;
+      ctx.fillStyle = b.color || "#ffd84d";
+      ctx.shadowBlur = 18;
+      ctx.shadowColor = b.color || "#ffd84d";
+      ctx.beginPath();
+      ctx.ellipse(-i * 13,0,len * (0.45 + i * 0.08),thick * (0.50 + i * 0.10),0,0,TWO_PI);
+      ctx.fill();
+    }
+
+    /*
+      外側の光
+    */
+    ctx.globalAlpha = 0.30 * fade;
+    ctx.fillStyle = b.color || "#ffd84d";
+    ctx.shadowBlur = 28;
+    ctx.shadowColor = b.color || "#ffd84d";
+    ctx.beginPath();
+    ctx.ellipse(0,0,len * 0.62,thick * 0.82,0,0,TWO_PI);
+    ctx.fill();
+
+    /*
+      本体
+    */
+    const grad = ctx.createLinearGradient(-len / 2,0,len / 2,0);
+    grad.addColorStop(0,"rgba(255,255,255,0.05)");
+    grad.addColorStop(0.22,b.color || "#ffd84d");
+    grad.addColorStop(0.55,"#ffffff");
+    grad.addColorStop(0.82,b.color || "#ffd84d");
+    grad.addColorStop(1,"rgba(255,255,255,0.10)");
+
+    ctx.globalAlpha = 0.82 * fade;
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.ellipse(0,0,len * 0.46,thick * 0.48,0,0,TWO_PI);
+    ctx.fill();
+
+    /*
+      中心線
+    */
+    ctx.globalAlpha = 0.92 * fade;
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 3;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(-len * 0.36,0);
+    ctx.lineTo(len * 0.42,0);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  function drawGrowthWaveSparks(){
+    if(!G || !Array.isArray(G.effects)) return;
+
+    for(const e of G.effects){
+      if(!e || e.type !== "growth_wave_spark") continue;
+
+      const rate = Math.max(0, Math.min(1, e.life / (e.max || e.life || 1)));
+
+      ctx.save();
+      ctx.globalAlpha = rate;
+      ctx.fillStyle = e.color || "#ffd84d";
+      ctx.shadowBlur = 12;
+      ctx.shadowColor = e.color || "#ffd84d";
+      ctx.beginPath();
+      ctx.arc(wx(e.x),wy(e.y),e.size || 2,0,TWO_PI);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  /*
+    描画上乗せ:
+    - 波動砲の見た目
+    - Lv5はキラキラを出さない
+    - Lv7のキラキラ/マントは既存の最終覚醒描画パッチ側の goldAwaken フラグで出る
+  */
+  if(typeof draw === "function" && !draw.__heroGrowthFinalSpecV3Wrapped){
+    const oldDraw = draw;
+
+    draw = function(){
+      oldDraw();
+
+      if(!G || G.state === "title") return;
+
+      if(Array.isArray(G.bullets)){
+        for(const b of G.bullets){
+          if(b && b.growthWave){
+            drawGrowthWaveBullet(b);
+          }
+        }
+      }
+
+      drawGrowthWaveSparks();
+    };
+
+    draw.__heroGrowthFinalSpecV3Wrapped = true;
+  }
+
+  /*
+    毎フレーム同期。
+    既存パッチが trueGold / curseLifted を書き換えても戻す。
+  */
+  if(typeof update === "function" && !update.__heroGrowthFinalSpecV3Wrapped){
+    const oldUpdate = update;
+
+    update = function(){
+      oldUpdate();
+
+      if(typeof G !== "undefined" && G.player){
+        syncHeroGrowthFlags(G.player);
+      }
+    };
+
+    update.__heroGrowthFinalSpecV3Wrapped = true;
+  }
+
+  /*
+    すでにゲーム中の場合も即反映。
+  */
+  if(typeof G !== "undefined" && G.player){
+    applyGrowthStats(G.player);
+  }
+
+  console.log("hero growth final spec v3 loaded");
+})();
+/* =========================================================
+   Lv7 移動速度アップ専用パッチ 安全版
+   貼る場所:
+   - game.js の一番最後
+   - 連射パッチ、覚醒パッチ、マント描画順修正より後ろ
+
+   効果:
+   - 剣Lv7 / 盾Lv7 / 本Lv7 以上で移動速度アップ
+   - attack(), drawHeroAdventurer3D(), finalHeroDraw() には触らない
+   - 剣モーションや連射機能を壊さない
+   ========================================================= */
+
+(function(){
+  if(window.__lv7MoveSpeedOnlyPatchApplied) return;
+  window.__lv7MoveSpeedOnlyPatchApplied = true;
+
+  /*
+    速度倍率。
+    1.12 = 少し速い
+    1.18 = 体感で速い
+    1.25 = かなり速い
+  */
+  const LV7_SPEED_RATE = 1.18;
+
+  function lv(v){
+    return Math.max(0, v | 0);
+  }
+
+  function isLv7Hero(p){
+    if(!p) return false;
+
+    const sword = lv(p.swordLv);
+    const shield = lv(p.shieldLv);
+    const book = lv(p.bookLv || p.magicLv);
+
+    return sword >= 7 && shield >= 7 && book >= 7;
+  }
+
+  function applyLv7Speed(p){
+    if(!p) return;
+
+    /*
+      元速度を一度だけ保存。
+      これをしないと毎フレーム speed が増え続ける。
+    */
+    if(p.__lv7SpeedBase == null){
+      p.__lv7SpeedBase = p.speed || 3.35;
+    }
+
+    if(isLv7Hero(p)){
+      p.speed = p.__lv7SpeedBase * LV7_SPEED_RATE;
+    }else{
+      p.speed = p.__lv7SpeedBase;
+    }
+  }
+
+  if(typeof update === "function"){
+    const oldUpdateLv7MoveSpeedOnly = update;
+
+    update = function(){
+      /*
+        update前にも反映。
+        updP() の移動処理が update 内で呼ばれるため、
+        移動前に speed をセットする。
+      */
+      if(typeof G !== "undefined" && G.player){
+        applyLv7Speed(G.player);
+      }
+
+      oldUpdateLv7MoveSpeedOnly.apply(this, arguments);
+
+      /*
+        update後にも保険で反映。
+        他パッチが speed を戻しても次フレーム安定する。
+      */
+      if(typeof G !== "undefined" && G.player){
+        applyLv7Speed(G.player);
+      }
+    };
+  }
+
+  console.log("lv7 move speed only patch loaded");
 })();
