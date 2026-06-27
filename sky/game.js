@@ -10800,3 +10800,3964 @@ loop();
 
   console.log("restartVisualCleanupPatch loaded");
 })();
+/* =========================================================
+   主人公 通常攻撃モーション本体 3段化パッチ
+   貼る場所:
+   - game.js の一番下
+   - 既存の全パッチよりさらに後ろ
+
+   内容:
+   - drawHeroAdventurer3D を上書き
+   - 1段目: 斜め振り下ろし
+   - 2段目: 逆方向の横斬り
+   - 3段目: 回転なぎ払い
+   - エフェクトだけでなく、体・腕・剣の位置そのものを変える
+   ========================================================= */
+(function(){
+  if(window.__realThreeStepHeroMotionPatchApplied) return;
+  window.__realThreeStepHeroMotionPatchApplied = true;
+
+  const TWO_PI = Math.PI * 2;
+
+  function clamp(v,a,b){
+    return Math.max(a, Math.min(b, v));
+  }
+
+  function easeOutBack(t){
+    const c1 = 1.70158;
+    const c3 = c1 + 1;
+    return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+  }
+
+  function easeInOut(t){
+    return 0.5 - Math.cos(t * Math.PI) * 0.5;
+  }
+
+  function dirAngle(dir){
+    if(dir === "up") return -Math.PI / 2;
+    if(dir === "down") return Math.PI / 2;
+    if(dir === "left") return Math.PI;
+    return 0;
+  }
+
+  function heroColors(p){
+    const lifted = !!p.curseLifted;
+    const gold = !!p.trueGold;
+
+    return {
+      body: gold ? "#48c96a" : lifted ? "#2f8cff" : "#8b5a32",
+      bodyDark: gold ? "#2fae55" : lifted ? "#1f62d0" : "#6b4328",
+      outline: gold ? "#7b5b16" : lifted ? "#143f8f" : "#4a2c1c",
+      face: lifted ? "#ffe4bd" : "#a8784a",
+      hair: gold ? "#ffd84d" : lifted ? "#f4c35a" : "#5b3520",
+      sword: gold ? "#ffd84d" : lifted ? "#9ef7ff" : "#e9fbff",
+      swordCore: gold ? "#fff7a8" : "#ffffff",
+      shield: gold ? "#ffd84d" : lifted ? "#35c7ff" : "#346bd8",
+      trail: gold ? "#ffd84d" : lifted ? "#9ef7ff" : "#fff7a8",
+      trail2: gold ? "#fff7a8" : lifted ? "#63d8ff" : "#ffffff"
+    };
+  }
+
+  function rr(ctx,x,y,w,h,r){
+    r = Math.min(r || 0, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function ellipse(ctx,x,y,rx,ry,color,stroke){
+    ctx.beginPath();
+    ctx.ellipse(x,y,rx,ry,0,0,TWO_PI);
+    if(color){
+      ctx.fillStyle = color;
+      ctx.fill();
+    }
+    if(stroke){
+      ctx.strokeStyle = stroke;
+      ctx.stroke();
+    }
+  }
+
+  function drawShadow(ctx){
+    ctx.save();
+    ctx.globalAlpha = 0.28;
+    ctx.fillStyle = "rgba(0,25,40,.42)";
+    ctx.beginPath();
+    ctx.ellipse(0, 22, 26, 8, 0, 0, TWO_PI);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawSword(ctx, col, length, width){
+    length = length || 42;
+    width = width || 4;
+
+    ctx.save();
+
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = col.sword;
+
+    /*
+      blade outline
+    */
+    ctx.strokeStyle = "rgba(20,25,35,.72)";
+    ctx.lineWidth = width + 3;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(0, 4);
+    ctx.lineTo(0, -length);
+    ctx.stroke();
+
+    /*
+      blade
+    */
+    const grad = ctx.createLinearGradient(-3, -length, 3, 6);
+    grad.addColorStop(0, col.swordCore);
+    grad.addColorStop(0.45, col.sword);
+    grad.addColorStop(1, "#89cfff");
+
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = width;
+    ctx.beginPath();
+    ctx.moveTo(0, 4);
+    ctx.lineTo(0, -length);
+    ctx.stroke();
+
+    /*
+      sword tip
+    */
+    ctx.fillStyle = col.swordCore;
+    ctx.beginPath();
+    ctx.moveTo(0, -length - 7);
+    ctx.lineTo(-4, -length + 2);
+    ctx.lineTo(4, -length + 2);
+    ctx.closePath();
+    ctx.fill();
+
+    /*
+      guard
+    */
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = "#6b4a2a";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(-9, 5);
+    ctx.lineTo(9, 5);
+    ctx.stroke();
+
+    /*
+      handle
+    */
+    ctx.strokeStyle = "#3b2b20";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(0, 5);
+    ctx.lineTo(0, 15);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  function drawShield(ctx, col, scale){
+    scale = scale || 1;
+
+    ctx.save();
+    ctx.scale(scale, scale);
+
+    const grad = ctx.createLinearGradient(-12, -14, 14, 18);
+    grad.addColorStop(0, "#ffffff");
+    grad.addColorStop(0.35, col.shield);
+    grad.addColorStop(1, "#1a418e");
+
+    ctx.fillStyle = grad;
+    ctx.strokeStyle = col.swordCore;
+    ctx.lineWidth = 2;
+
+    ctx.beginPath();
+    ctx.moveTo(-11, -15);
+    ctx.lineTo(8, -17);
+    ctx.lineTo(15, -1);
+    ctx.lineTo(4, 18);
+    ctx.lineTo(-14, 7);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = "rgba(255,255,255,.24)";
+    ctx.beginPath();
+    ctx.moveTo(-5, -10);
+    ctx.lineTo(5, -12);
+    ctx.lineTo(8, -1);
+    ctx.lineTo(1, 11);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  /*
+    攻撃段数ごとのポーズを返す。
+    forward方向はローカルXプラス。
+  */
+  function attackPose(p, combo, progress){
+    const swing = easeInOut(progress);
+    const impact = Math.sin(progress * Math.PI);
+
+    /*
+      基本待機ポーズ
+    */
+    const pose = {
+      bodyLeanX: 0,
+      bodyLeanY: 0,
+      bodyRot: 0,
+      headX: 0,
+      headY: 0,
+      swordHandX: 17,
+      swordHandY: 1,
+      swordAngle: -0.35,
+      swordLength: 38,
+      shieldHandX: -17,
+      shieldHandY: 4,
+      shieldAngle: -0.18,
+      shieldScale: 0.86,
+      slashKind: 0,
+      footA: 0,
+      footB: 0
+    };
+
+    if(!(p.attackT > 0)){
+      return pose;
+    }
+
+    if(combo === 1){
+      /*
+        1段目:
+        右上に構えて、斜めに振り下ろす
+      */
+      const wind = clamp(progress / 0.32, 0, 1);
+      const cut = clamp((progress - 0.18) / 0.62, 0, 1);
+      const cutEase = easeOutBack(cut);
+
+      pose.bodyLeanX = 4 * impact;
+      pose.bodyLeanY = -1 * impact;
+      pose.bodyRot = -0.10 + 0.18 * cut;
+      pose.headX = 2 * impact;
+
+      pose.swordHandX = 12 + 13 * cutEase;
+      pose.swordHandY = -10 + 17 * cutEase;
+      pose.swordAngle = -2.35 + 2.15 * cutEase;
+      pose.swordLength = 42;
+
+      pose.shieldHandX = -18 - 2 * impact;
+      pose.shieldHandY = 4;
+
+      pose.footA = -3 * impact;
+      pose.footB = 5 * impact;
+
+      pose.slashKind = 1;
+    }else if(combo === 2){
+      /*
+        2段目:
+        逆側へ体をひねって横斬り
+      */
+      const cut = easeInOut(progress);
+
+      pose.bodyLeanX = 5 * impact;
+      pose.bodyLeanY = 0;
+      pose.bodyRot = 0.16 - 0.30 * cut;
+      pose.headX = 1 * impact;
+
+      pose.swordHandX = 26 - 20 * cut;
+      pose.swordHandY = 8 - 20 * cut;
+      pose.swordAngle = 0.72 - 2.15 * cut;
+      pose.swordLength = 44;
+
+      pose.shieldHandX = -18 + 5 * impact;
+      pose.shieldHandY = 2 - 2 * impact;
+      pose.shieldAngle = -0.35;
+
+      pose.footA = 4 * impact;
+      pose.footB = -4 * impact;
+
+      pose.slashKind = 2;
+    }else{
+      /*
+        3段目:
+        回転なぎ払い
+        体と剣を大きく回す
+      */
+      const spin = progress * TWO_PI;
+      const radius = 23 + 4 * impact;
+
+      pose.bodyLeanX = 1 * impact;
+      pose.bodyLeanY = 1 * impact;
+      pose.bodyRot = spin * 0.55;
+
+      pose.headX = Math.cos(spin) * 2;
+      pose.headY = Math.sin(spin) * 1.5;
+
+      pose.swordHandX = Math.cos(spin - 0.15) * radius;
+      pose.swordHandY = Math.sin(spin - 0.15) * radius * 0.72;
+      pose.swordAngle = spin + Math.PI / 2;
+      pose.swordLength = 48;
+
+      pose.shieldHandX = Math.cos(spin + Math.PI) * 17;
+      pose.shieldHandY = Math.sin(spin + Math.PI) * 13 * 0.72;
+      pose.shieldAngle = spin + Math.PI * 0.15;
+      pose.shieldScale = 0.80;
+
+      pose.footA = Math.sin(spin) * 5;
+      pose.footB = -Math.sin(spin) * 5;
+
+      pose.slashKind = 3;
+    }
+
+    return pose;
+  }
+
+  function drawSlashFromPose(ctx, p, col, combo, progress){
+    if(!(p.attackT > 0)) return;
+
+    const impact = Math.sin(progress * Math.PI);
+
+    ctx.save();
+    ctx.globalAlpha = 0.65 * impact;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.shadowBlur = 18;
+    ctx.shadowColor = col.trail;
+
+    if(combo === 1){
+      ctx.strokeStyle = col.trail;
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(8, -28);
+      ctx.quadraticCurveTo(36, -12, 42, 20);
+      ctx.stroke();
+
+      ctx.globalAlpha = 0.42 * impact;
+      ctx.strokeStyle = col.trail2;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(18, -25);
+      ctx.quadraticCurveTo(45, -8, 46, 21);
+      ctx.stroke();
+    }else if(combo === 2){
+      ctx.strokeStyle = col.trail;
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.moveTo(42, -20);
+      ctx.quadraticCurveTo(20, 2, -3, 24);
+      ctx.stroke();
+
+      ctx.globalAlpha = 0.40 * impact;
+      ctx.strokeStyle = col.trail2;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(47, -10);
+      ctx.quadraticCurveTo(22, 13, -6, 14);
+      ctx.stroke();
+    }else{
+      ctx.scale(1, 0.72);
+
+      ctx.strokeStyle = col.trail;
+      ctx.lineWidth = 8;
+      ctx.beginPath();
+      ctx.arc(0, 0, 50 + impact * 8, progress * TWO_PI, progress * TWO_PI + Math.PI * 1.55);
+      ctx.stroke();
+
+      ctx.globalAlpha = 0.45 * impact;
+      ctx.strokeStyle = col.trail2;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(0, 0, 34 + impact * 5, progress * TWO_PI + Math.PI * 0.7, progress * TWO_PI + Math.PI * 2.05);
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+
+  function drawHeroBody(ctx, p, col, pose, walk){
+    /*
+      足
+    */
+    ctx.save();
+    ctx.strokeStyle = col.outline;
+    ctx.lineWidth = 7;
+    ctx.lineCap = "round";
+
+    ctx.beginPath();
+    ctx.moveTo(-6, 9);
+    ctx.lineTo(-11 + pose.footA + walk * 2, 28);
+    ctx.moveTo(6, 9);
+    ctx.lineTo(11 + pose.footB - walk * 2, 28);
+    ctx.stroke();
+
+    ctx.strokeStyle = col.bodyDark;
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(-6, 10);
+    ctx.lineTo(-11 + pose.footA + walk * 2, 28);
+    ctx.moveTo(6, 10);
+    ctx.lineTo(11 + pose.footB - walk * 2, 28);
+    ctx.stroke();
+
+    ctx.fillStyle = "#263149";
+    rr(ctx, -17 + pose.footA + walk * 2, 27, 14, 5, 3);
+    ctx.fill();
+    rr(ctx, 3 + pose.footB - walk * 2, 27, 14, 5, 3);
+    ctx.fill();
+
+    ctx.restore();
+
+    /*
+      体
+    */
+    ctx.save();
+    ctx.translate(pose.bodyLeanX, pose.bodyLeanY);
+    ctx.rotate(pose.bodyRot);
+
+    const bodyGrad = ctx.createLinearGradient(0, -18, 0, 16);
+    bodyGrad.addColorStop(0, col.body);
+    bodyGrad.addColorStop(1, col.bodyDark);
+
+    ctx.fillStyle = bodyGrad;
+    ctx.strokeStyle = col.outline;
+    ctx.lineWidth = 2;
+
+    ctx.beginPath();
+    ctx.moveTo(0, -18);
+    ctx.lineTo(13, -5);
+    ctx.lineTo(9, 14);
+    ctx.lineTo(-9, 14);
+    ctx.lineTo(-13, -5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = "#6b4a2a";
+    ctx.fillRect(-10, 7, 20, 4);
+
+    ctx.restore();
+  }
+
+  function drawHeroArmsAndGear(ctx, p, col, pose){
+    /*
+      shield arm
+    */
+    ctx.save();
+    ctx.strokeStyle = col.outline;
+    ctx.lineWidth = 7;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(-10, -6);
+    ctx.lineTo(pose.shieldHandX, pose.shieldHandY);
+    ctx.stroke();
+
+    ctx.strokeStyle = col.bodyDark;
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(-10, -6);
+    ctx.lineTo(pose.shieldHandX, pose.shieldHandY);
+    ctx.stroke();
+
+    ctx.translate(pose.shieldHandX, pose.shieldHandY);
+    ctx.rotate(pose.shieldAngle);
+    drawShield(ctx, col, pose.shieldScale);
+    ctx.restore();
+
+    /*
+      sword arm
+    */
+    ctx.save();
+    ctx.strokeStyle = col.outline;
+    ctx.lineWidth = 7;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(10, -6);
+    ctx.lineTo(pose.swordHandX, pose.swordHandY);
+    ctx.stroke();
+
+    ctx.strokeStyle = col.bodyDark;
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(10, -6);
+    ctx.lineTo(pose.swordHandX, pose.swordHandY);
+    ctx.stroke();
+
+    ctx.translate(pose.swordHandX, pose.swordHandY);
+    ctx.rotate(pose.swordAngle);
+    drawSword(ctx, col, pose.swordLength, 4);
+    ctx.restore();
+  }
+
+  function drawHeroHead(ctx, p, col, pose){
+    ctx.save();
+    ctx.translate(pose.headX, pose.headY);
+
+    /*
+      neck
+    */
+    ctx.fillStyle = col.face;
+    rr(ctx, -4, -21, 8, 7, 3);
+    ctx.fill();
+
+    /*
+      head
+    */
+    ctx.fillStyle = col.face;
+    ctx.strokeStyle = col.outline;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.ellipse(0, -30, 10, 10.5, 0, 0, TWO_PI);
+    ctx.fill();
+    ctx.stroke();
+
+    /*
+      hair / tanuki ears
+    */
+    if(p.curseLifted){
+      ctx.fillStyle = col.hair;
+      ctx.beginPath();
+      ctx.ellipse(0, -36, 10.8, 5.6, 0, 0, TWO_PI);
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.ellipse(-5, -35, 4, 4, -0.4, 0, TWO_PI);
+      ctx.ellipse(2, -37, 5, 4, 0.2, 0, TWO_PI);
+      ctx.ellipse(6, -34, 3, 4, 0.4, 0, TWO_PI);
+      ctx.fill();
+    }else{
+      ctx.fillStyle = "#6b3e24";
+      ctx.strokeStyle = col.outline;
+      ctx.lineWidth = 1;
+
+      ctx.beginPath();
+      ctx.ellipse(-8, -37, 5, 7, -0.8, 0, TWO_PI);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.ellipse(8, -37, 5, 7, 0.8, 0, TWO_PI);
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    /*
+      eyes
+    */
+    ctx.fillStyle = "#172334";
+    ctx.fillRect(-4, -31, 2, 2);
+    ctx.fillRect(3, -31, 2, 2);
+
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(-3.6, -31, 1, 1);
+    ctx.fillRect(3.4, -31, 1, 1);
+
+    /*
+      cheek
+    */
+    ctx.globalAlpha = 0.55;
+    ctx.fillStyle = p.curseLifted ? "#ffb6a0" : "#d39a72";
+    ctx.beginPath();
+    ctx.arc(-6, -27, 2, 0, TWO_PI);
+    ctx.arc(6, -27, 2, 0, TWO_PI);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function drawHeroAura(ctx, p, col, time){
+    if(!p.curseLifted && !p.trueGold) return;
+
+    ctx.save();
+
+    const pulse = 1 + Math.sin((time || 0) * 0.08) * 0.06;
+    ctx.globalAlpha = p.trueGold ? 0.24 : 0.18;
+    ctx.fillStyle = p.trueGold ? "#ffd84d" : "#9ef7ff";
+    ctx.shadowBlur = p.trueGold ? 26 : 18;
+    ctx.shadowColor = ctx.fillStyle;
+
+    ctx.beginPath();
+    ctx.ellipse(0, 2, 30 * pulse, 42 * pulse, 0, 0, TWO_PI);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function drawMotionDebugLabel(ctx, combo){
+    /*
+      不要ならこの関数呼び出しを消してOK。
+      デバッグ表示は小さく薄くしている。
+    */
+    ctx.save();
+    ctx.globalAlpha = 0.45;
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "800 9px system-ui";
+    ctx.textAlign = "center";
+    ctx.fillText("combo " + combo, 0, -48);
+    ctx.restore();
+  }
+
+  function realThreeStepDrawHero(ctx, p, wx, wy, time, atkBox){
+    if(!p) return;
+
+    /*
+      既存仕様: 無敵点滅
+    */
+    if(p.inv > 0 && p.inv % 8 < 4){
+      return;
+    }
+
+    const x = wx(p.x);
+    const y = wy(p.y);
+    const cx = x + p.w / 2;
+    const cy = y + p.h / 2;
+
+    /*
+      元の characterRenderer と同じように anim を進める。
+      game.js 側では p.vx/p.vy が常に更新されるとは限らないので、
+      入力と dash も少し見る。
+    */
+    const moveAmount =
+      Math.abs(p.vx || 0) +
+      Math.abs(p.vy || 0) +
+      ((p.dashT || 0) > 0 ? 1.0 : 0);
+
+    p.anim = (p.anim || 0) + moveAmount * 0.10 + 0.035;
+    const walk = Math.sin(p.anim) * (moveAmount > 0.05 ? 1 : 0.25);
+    const bob = moveAmount > 0.05 ? Math.abs(walk) * 1.8 : Math.sin((time || 0) * 0.05) * 0.5;
+
+    const combo = clamp(p.combo || 1, 1, 3);
+    const total = combo === 3 ? 18 : 12;
+    const progress = p.attackT > 0 ? clamp(1 - p.attackT / total, 0, 1) : 0;
+
+    const col = heroColors(p);
+    const pose = attackPose(p, combo, progress);
+    const angle = dirAngle(p.dir || "down");
+
+    ctx.save();
+
+    /*
+      画面上の中心へ移動。
+      その後、向きに合わせてローカル座標を回す。
+      ローカルXプラスが「前方」。
+    */
+    ctx.translate(cx, cy + bob + 4);
+    ctx.rotate(angle);
+
+    /*
+      少し疑似3D感を出す。
+    */
+    ctx.scale(1, 0.86);
+
+    drawShadow(ctx);
+    drawHeroAura(ctx, p, col, time);
+
+    /*
+      斬撃は体より後ろに少し置く。
+      3段目は回転感を出すため大きめ。
+    */
+    drawSlashFromPose(ctx, p, col, combo, progress);
+
+    /*
+      本体
+    */
+    drawHeroBody(ctx, p, col, pose, walk);
+    drawHeroArmsAndGear(ctx, p, col, pose);
+    drawHeroHead(ctx, p, col, pose);
+
+    /*
+      必要なら確認用。
+      邪魔ならコメントアウト。
+    */
+    // if(p.attackT > 0) drawMotionDebugLabel(ctx, combo);
+
+    ctx.restore();
+  }
+
+  /*
+    グローバル関数を完全に差し替える。
+    game.js の draw() は drawHeroAdventurer3D(...) を直接呼ぶので、
+    ここを上書きすれば主人公本体モーションが変わる。
+  */
+  window.drawHeroAdventurer3D = realThreeStepDrawHero;
+
+  /*
+    古いブラウザ/スコープ対策。
+    非module scriptなら、この代入でグローバル識別子側も更新される。
+  */
+  try{
+    drawHeroAdventurer3D = realThreeStepDrawHero;
+  }catch(e){}
+
+  console.log("realThreeStepHeroMotionPatch loaded");
+})();
+/* =========================================================
+   主人公 通常攻撃モーション3段化 方向修正版
+   貼る場所:
+   - game.js の一番下
+   - 前回の realThreeStepHeroMotionPatch よりさらに後ろ
+
+   修正内容:
+   - 主人公本体を回転させない
+   - down は正面、up は背面、left/right は横向きで描く
+   - 3段攻撃の腕・剣・盾モーションは維持
+   ========================================================= */
+(function(){
+  if(window.__realThreeStepHeroMotionDirectionFixApplied) return;
+  window.__realThreeStepHeroMotionDirectionFixApplied = true;
+
+  const TWO_PI = Math.PI * 2;
+
+  function clamp(v,a,b){
+    return Math.max(a, Math.min(b, v));
+  }
+
+  function easeInOut(t){
+    return 0.5 - Math.cos(t * Math.PI) * 0.5;
+  }
+
+  function easeOutBack(t){
+    const c1 = 1.70158;
+    const c3 = c1 + 1;
+    return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+  }
+
+  function rr(ctx,x,y,w,h,r){
+    r = Math.min(r || 0, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function colors(p){
+    const lifted = !!p.curseLifted;
+    const gold = !!p.trueGold;
+
+    return {
+      body: gold ? "#48c96a" : lifted ? "#2f8cff" : "#8b5a32",
+      bodyDark: gold ? "#2fae55" : lifted ? "#1f62d0" : "#6b4328",
+      outline: gold ? "#7b5b16" : lifted ? "#143f8f" : "#4a2c1c",
+      face: lifted ? "#ffe4bd" : "#a8784a",
+      hair: gold ? "#ffd84d" : lifted ? "#f4c35a" : "#5b3520",
+      sword: gold ? "#ffd84d" : lifted ? "#9ef7ff" : "#e9fbff",
+      swordCore: gold ? "#fff7a8" : "#ffffff",
+      shield: gold ? "#ffd84d" : lifted ? "#35c7ff" : "#346bd8",
+      trail: gold ? "#ffd84d" : lifted ? "#9ef7ff" : "#fff7a8",
+      trail2: gold ? "#fff7a8" : lifted ? "#63d8ff" : "#ffffff",
+      cape: gold ? "#d9a93d" : "#1f5fbf"
+    };
+  }
+
+  function drawShadow(ctx){
+    ctx.save();
+    ctx.globalAlpha = 0.28;
+    ctx.fillStyle = "rgba(0,25,40,.42)";
+    ctx.beginPath();
+    ctx.ellipse(0, 23, 27, 8, 0, 0, TWO_PI);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawSword(ctx, c, length){
+    length = length || 42;
+
+    ctx.save();
+
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = c.sword;
+
+    ctx.strokeStyle = "rgba(20,25,35,.72)";
+    ctx.lineWidth = 7;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(0, 5);
+    ctx.lineTo(0, -length);
+    ctx.stroke();
+
+    const grad = ctx.createLinearGradient(-3, -length, 3, 6);
+    grad.addColorStop(0, c.swordCore);
+    grad.addColorStop(0.45, c.sword);
+    grad.addColorStop(1, "#89cfff");
+
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(0, 5);
+    ctx.lineTo(0, -length);
+    ctx.stroke();
+
+    ctx.fillStyle = c.swordCore;
+    ctx.beginPath();
+    ctx.moveTo(0, -length - 7);
+    ctx.lineTo(-4, -length + 2);
+    ctx.lineTo(4, -length + 2);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = "#6b4a2a";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(-9, 5);
+    ctx.lineTo(9, 5);
+    ctx.stroke();
+
+    ctx.strokeStyle = "#3b2b20";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(0, 5);
+    ctx.lineTo(0, 15);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  function drawShield(ctx, c, scale){
+    scale = scale || 1;
+
+    ctx.save();
+    ctx.scale(scale, scale);
+
+    const grad = ctx.createLinearGradient(-12, -14, 14, 18);
+    grad.addColorStop(0, "#ffffff");
+    grad.addColorStop(0.35, c.shield);
+    grad.addColorStop(1, "#1a418e");
+
+    ctx.fillStyle = grad;
+    ctx.strokeStyle = c.swordCore;
+    ctx.lineWidth = 2;
+
+    ctx.beginPath();
+    ctx.moveTo(-11, -15);
+    ctx.lineTo(8, -17);
+    ctx.lineTo(15, -1);
+    ctx.lineTo(4, 18);
+    ctx.lineTo(-14, 7);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = "rgba(255,255,255,.24)";
+    ctx.beginPath();
+    ctx.moveTo(-5, -10);
+    ctx.lineTo(5, -12);
+    ctx.lineTo(8, -1);
+    ctx.lineTo(1, 11);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function getProgress(p, combo){
+    if(!(p.attackT > 0)) return 0;
+    const total = combo === 3 ? 18 : 12;
+    return clamp(1 - p.attackT / total, 0, 1);
+  }
+
+  /*
+    向きごとの攻撃ポーズ。
+    ここでは主人公全体は回転させず、腕と剣の座標だけ変える。
+  */
+  function getPose(p, dir, combo, progress){
+    const hit = Math.sin(progress * Math.PI);
+    const cut = easeInOut(progress);
+
+    const pose = {
+      bodyRot: 0,
+      bodyX: 0,
+      bodyY: 0,
+      headX: 0,
+      headY: 0,
+
+      swordX: 18,
+      swordY: 2,
+      swordAngle: -0.35,
+      swordLen: 38,
+
+      shieldX: -18,
+      shieldY: 4,
+      shieldAngle: -0.15,
+      shieldScale: 0.86,
+
+      footA: 0,
+      footB: 0
+    };
+
+    if(!(p.attackT > 0)){
+      return pose;
+    }
+
+    const isUp = dir === "up";
+    const isSide = dir === "left" || dir === "right";
+
+    if(combo === 1){
+      const s = easeOutBack(clamp((progress - 0.10) / 0.75, 0, 1));
+
+      if(isSide){
+        pose.bodyX = 4 * hit;
+        pose.bodyRot = -0.05 + 0.12 * s;
+        pose.swordX = 18 + 18 * s;
+        pose.swordY = -12 + 18 * s;
+        pose.swordAngle = -2.00 + 1.95 * s;
+        pose.shieldX = -16;
+        pose.shieldY = 5;
+      }else if(isUp){
+        pose.bodyY = -2 * hit;
+        pose.bodyRot = 0.08 - 0.14 * s;
+        pose.swordX = -16 - 9 * s;
+        pose.swordY = -6 - 15 * s;
+        pose.swordAngle = 2.15 - 1.85 * s;
+        pose.shieldX = 18;
+        pose.shieldY = 4;
+      }else{
+        pose.bodyY = 1 * hit;
+        pose.bodyRot = -0.10 + 0.18 * s;
+        pose.swordX = 12 + 14 * s;
+        pose.swordY = -10 + 18 * s;
+        pose.swordAngle = -2.35 + 2.15 * s;
+        pose.shieldX = -18;
+        pose.shieldY = 4;
+      }
+
+      pose.swordLen = 42;
+      pose.footA = -3 * hit;
+      pose.footB = 5 * hit;
+    }
+
+    if(combo === 2){
+      const s = cut;
+
+      if(isSide){
+        pose.bodyX = 6 * hit;
+        pose.bodyRot = 0.12 - 0.20 * s;
+        pose.swordX = 38 - 30 * s;
+        pose.swordY = 3 - 18 * s;
+        pose.swordAngle = 0.50 - 1.95 * s;
+        pose.shieldX = -16 + 4 * hit;
+        pose.shieldY = 2;
+      }else if(isUp){
+        pose.bodyY = -1 * hit;
+        pose.bodyRot = -0.12 + 0.22 * s;
+        pose.swordX = 24 - 30 * s;
+        pose.swordY = -18 + 18 * s;
+        pose.swordAngle = -0.45 + 1.95 * s;
+        pose.shieldX = 18 - 5 * hit;
+        pose.shieldY = 3;
+      }else{
+        pose.bodyY = 1 * hit;
+        pose.bodyRot = 0.16 - 0.30 * s;
+        pose.swordX = 28 - 22 * s;
+        pose.swordY = 8 - 22 * s;
+        pose.swordAngle = 0.72 - 2.15 * s;
+        pose.shieldX = -18 + 5 * hit;
+        pose.shieldY = 2;
+      }
+
+      pose.swordLen = 44;
+      pose.footA = 4 * hit;
+      pose.footB = -4 * hit;
+    }
+
+    if(combo === 3){
+      const spin = progress * TWO_PI;
+      const r = isSide ? 25 : 23;
+
+      pose.bodyRot = isSide ? Math.sin(spin) * 0.12 : spin * 0.10;
+      pose.bodyX = isSide ? 3 * hit : 0;
+      pose.bodyY = isUp ? -1 * hit : 1 * hit;
+
+      if(isSide){
+        pose.swordX = Math.cos(spin) * r + 8;
+        pose.swordY = Math.sin(spin) * r * 0.72;
+      }else if(isUp){
+        pose.swordX = Math.cos(spin + Math.PI) * r;
+        pose.swordY = -4 + Math.sin(spin + Math.PI) * r * 0.72;
+      }else{
+        pose.swordX = Math.cos(spin - 0.15) * r;
+        pose.swordY = Math.sin(spin - 0.15) * r * 0.72;
+      }
+
+      pose.swordAngle = spin + Math.PI / 2;
+      pose.swordLen = 48;
+
+      pose.shieldX = -pose.swordX * 0.65;
+      pose.shieldY = -pose.swordY * 0.55;
+      pose.shieldAngle = spin * 0.7;
+      pose.shieldScale = 0.78;
+
+      pose.footA = Math.sin(spin) * 5;
+      pose.footB = -Math.sin(spin) * 5;
+    }
+
+    return pose;
+  }
+
+  function drawSlash(ctx, p, c, dir, combo, progress){
+    if(!(p.attackT > 0)) return;
+
+    const alpha = Math.sin(progress * Math.PI);
+    if(alpha <= 0.01) return;
+
+    const isUp = dir === "up";
+    const isSide = dir === "left" || dir === "right";
+
+    ctx.save();
+    ctx.globalAlpha = 0.65 * alpha;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.shadowBlur = 18;
+    ctx.shadowColor = c.trail;
+    ctx.strokeStyle = c.trail;
+
+    if(combo === 1){
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+
+      if(isSide){
+        ctx.moveTo(14, -26);
+        ctx.quadraticCurveTo(42, -8, 43, 20);
+      }else if(isUp){
+        ctx.moveTo(-12, -30);
+        ctx.quadraticCurveTo(-36, -14, -40, 16);
+      }else{
+        ctx.moveTo(8, -28);
+        ctx.quadraticCurveTo(36, -12, 42, 20);
+      }
+
+      ctx.stroke();
+    }else if(combo === 2){
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+
+      if(isSide){
+        ctx.moveTo(45, -16);
+        ctx.quadraticCurveTo(18, 4, 2, 24);
+      }else if(isUp){
+        ctx.moveTo(36, -18);
+        ctx.quadraticCurveTo(12, 2, -20, 22);
+      }else{
+        ctx.moveTo(42, -20);
+        ctx.quadraticCurveTo(20, 2, -3, 24);
+      }
+
+      ctx.stroke();
+    }else{
+      ctx.scale(1, 0.72);
+      ctx.lineWidth = 8;
+      ctx.beginPath();
+      ctx.arc(0, 0, 50 + alpha * 8, progress * TWO_PI, progress * TWO_PI + Math.PI * 1.55);
+      ctx.stroke();
+
+      ctx.globalAlpha = 0.38 * alpha;
+      ctx.strokeStyle = c.trail2;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(0, 0, 34 + alpha * 5, progress * TWO_PI + Math.PI * 0.7, progress * TWO_PI + Math.PI * 2.05);
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+
+  function drawLegs(ctx, c, pose, walk, view){
+    ctx.save();
+
+    const side = view === "side";
+
+    ctx.strokeStyle = c.outline;
+    ctx.lineWidth = 7;
+    ctx.lineCap = "round";
+
+    ctx.beginPath();
+
+    if(side){
+      ctx.moveTo(-4, 9);
+      ctx.lineTo(-8 + pose.footA + walk * 2, 28);
+      ctx.moveTo(5, 9);
+      ctx.lineTo(10 + pose.footB - walk * 2, 28);
+    }else{
+      ctx.moveTo(-6, 9);
+      ctx.lineTo(-11 + pose.footA + walk * 2, 28);
+      ctx.moveTo(6, 9);
+      ctx.lineTo(11 + pose.footB - walk * 2, 28);
+    }
+
+    ctx.stroke();
+
+    ctx.strokeStyle = c.bodyDark;
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+
+    if(side){
+      ctx.moveTo(-4, 10);
+      ctx.lineTo(-8 + pose.footA + walk * 2, 28);
+      ctx.moveTo(5, 10);
+      ctx.lineTo(10 + pose.footB - walk * 2, 28);
+    }else{
+      ctx.moveTo(-6, 10);
+      ctx.lineTo(-11 + pose.footA + walk * 2, 28);
+      ctx.moveTo(6, 10);
+      ctx.lineTo(11 + pose.footB - walk * 2, 28);
+    }
+
+    ctx.stroke();
+
+    ctx.fillStyle = "#263149";
+    rr(ctx, -17 + pose.footA + walk * 2, 27, 14, 5, 3);
+    ctx.fill();
+    rr(ctx, 3 + pose.footB - walk * 2, 27, 14, 5, 3);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function drawBody(ctx, c, pose, view){
+    ctx.save();
+    ctx.translate(pose.bodyX, pose.bodyY);
+    ctx.rotate(pose.bodyRot);
+
+    const grad = ctx.createLinearGradient(0, -18, 0, 16);
+    grad.addColorStop(0, c.body);
+    grad.addColorStop(1, c.bodyDark);
+
+    ctx.fillStyle = grad;
+    ctx.strokeStyle = c.outline;
+    ctx.lineWidth = 2;
+
+    if(view === "side"){
+      ctx.beginPath();
+      ctx.ellipse(0, -2, 9, 17, 0, 0, TWO_PI);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = "#6b4a2a";
+      ctx.fillRect(-8, 7, 16, 4);
+    }else{
+      ctx.beginPath();
+      ctx.moveTo(0, -18);
+      ctx.lineTo(13, -5);
+      ctx.lineTo(9, 14);
+      ctx.lineTo(-9, 14);
+      ctx.lineTo(-13, -5);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      if(view === "front"){
+        ctx.fillStyle = "rgba(255,255,255,.18)";
+        ctx.beginPath();
+        ctx.moveTo(-5, -13);
+        ctx.lineTo(0, -4);
+        ctx.lineTo(5, -13);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      ctx.fillStyle = "#6b4a2a";
+      ctx.fillRect(-10, 7, 20, 4);
+    }
+
+    ctx.restore();
+  }
+
+  function drawHead(ctx, p, c, pose, view){
+    ctx.save();
+    ctx.translate(pose.headX, pose.headY);
+
+    ctx.fillStyle = c.face;
+    rr(ctx, -4, -21, 8, 7, 3);
+    ctx.fill();
+
+    ctx.fillStyle = view === "back" && p.curseLifted ? c.hair : c.face;
+    ctx.strokeStyle = c.outline;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.ellipse(0, -30, 10, 10.5, 0, 0, TWO_PI);
+    ctx.fill();
+    ctx.stroke();
+
+    if(p.curseLifted){
+      ctx.fillStyle = c.hair;
+      ctx.beginPath();
+      ctx.ellipse(0, -36, 10.8, 5.6, 0, 0, TWO_PI);
+      ctx.fill();
+
+      if(view !== "back"){
+        ctx.beginPath();
+        ctx.ellipse(-5, -35, 4, 4, -0.4, 0, TWO_PI);
+        ctx.ellipse(2, -37, 5, 4, 0.2, 0, TWO_PI);
+        ctx.ellipse(6, -34, 3, 4, 0.4, 0, TWO_PI);
+        ctx.fill();
+      }
+    }else{
+      ctx.fillStyle = "#6b3e24";
+      ctx.strokeStyle = c.outline;
+      ctx.lineWidth = 1;
+
+      ctx.beginPath();
+      ctx.ellipse(-8, -37, 5, 7, -0.8, 0, TWO_PI);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.ellipse(8, -37, 5, 7, 0.8, 0, TWO_PI);
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    if(view !== "back"){
+      ctx.fillStyle = "#172334";
+
+      if(view === "side"){
+        ctx.fillRect(4, -31, 2, 2);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(4.4, -31, 1, 1);
+      }else{
+        ctx.fillRect(-4, -31, 2, 2);
+        ctx.fillRect(3, -31, 2, 2);
+
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(-3.6, -31, 1, 1);
+        ctx.fillRect(3.4, -31, 1, 1);
+      }
+    }
+
+    ctx.restore();
+  }
+
+  function drawArmsGear(ctx, c, pose, view){
+    /*
+      背面のときは左右の見え方を少し入れ替える
+    */
+    const back = view === "back";
+
+    const swordShoulderX = back ? -10 : 10;
+    const shieldShoulderX = back ? 10 : -10;
+
+    /*
+      盾腕
+    */
+    ctx.save();
+    ctx.strokeStyle = c.outline;
+    ctx.lineWidth = 7;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(shieldShoulderX, -6);
+    ctx.lineTo(pose.shieldX, pose.shieldY);
+    ctx.stroke();
+
+    ctx.strokeStyle = c.bodyDark;
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(shieldShoulderX, -6);
+    ctx.lineTo(pose.shieldX, pose.shieldY);
+    ctx.stroke();
+
+    ctx.translate(pose.shieldX, pose.shieldY);
+    ctx.rotate(pose.shieldAngle);
+    drawShield(ctx, c, pose.shieldScale);
+    ctx.restore();
+
+    /*
+      剣腕
+    */
+    ctx.save();
+    ctx.strokeStyle = c.outline;
+    ctx.lineWidth = 7;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(swordShoulderX, -6);
+    ctx.lineTo(pose.swordX, pose.swordY);
+    ctx.stroke();
+
+    ctx.strokeStyle = c.bodyDark;
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(swordShoulderX, -6);
+    ctx.lineTo(pose.swordX, pose.swordY);
+    ctx.stroke();
+
+    ctx.translate(pose.swordX, pose.swordY);
+    ctx.rotate(pose.swordAngle);
+    drawSword(ctx, c, pose.swordLen);
+    ctx.restore();
+  }
+
+  function drawAura(ctx, p, c, time){
+    if(!p.curseLifted && !p.trueGold) return;
+
+    const pulse = 1 + Math.sin((time || 0) * 0.08) * 0.06;
+
+    ctx.save();
+    ctx.globalAlpha = p.trueGold ? 0.24 : 0.18;
+    ctx.fillStyle = p.trueGold ? "#ffd84d" : "#9ef7ff";
+    ctx.shadowBlur = p.trueGold ? 26 : 18;
+    ctx.shadowColor = ctx.fillStyle;
+
+    ctx.beginPath();
+    ctx.ellipse(0, 2, 30 * pulse, 42 * pulse, 0, 0, TWO_PI);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function directionFixedThreeStepHero(ctx, p, wx, wy, time, atkBox){
+    if(!p) return;
+
+    if(p.inv > 0 && p.inv % 8 < 4){
+      return;
+    }
+
+    const x = wx(p.x);
+    const y = wy(p.y);
+    const cx = x + p.w / 2;
+    const cy = y + p.h / 2;
+
+    const moveAmount =
+      Math.abs(p.vx || 0) +
+      Math.abs(p.vy || 0) +
+      ((p.dashT || 0) > 0 ? 1.0 : 0);
+
+    p.anim = (p.anim || 0) + moveAmount * 0.10 + 0.035;
+
+    const walk = Math.sin(p.anim) * (moveAmount > 0.05 ? 1 : 0.25);
+    const bob = moveAmount > 0.05
+      ? Math.abs(walk) * 1.8
+      : Math.sin((time || 0) * 0.05) * 0.5;
+
+    const dir = p.dir || "down";
+    const combo = clamp(p.combo || 1, 1, 3);
+    const progress = getProgress(p, combo);
+
+    const c = colors(p);
+    const pose = getPose(p, dir, combo, progress);
+
+    let view = "front";
+    let flip = 1;
+
+    if(dir === "up"){
+      view = "back";
+    }else if(dir === "left"){
+      view = "side";
+      flip = -1;
+    }else if(dir === "right"){
+      view = "side";
+      flip = 1;
+    }else{
+      view = "front";
+    }
+
+    ctx.save();
+    ctx.translate(cx, cy + bob + 4);
+    ctx.scale(flip, 1);
+    ctx.scale(1, 0.86);
+
+    drawShadow(ctx);
+    drawAura(ctx, p, c, time);
+
+    /*
+      斬撃は本体より少し奥に置く
+    */
+    drawSlash(ctx, p, c, dir, combo, progress);
+
+    /*
+      背面時は、剣・盾が体の後ろ側にあるように見せたいので
+      先に腕装備を少し描き、体を重ねる
+    */
+    if(view === "back"){
+      drawArmsGear(ctx, c, pose, view);
+      drawLegs(ctx, c, pose, walk, view);
+      drawBody(ctx, c, pose, view);
+      drawHead(ctx, p, c, pose, view);
+    }else{
+      drawLegs(ctx, c, pose, walk, view);
+      drawBody(ctx, c, pose, view);
+      drawArmsGear(ctx, c, pose, view);
+      drawHead(ctx, p, c, pose, view);
+    }
+
+    ctx.restore();
+  }
+
+  /*
+    前回パッチの drawHeroAdventurer3D を上書きする
+  */
+  window.drawHeroAdventurer3D = directionFixedThreeStepHero;
+
+  try{
+    drawHeroAdventurer3D = directionFixedThreeStepHero;
+  }catch(e){}
+
+  console.log("realThreeStepHeroMotion direction fix loaded");
+})();
+/* =========================================================
+   Lv5伝説装備 マント + 電撃オーラ追加パッチ
+   貼る場所:
+   - game.js の一番下
+   - 主人公 通常攻撃モーション3段化 方向修正版よりさらに後ろ
+
+   効果:
+   - 剣Lv5以上 + 盾Lv5以上 + 魔法/本Lv5以上で発動
+   - 主人公にマントを追加
+   - 主人公の周囲に電撃オーラを追加
+   - 既存の3段攻撃モーションはそのまま維持
+   ========================================================= */
+(function(){
+  if(window.__legendCapeLightningPatchApplied) return;
+  window.__legendCapeLightningPatchApplied = true;
+
+  const TWO_PI = Math.PI * 2;
+
+  function isLegendGear(p){
+    if(!p) return false;
+    return (p.swordLv || 0) >= 5 &&
+           (p.shieldLv || 0) >= 5 &&
+           (p.bookLv || p.magicLv || 0) >= 5;
+  }
+
+  function capeColorMain(p){
+    if(p.trueGold) return "#ffd84d";
+    if(p.curseLifted) return "#2f8cff";
+    return "#6b4328";
+  }
+
+  function capeColorSub(p){
+    if(p.trueGold) return "#fff7a8";
+    if(p.curseLifted) return "#9ef7ff";
+    return "#d6ae78";
+  }
+
+  function capeColorDark(p){
+    if(p.trueGold) return "#9a681c";
+    if(p.curseLifted) return "#143f8f";
+    return "#4a2c1c";
+  }
+
+  function drawCapeFront(ctx, p, t){
+    /*
+      正面時:
+      体の後ろから左右に少し見えるマント。
+      主人公本体はこの後に描かれるので、中心部分は自然に隠れる。
+    */
+    const flap = Math.sin(t * 0.08) * 2.2;
+    const main = capeColorMain(p);
+    const sub = capeColorSub(p);
+    const dark = capeColorDark(p);
+
+    ctx.save();
+
+    const grad = ctx.createLinearGradient(0, -20, 0, 36);
+    grad.addColorStop(0, sub);
+    grad.addColorStop(0.38, main);
+    grad.addColorStop(1, dark);
+
+    ctx.fillStyle = grad;
+    ctx.strokeStyle = "rgba(255,255,255,.24)";
+    ctx.lineWidth = 1.4;
+
+    /*
+      左マント
+    */
+    ctx.beginPath();
+    ctx.moveTo(-12, -14);
+    ctx.quadraticCurveTo(-28, -2 + flap, -26, 24);
+    ctx.quadraticCurveTo(-18, 34 + flap, -7, 20);
+    ctx.quadraticCurveTo(-10, 4, -7, -12);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    /*
+      右マント
+    */
+    ctx.beginPath();
+    ctx.moveTo(12, -14);
+    ctx.quadraticCurveTo(28, -2 - flap, 26, 24);
+    ctx.quadraticCurveTo(18, 34 - flap, 7, 20);
+    ctx.quadraticCurveTo(10, 4, 7, -12);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    /*
+      中央の影
+    */
+    ctx.globalAlpha = 0.18;
+    ctx.fillStyle = "#000";
+    ctx.beginPath();
+    ctx.moveTo(0, -12);
+    ctx.quadraticCurveTo(-5, 6, -2, 28);
+    ctx.lineTo(0, 34);
+    ctx.quadraticCurveTo(5, 6, 0, -12);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function drawCapeBack(ctx, p, t){
+    /*
+      背面時:
+      マントが一番よく見える。
+    */
+    const flap = Math.sin(t * 0.075) * 3;
+    const main = capeColorMain(p);
+    const sub = capeColorSub(p);
+    const dark = capeColorDark(p);
+
+    ctx.save();
+
+    const grad = ctx.createLinearGradient(0, -22, 0, 42);
+    grad.addColorStop(0, sub);
+    grad.addColorStop(0.32, main);
+    grad.addColorStop(1, dark);
+
+    ctx.fillStyle = grad;
+    ctx.strokeStyle = "rgba(255,255,255,.30)";
+    ctx.lineWidth = 1.5;
+
+    ctx.beginPath();
+    ctx.moveTo(-18, -16);
+    ctx.lineTo(18, -16);
+    ctx.quadraticCurveTo(26, 3 + flap, 20, 34);
+    ctx.lineTo(8, 27 + flap * 0.4);
+    ctx.lineTo(0, 42);
+    ctx.lineTo(-8, 27 - flap * 0.4);
+    ctx.lineTo(-20, 34);
+    ctx.quadraticCurveTo(-26, 3 - flap, -18, -16);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    /*
+      マントの折り目
+    */
+    ctx.save();
+    ctx.globalAlpha = 0.22;
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 1;
+
+    ctx.beginPath();
+    ctx.moveTo(-8, -12);
+    ctx.quadraticCurveTo(-12, 10, -9, 30);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(8, -12);
+    ctx.quadraticCurveTo(12, 10, 9, 30);
+    ctx.stroke();
+
+    ctx.restore();
+
+    /*
+      中央影
+    */
+    ctx.globalAlpha = 0.20;
+    ctx.fillStyle = "#000";
+    ctx.beginPath();
+    ctx.moveTo(0, -13);
+    ctx.quadraticCurveTo(-4, 12, 0, 39);
+    ctx.quadraticCurveTo(4, 12, 0, -13);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function drawCapeSide(ctx, p, t){
+    /*
+      横向き:
+      後ろへなびくマント。
+      left の時は外側で ctx.scale(-1,1) されるので、ここでは右向き基準。
+    */
+    const flap = Math.sin(t * 0.09) * 3.2;
+    const main = capeColorMain(p);
+    const sub = capeColorSub(p);
+    const dark = capeColorDark(p);
+
+    ctx.save();
+
+    const grad = ctx.createLinearGradient(-24, -18, 10, 38);
+    grad.addColorStop(0, sub);
+    grad.addColorStop(0.38, main);
+    grad.addColorStop(1, dark);
+
+    ctx.fillStyle = grad;
+    ctx.strokeStyle = "rgba(255,255,255,.26)";
+    ctx.lineWidth = 1.4;
+
+    ctx.beginPath();
+    ctx.moveTo(-8, -15);
+    ctx.quadraticCurveTo(-29, -7 + flap, -32, 17);
+    ctx.quadraticCurveTo(-26, 35, -8, 29);
+    ctx.quadraticCurveTo(2, 20 + flap * 0.3, 5, 1);
+    ctx.lineTo(4, -13);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    /*
+      先端の光
+    */
+    ctx.save();
+    ctx.globalAlpha = 0.30;
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(-12, -8);
+    ctx.quadraticCurveTo(-24, 7, -23, 27);
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.restore();
+  }
+
+  function drawLegendCape(ctx, p, wx, wy, time){
+    if(!isLegendGear(p)) return;
+
+    const x = wx(p.x);
+    const y = wy(p.y);
+    const cx = x + p.w / 2;
+    const cy = y + p.h / 2;
+
+    const dir = p.dir || "down";
+    const flip = dir === "left" ? -1 : 1;
+
+    ctx.save();
+
+    /*
+      現在の方向修正版主人公と同じ座標感に合わせる。
+      マントは主人公本体より先に描くので、本体の後ろに見える。
+    */
+    ctx.translate(cx, cy + 4);
+    ctx.scale(flip, 1);
+    ctx.scale(1, 0.86);
+
+    if(dir === "up"){
+      drawCapeBack(ctx, p, time || 0);
+    }else if(dir === "left" || dir === "right"){
+      drawCapeSide(ctx, p, time || 0);
+    }else{
+      drawCapeFront(ctx, p, time || 0);
+    }
+
+    ctx.restore();
+  }
+
+  function drawLightningBolt(ctx, x1, y1, x2, y2, segments, jitter){
+    const pts = [];
+    pts.push({x:x1, y:y1});
+
+    for(let i=1; i<segments; i++){
+      const t = i / segments;
+      const x = x1 + (x2 - x1) * t;
+      const y = y1 + (y2 - y1) * t;
+
+      const nx = -(y2 - y1);
+      const ny = x2 - x1;
+      const len = Math.hypot(nx, ny) || 1;
+
+      pts.push({
+        x: x + (nx / len) * (Math.random() * 2 - 1) * jitter,
+        y: y + (ny / len) * (Math.random() * 2 - 1) * jitter
+      });
+    }
+
+    pts.push({x:x2, y:y2});
+
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+
+    for(let i=1; i<pts.length; i++){
+      ctx.lineTo(pts[i].x, pts[i].y);
+    }
+
+    ctx.stroke();
+  }
+
+  function drawLegendLightning(ctx, p, wx, wy, time){
+    if(!isLegendGear(p)) return;
+
+    const x = wx(p.x);
+    const y = wy(p.y);
+    const cx = x + p.w / 2;
+    const cy = y + p.h / 2 + 4;
+
+    const t = time || 0;
+    const color = p.trueGold ? "#fff7a8" : "#d8ffff";
+    const sub = p.trueGold ? "#ffd84d" : "#9ef7ff";
+
+    ctx.save();
+
+    /*
+      画面座標で描く。
+      電撃は主人公本体の上に重ねる。
+    */
+    ctx.globalCompositeOperation = "source-over";
+
+    /*
+      外側の薄い電気オーラ
+    */
+    ctx.globalAlpha = 0.18 + Math.sin(t * 0.15) * 0.04;
+    ctx.fillStyle = sub;
+    ctx.shadowBlur = 24;
+    ctx.shadowColor = sub;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, 32, 43, 0, 0, TWO_PI);
+    ctx.fill();
+
+    /*
+      周囲の電撃線
+    */
+    ctx.globalAlpha = 0.78;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.shadowBlur = 16;
+    ctx.shadowColor = color;
+    ctx.lineCap = "round";
+
+    const count = 4 + ((t / 8) | 0) % 3;
+
+    for(let i=0; i<count; i++){
+      const a1 = t * 0.08 + i / count * TWO_PI;
+      const a2 = a1 + 0.55 + Math.sin(t * 0.03 + i) * 0.25;
+
+      const r1x = 22 + (i % 2) * 6;
+      const r1y = 30 + (i % 3) * 4;
+      const r2x = 29 + (i % 3) * 5;
+      const r2y = 38 + (i % 2) * 5;
+
+      const x1 = cx + Math.cos(a1) * r1x;
+      const y1 = cy + Math.sin(a1) * r1y;
+      const x2 = cx + Math.cos(a2) * r2x;
+      const y2 = cy + Math.sin(a2) * r2y;
+
+      drawLightningBolt(ctx, x1, y1, x2, y2, 4, 6);
+    }
+
+    /*
+      たまに強い縦稲妻
+    */
+    if(t % 34 < 7){
+      ctx.globalAlpha = 0.92;
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 2.2;
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = color;
+
+      drawLightningBolt(
+        ctx,
+        cx + Math.sin(t * 0.31) * 20,
+        cy - 42,
+        cx + Math.cos(t * 0.27) * 18,
+        cy + 36,
+        6,
+        8
+      );
+    }
+
+    /*
+      小さい電気粒子
+    */
+    ctx.globalAlpha = 0.85;
+    ctx.fillStyle = color;
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = color;
+
+    for(let i=0; i<8; i++){
+      const a = t * 0.055 + i / 8 * TWO_PI;
+      const r = 24 + (i % 4) * 5;
+      const px = cx + Math.cos(a) * r;
+      const py = cy + Math.sin(a) * r * 1.25;
+
+      ctx.beginPath();
+      ctx.arc(px, py, 1.4 + (i % 2), 0, TWO_PI);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
+  /*
+    現在の drawHeroAdventurer3D を包む。
+    - 先にマントを描く
+    - その後、既存の3段モーション主人公を描く
+    - 最後に電撃を重ねる
+  */
+  const baseHeroDraw = window.drawHeroAdventurer3D || drawHeroAdventurer3D;
+
+  function legendCapeLightningHeroDraw(ctx, p, wx, wy, time, atkBox){
+    if(!p) return;
+
+    /*
+      無敵点滅中は、本体側と合わせてマント・電撃も消す。
+    */
+    if(p.inv > 0 && p.inv % 8 < 4){
+      return;
+    }
+
+    drawLegendCape(ctx, p, wx, wy, time);
+
+    if(typeof baseHeroDraw === "function"){
+      baseHeroDraw.call(this, ctx, p, wx, wy, time, atkBox);
+    }
+
+    drawLegendLightning(ctx, p, wx, wy, time);
+  }
+
+  window.drawHeroAdventurer3D = legendCapeLightningHeroDraw;
+
+  try{
+    drawHeroAdventurer3D = legendCapeLightningHeroDraw;
+  }catch(e){}
+
+  console.log("legendCapeLightningPatch loaded");
+})();
+/* =========================================================
+   Lv5伝説装備 マント表示修正パッチ
+   貼る場所:
+   - game.js の一番下
+   - 既存のマント + 電撃パッチよりさらに後ろ
+
+   修正内容:
+   - マントが前掛けに見えないようにする
+   - up時は背中側に大きく表示
+   - down時は左右と下端だけ表示
+   - side時は後ろになびく形で表示
+   ========================================================= */
+(function(){
+  if(window.__legendCapeVisibleFixPatchApplied) return;
+  window.__legendCapeVisibleFixPatchApplied = true;
+
+  const TWO_PI = Math.PI * 2;
+
+  function isLegendGear(p){
+    if(!p) return false;
+    return (p.swordLv || 0) >= 5 &&
+           (p.shieldLv || 0) >= 5 &&
+           (p.bookLv || p.magicLv || 0) >= 5;
+  }
+
+  function capeMain(p){
+    if(p.trueGold) return "#ffd84d";
+    if(p.curseLifted) return "#2f8cff";
+    return "#6b4328";
+  }
+
+  function capeSub(p){
+    if(p.trueGold) return "#fff7a8";
+    if(p.curseLifted) return "#9ef7ff";
+    return "#d6ae78";
+  }
+
+  function capeDark(p){
+    if(p.trueGold) return "#8f5f18";
+    if(p.curseLifted) return "#143f8f";
+    return "#3f281b";
+  }
+
+  function makeCapeGradient(ctx, p, y1, y2){
+    const g = ctx.createLinearGradient(0, y1, 0, y2);
+    g.addColorStop(0, capeSub(p));
+    g.addColorStop(0.34, capeMain(p));
+    g.addColorStop(1, capeDark(p));
+    return g;
+  }
+
+  function drawCapeFoldLines(ctx, color){
+    ctx.save();
+    ctx.globalAlpha = 0.22;
+    ctx.strokeStyle = color || "#ffffff";
+    ctx.lineWidth = 1;
+
+    ctx.beginPath();
+    ctx.moveTo(-10, -12);
+    ctx.quadraticCurveTo(-14, 8, -10, 31);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(10, -12);
+    ctx.quadraticCurveTo(14, 8, 10, 31);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(0, -11);
+    ctx.quadraticCurveTo(-2, 13, 0, 39);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  /*
+    背面用。
+    up の時はプレイヤーの背中が見えているので、
+    マントは本体の上から見えてOK。
+  */
+  function drawBackCapeOverlay(ctx, p, time){
+    const flap = Math.sin((time || 0) * 0.075) * 3.2;
+
+    ctx.save();
+
+    ctx.fillStyle = makeCapeGradient(ctx, p, -22, 45);
+    ctx.strokeStyle = "rgba(255,255,255,.34)";
+    ctx.lineWidth = 1.5;
+
+    ctx.beginPath();
+    ctx.moveTo(-19, -18);
+    ctx.lineTo(19, -18);
+
+    ctx.quadraticCurveTo(28, 3 + flap, 22, 35);
+    ctx.lineTo(10, 28 + flap * 0.45);
+    ctx.lineTo(0, 44);
+    ctx.lineTo(-10, 28 - flap * 0.45);
+    ctx.lineTo(-22, 35);
+    ctx.quadraticCurveTo(-28, 3 - flap, -19, -18);
+
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    /*
+      肩留め。マントが装備に見えるようにする。
+    */
+    ctx.fillStyle = p.trueGold ? "#fff7a8" : "#e8f3ff";
+    ctx.strokeStyle = "rgba(30,35,45,.45)";
+    ctx.lineWidth = 1;
+
+    ctx.beginPath();
+    ctx.arc(-13, -15, 4, 0, TWO_PI);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(13, -15, 4, 0, TWO_PI);
+    ctx.fill();
+    ctx.stroke();
+
+    drawCapeFoldLines(ctx, "#ffffff");
+
+    ctx.restore();
+  }
+
+  /*
+    正面用。
+    down の時に中央を描くと前掛けになるので、
+    左右の外側と下端だけ描く。
+  */
+  function drawFrontCapeEdges(ctx, p, time){
+    const flap = Math.sin((time || 0) * 0.08) * 2.4;
+
+    ctx.save();
+
+    ctx.fillStyle = makeCapeGradient(ctx, p, -16, 38);
+    ctx.strokeStyle = "rgba(255,255,255,.26)";
+    ctx.lineWidth = 1.2;
+
+    /*
+      左の外側だけ。
+      中央へ入りすぎないようにして前掛け化を防ぐ。
+    */
+    ctx.beginPath();
+    ctx.moveTo(-13, -13);
+    ctx.quadraticCurveTo(-30, 0 + flap, -28, 24);
+    ctx.quadraticCurveTo(-22, 36 + flap, -10, 28);
+    ctx.quadraticCurveTo(-14, 10, -13, -13);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    /*
+      右の外側だけ。
+    */
+    ctx.beginPath();
+    ctx.moveTo(13, -13);
+    ctx.quadraticCurveTo(30, 0 - flap, 28, 24);
+    ctx.quadraticCurveTo(22, 36 - flap, 10, 28);
+    ctx.quadraticCurveTo(14, 10, 13, -13);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    /*
+      下端だけ少し見せる。
+      中央上部は描かない。
+    */
+    ctx.save();
+    ctx.globalAlpha = 0.9;
+    ctx.beginPath();
+    ctx.moveTo(-10, 25);
+    ctx.quadraticCurveTo(-4, 35, 0, 40);
+    ctx.quadraticCurveTo(4, 35, 10, 25);
+    ctx.quadraticCurveTo(5, 30, 0, 31);
+    ctx.quadraticCurveTo(-5, 30, -10, 25);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.restore();
+  }
+
+  /*
+    横向き用。
+    右向き基準で「後ろ = 左側」に流す。
+    left の場合は外側で反転する。
+  */
+  function drawSideCapeOverlay(ctx, p, time){
+    const flap = Math.sin((time || 0) * 0.09) * 3.3;
+
+    ctx.save();
+
+    const g = ctx.createLinearGradient(-34, -18, 8, 38);
+    g.addColorStop(0, capeSub(p));
+    g.addColorStop(0.35, capeMain(p));
+    g.addColorStop(1, capeDark(p));
+
+    ctx.fillStyle = g;
+    ctx.strokeStyle = "rgba(255,255,255,.28)";
+    ctx.lineWidth = 1.3;
+
+    ctx.beginPath();
+    ctx.moveTo(-5, -15);
+    ctx.quadraticCurveTo(-29, -8 + flap, -34, 16);
+    ctx.quadraticCurveTo(-28, 36, -8, 30);
+    ctx.quadraticCurveTo(4, 20 + flap * 0.25, 6, 0);
+    ctx.lineTo(5, -13);
+    ctx.closePath();
+
+    ctx.fill();
+    ctx.stroke();
+
+    /*
+      首元の留め具
+    */
+    ctx.fillStyle = p.trueGold ? "#fff7a8" : "#e8f3ff";
+    ctx.strokeStyle = "rgba(30,35,45,.45)";
+    ctx.beginPath();
+    ctx.arc(-3, -14, 3.5, 0, TWO_PI);
+    ctx.fill();
+    ctx.stroke();
+
+    /*
+      折り目
+    */
+    ctx.save();
+    ctx.globalAlpha = 0.26;
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(-11, -8);
+    ctx.quadraticCurveTo(-24, 8, -24, 28);
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.restore();
+  }
+
+  function drawVisibleCape(ctx, p, wx, wy, time){
+    if(!isLegendGear(p)) return;
+
+    const dir = p.dir || "down";
+
+    const x = wx(p.x);
+    const y = wy(p.y);
+    const cx = x + p.w / 2;
+    const cy = y + p.h / 2;
+
+    const flip = dir === "left" ? -1 : 1;
+
+    ctx.save();
+
+    /*
+      既存の方向修正版主人公と同じ座標系に合わせる。
+      注意:
+      これは「本体描画後に重ねる」ので、見える部分だけを描く。
+    */
+    ctx.translate(cx, cy + 4);
+    ctx.scale(flip, 1);
+    ctx.scale(1, 0.86);
+
+    if(dir === "up"){
+      drawBackCapeOverlay(ctx, p, time);
+    }else if(dir === "left" || dir === "right"){
+      drawSideCapeOverlay(ctx, p, time);
+    }else{
+      drawFrontCapeEdges(ctx, p, time);
+    }
+
+    ctx.restore();
+  }
+
+  /*
+    現在の主人公描画を包む。
+    既存の3段攻撃モーションや電撃は維持して、
+    その上に「見えるマント」を追加する。
+  */
+  const oldHeroDraw = window.drawHeroAdventurer3D || drawHeroAdventurer3D;
+
+  function capeVisibleFixedHeroDraw(ctx, p, wx, wy, time, atkBox){
+    if(!p) return;
+
+    if(p.inv > 0 && p.inv % 8 < 4){
+      return;
+    }
+
+    if(typeof oldHeroDraw === "function"){
+      oldHeroDraw.call(this, ctx, p, wx, wy, time, atkBox);
+    }
+
+    /*
+      本体の後から描く。
+      ただし down は外側だけなので、前掛けにならない。
+      up は背中なので大きく覆ってOK。
+    */
+    drawVisibleCape(ctx, p, wx, wy, time);
+  }
+
+  window.drawHeroAdventurer3D = capeVisibleFixedHeroDraw;
+
+  try{
+    drawHeroAdventurer3D = capeVisibleFixedHeroDraw;
+  }catch(e){}
+
+  console.log("legendCapeVisibleFixPatch loaded");
+})();
+/* =========================================================
+   装備Lv段階覚醒パッチ
+   貼る場所:
+   - game.js の一番下
+   - 既存の全パッチよりさらに後ろ
+
+   仕様:
+   - 剣・盾・魔法/本がすべてLv3以上 → 青い人
+   - 剣・盾・魔法/本がすべてLv5以上 → 金色
+   - 剣・盾・魔法/本がすべてLv7以上 → 金色覚醒
+   - コイン入手量・ショップ価格・敵ドロップは変更しない
+   ========================================================= */
+(function(){
+  if(window.__tieredHeroAwakeningPatchApplied) return;
+  window.__tieredHeroAwakeningPatchApplied = true;
+
+  const BLUE_LV = 3;
+  const GOLD_LV = 5;
+  const GOLD_AWAKEN_LV = 7;
+
+  function lv(v){
+    return Math.max(0, v | 0);
+  }
+
+  function getGearLevels(p){
+    if(!p){
+      return {
+        sword: 0,
+        shield: 0,
+        book: 0,
+        min: 0
+      };
+    }
+
+    const sword = lv(p.swordLv);
+    const shield = lv(p.shieldLv);
+    const book = lv(p.bookLv || p.magicLv);
+
+    return {
+      sword,
+      shield,
+      book,
+      min: Math.min(sword, shield, book)
+    };
+  }
+
+  function allAtLeast(p, n){
+    const g = getGearLevels(p);
+    return g.sword >= n && g.shield >= n && g.book >= n;
+  }
+
+  /*
+    覚醒段階を見た目用フラグとして整理する。
+    既存パッチとの互換のため、
+    - curseLifted: 青い人以上
+    - trueGold: 金色以上
+    をそのまま使う。
+  */
+  function syncHeroAwakeningFlags(p){
+    if(!p) return;
+
+    const blue = allAtLeast(p, BLUE_LV);
+    const gold = allAtLeast(p, GOLD_LV);
+    const goldAwaken = allAtLeast(p, GOLD_AWAKEN_LV);
+
+    /*
+      既存描画・既存攻撃補正との互換。
+    */
+    p.curseLifted = blue;
+    p.trueGold = gold;
+
+    /*
+      新しい最上位段階。
+      今後の描画パッチや攻撃演出で使える。
+    */
+    p.goldAwaken = goldAwaken;
+    p.trueGoldAwaken = goldAwaken;
+    p.legendAwaken = goldAwaken;
+
+    /*
+      段階名。UIやデバッグ用。
+    */
+    if(goldAwaken){
+      p.awakenTier = "gold_awaken";
+      p.awakenName = "金色覚醒";
+    }else if(gold){
+      p.awakenTier = "gold";
+      p.awakenName = "金色";
+    }else if(blue){
+      p.awakenTier = "blue";
+      p.awakenName = "青い人";
+    }else{
+      p.awakenTier = "normal";
+      p.awakenName = "通常";
+    }
+  }
+
+  /*
+    段階到達ボーナス。
+    コイン量や価格は触らない。
+    既存の覚醒がステータスも少し上げる作りだったので、
+    ここでも一度だけ軽めに加算する。
+  */
+  function applyTierBonusOnce(p){
+    if(!p) return;
+
+    /*
+      全Lv3: 青い人
+      旧 curseLifted 相当。
+    */
+    if(allAtLeast(p, BLUE_LV) && !p.__blueAwakenBonusApplied){
+      p.__blueAwakenBonusApplied = true;
+
+      p.maxHp += 8;
+      p.hp = p.maxHp;
+      p.maxMp += 4;
+      p.mp = p.maxMp;
+      p.atk += 3;
+      p.def += 2;
+      p.magic += 2;
+      p.speed += 0.35;
+
+      if(typeof msg === "function"){
+        msg("青い力に目覚めた！", 150);
+      }
+    }
+
+    /*
+      全Lv5: 金色
+      旧 trueGold 相当をLv5へ移動。
+    */
+    if(allAtLeast(p, GOLD_LV) && !p.__goldAwakenBonusApplied){
+      p.__goldAwakenBonusApplied = true;
+
+      p.maxHp += 7;
+      p.hp = p.maxHp;
+      p.maxMp += 5;
+      p.mp = p.maxMp;
+      p.atk += 3;
+      p.def += 2;
+      p.magic += 4;
+      p.speed += 0.22;
+
+      if(typeof msg === "function"){
+        msg("金色の力をまとった！", 150);
+      }
+    }
+
+    /*
+      全Lv7: 金色覚醒
+      最上位のご褒美。
+      強くしすぎないが、到達感は出す。
+    */
+    if(allAtLeast(p, GOLD_AWAKEN_LV) && !p.__trueGoldAwakenBonusApplied){
+      p.__trueGoldAwakenBonusApplied = true;
+
+      p.maxHp += 10;
+      p.hp = p.maxHp;
+      p.maxMp += 6;
+      p.mp = p.maxMp;
+      p.atk += 4;
+      p.def += 3;
+      p.magic += 5;
+      p.speed += 0.18;
+
+      if(typeof msg === "function"){
+        msg("金色覚醒！ 伝説の力が解放された！", 180);
+      }
+    }
+  }
+
+  function applyTieredAwakening(p){
+    if(!p) return;
+    syncHeroAwakeningFlags(p);
+    applyTierBonusOnce(p);
+    syncHeroAwakeningFlags(p);
+  }
+
+  /*
+    既存の checkAwaken を差し替える。
+    buy() は各強化後に checkAwaken() を呼んでいるので、
+    この差し替えだけで購入時に新仕様が反映される。
+  */
+  checkAwaken = function(){
+    if(typeof G === "undefined") return;
+    if(!G.player) return;
+    applyTieredAwakening(G.player);
+  };
+
+  /*
+    すでにLv条件を満たしている状態でパッチを貼った場合にも即反映。
+  */
+  if(typeof G !== "undefined" && G.player){
+    applyTieredAwakening(G.player);
+  }
+
+  /*
+    ロード直後・ステージ遷移後にも状態を同期。
+    keep=trueでプレイヤーを引き継いだ時にもズレないようにする。
+  */
+  if(typeof load === "function"){
+    const oldLoadTieredAwakening = load;
+
+    load = function(s, keep){
+      oldLoadTieredAwakening.apply(this, arguments);
+
+      if(typeof G !== "undefined" && G.player){
+        applyTieredAwakening(G.player);
+      }
+    };
+  }
+
+  /*
+    念のため毎フレーム軽く同期。
+    フラグ同期だけなのでコインや価格には影響しない。
+  */
+  if(typeof update === "function"){
+    const oldUpdateTieredAwakening = update;
+
+    update = function(){
+      oldUpdateTieredAwakening.apply(this, arguments);
+
+      if(typeof G !== "undefined" && G.player){
+        syncHeroAwakeningFlags(G.player);
+      }
+    };
+  }
+
+  console.log("tieredHeroAwakeningPatch loaded");
+})();
+/* =========================================================
+   装備Lv覚醒条件 最終整理パッチ
+   貼る場所:
+   - game.js の一番下
+   - 既存の覚醒 / マント / 電撃 / 金色覚醒パッチよりさらに後ろ
+
+   仕様:
+   - 全Lv0〜2: 通常
+   - 全Lv3以上: 青い人
+       p.curseLifted = true
+   - 全Lv5以上: 覚醒前金色
+       p.trueGold = true
+       マントなし / 電撃なし / 波動拡散なし
+   - 全Lv7以上: 覚醒後金色
+       p.goldAwaken = true
+       マント + 電撃
+   ========================================================= */
+(function(){
+  if(window.__finalTierAwakeningRulesPatchApplied) return;
+  window.__finalTierAwakeningRulesPatchApplied = true;
+
+  const TWO_PI = Math.PI * 2;
+
+  const BLUE_LV = 3;
+  const PRE_GOLD_LV = 5;
+  const GOLD_AWAKEN_LV = 7;
+
+  function lv(v){
+    return Math.max(0, v | 0);
+  }
+
+  function getGearLv(p){
+    if(!p){
+      return {
+        sword: 0,
+        shield: 0,
+        book: 0,
+        min: 0
+      };
+    }
+
+    const sword = lv(p.swordLv);
+    const shield = lv(p.shieldLv);
+    const book = lv(p.bookLv || p.magicLv);
+
+    return {
+      sword,
+      shield,
+      book,
+      min: Math.min(sword, shield, book)
+    };
+  }
+
+  function allAtLeast(p, n){
+    const g = getGearLv(p);
+    return g.sword >= n && g.shield >= n && g.book >= n;
+  }
+
+  function syncFinalTierFlags(p){
+    if(!p) return;
+
+    const blue = allAtLeast(p, BLUE_LV);
+    const preGold = allAtLeast(p, PRE_GOLD_LV);
+    const goldAwaken = allAtLeast(p, GOLD_AWAKEN_LV);
+
+    /*
+      既存描画との互換:
+      - 青い人以上は curseLifted
+      - 覚醒前金色以上は trueGold
+      - 覚醒後金色だけ goldAwaken
+    */
+    p.curseLifted = blue;
+    p.trueGold = preGold;
+
+    p.goldAwaken = goldAwaken;
+    p.trueGoldAwaken = goldAwaken;
+    p.legendAwaken = goldAwaken;
+
+    if(goldAwaken){
+      p.awakenTier = "gold_awaken";
+      p.awakenName = "覚醒後金色";
+    }else if(preGold){
+      p.awakenTier = "pre_gold";
+      p.awakenName = "覚醒前金色";
+    }else if(blue){
+      p.awakenTier = "blue";
+      p.awakenName = "青い人";
+    }else{
+      p.awakenTier = "normal";
+      p.awakenName = "通常";
+    }
+  }
+
+  function notifyTierOnce(p){
+    if(!p) return;
+
+    if(allAtLeast(p, BLUE_LV) && !p.__finalTierBlueMsg){
+      p.__finalTierBlueMsg = true;
+      if(typeof msg === "function"){
+        msg("青い力に目覚めた！", 130);
+      }
+    }
+
+    if(allAtLeast(p, PRE_GOLD_LV) && !p.__finalTierPreGoldMsg){
+      p.__finalTierPreGoldMsg = true;
+      if(typeof msg === "function"){
+        msg("覚醒前金色になった！", 130);
+      }
+    }
+
+    if(allAtLeast(p, GOLD_AWAKEN_LV) && !p.__finalTierGoldAwakenMsg){
+      p.__finalTierGoldAwakenMsg = true;
+      if(typeof msg === "function"){
+        msg("覚醒後金色！ マントと電撃が解放された！", 170);
+      }
+    }
+  }
+
+  function applyFinalTierRules(p){
+    if(!p) return;
+    syncFinalTierFlags(p);
+    notifyTierOnce(p);
+  }
+
+  /*
+    既存の checkAwaken を最終仕様に差し替え。
+    ステータスやお金の溜まりやすさは変更しない。
+  */
+  checkAwaken = function(){
+    if(typeof G === "undefined") return;
+    if(!G.player) return;
+    applyFinalTierRules(G.player);
+  };
+
+  /*
+    Lv7だけマントを描く。
+    Lv5では絶対に描かない。
+  */
+  function capeMain(p){
+    return p.trueGold ? "#ffd84d" : "#2f8cff";
+  }
+
+  function capeSub(p){
+    return p.trueGold ? "#fff7a8" : "#9ef7ff";
+  }
+
+  function capeDark(p){
+    return p.trueGold ? "#8f5f18" : "#143f8f";
+  }
+
+  function capeGradient(ctx, p, y1, y2){
+    const g = ctx.createLinearGradient(0, y1, 0, y2);
+    g.addColorStop(0, capeSub(p));
+    g.addColorStop(0.36, capeMain(p));
+    g.addColorStop(1, capeDark(p));
+    return g;
+  }
+
+  function drawCapeBack(ctx, p, time){
+    const flap = Math.sin((time || 0) * 0.075) * 3.2;
+
+    ctx.save();
+
+    ctx.fillStyle = capeGradient(ctx, p, -22, 45);
+    ctx.strokeStyle = "rgba(255,255,255,.34)";
+    ctx.lineWidth = 1.5;
+
+    ctx.beginPath();
+    ctx.moveTo(-19, -18);
+    ctx.lineTo(19, -18);
+    ctx.quadraticCurveTo(28, 3 + flap, 22, 35);
+    ctx.lineTo(10, 28 + flap * 0.45);
+    ctx.lineTo(0, 44);
+    ctx.lineTo(-10, 28 - flap * 0.45);
+    ctx.lineTo(-22, 35);
+    ctx.quadraticCurveTo(-28, 3 - flap, -19, -18);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    /*
+      肩留め
+    */
+    ctx.fillStyle = "#fff7a8";
+    ctx.strokeStyle = "rgba(30,35,45,.45)";
+    ctx.lineWidth = 1;
+
+    ctx.beginPath();
+    ctx.arc(-13, -15, 4, 0, TWO_PI);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(13, -15, 4, 0, TWO_PI);
+    ctx.fill();
+    ctx.stroke();
+
+    /*
+      折り目
+    */
+    ctx.save();
+    ctx.globalAlpha = 0.24;
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 1;
+
+    ctx.beginPath();
+    ctx.moveTo(-10, -12);
+    ctx.quadraticCurveTo(-14, 8, -10, 31);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(10, -12);
+    ctx.quadraticCurveTo(14, 8, 10, 31);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(0, -11);
+    ctx.quadraticCurveTo(-2, 13, 0, 39);
+    ctx.stroke();
+
+    ctx.restore();
+
+    ctx.restore();
+  }
+
+  function drawCapeFrontEdges(ctx, p, time){
+    /*
+      正面では前掛けに見えないよう、左右と下端だけ。
+    */
+    const flap = Math.sin((time || 0) * 0.08) * 2.4;
+
+    ctx.save();
+
+    ctx.fillStyle = capeGradient(ctx, p, -16, 38);
+    ctx.strokeStyle = "rgba(255,255,255,.26)";
+    ctx.lineWidth = 1.2;
+
+    ctx.beginPath();
+    ctx.moveTo(-13, -13);
+    ctx.quadraticCurveTo(-30, 0 + flap, -28, 24);
+    ctx.quadraticCurveTo(-22, 36 + flap, -10, 28);
+    ctx.quadraticCurveTo(-14, 10, -13, -13);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(13, -13);
+    ctx.quadraticCurveTo(30, 0 - flap, 28, 24);
+    ctx.quadraticCurveTo(22, 36 - flap, 10, 28);
+    ctx.quadraticCurveTo(14, 10, 13, -13);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(-10, 25);
+    ctx.quadraticCurveTo(-4, 35, 0, 40);
+    ctx.quadraticCurveTo(4, 35, 10, 25);
+    ctx.quadraticCurveTo(5, 30, 0, 31);
+    ctx.quadraticCurveTo(-5, 30, -10, 25);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  function drawCapeSide(ctx, p, time){
+    /*
+      右向き基準。
+      left の場合は外側で反転される。
+    */
+    const flap = Math.sin((time || 0) * 0.09) * 3.3;
+
+    ctx.save();
+
+    const g = ctx.createLinearGradient(-34, -18, 8, 38);
+    g.addColorStop(0, capeSub(p));
+    g.addColorStop(0.35, capeMain(p));
+    g.addColorStop(1, capeDark(p));
+
+    ctx.fillStyle = g;
+    ctx.strokeStyle = "rgba(255,255,255,.28)";
+    ctx.lineWidth = 1.3;
+
+    ctx.beginPath();
+    ctx.moveTo(-5, -15);
+    ctx.quadraticCurveTo(-29, -8 + flap, -34, 16);
+    ctx.quadraticCurveTo(-28, 36, -8, 30);
+    ctx.quadraticCurveTo(4, 20 + flap * 0.25, 6, 0);
+    ctx.lineTo(5, -13);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = "#fff7a8";
+    ctx.strokeStyle = "rgba(30,35,45,.45)";
+    ctx.beginPath();
+    ctx.arc(-3, -14, 3.5, 0, TWO_PI);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  function drawGoldAwakenCape(ctx, p, wx, wy, time){
+    if(!p || !p.goldAwaken) return;
+
+    const dir = p.dir || "down";
+    const x = wx(p.x);
+    const y = wy(p.y);
+    const cx = x + p.w / 2;
+    const cy = y + p.h / 2;
+    const flip = dir === "left" ? -1 : 1;
+
+    ctx.save();
+
+    ctx.translate(cx, cy + 4);
+    ctx.scale(flip, 1);
+    ctx.scale(1, 0.86);
+
+    if(dir === "up"){
+      drawCapeBack(ctx, p, time);
+    }else if(dir === "left" || dir === "right"){
+      drawCapeSide(ctx, p, time);
+    }else{
+      drawCapeFrontEdges(ctx, p, time);
+    }
+
+    ctx.restore();
+  }
+
+  /*
+    Lv7だけ電撃を描く。
+    Lv5では絶対に描かない。
+    波動拡散っぽい大きな円形オーラは描かない。
+  */
+  function drawBolt(ctx, x1, y1, x2, y2, parts, jitter){
+    const pts = [{x:x1, y:y1}];
+
+    for(let i = 1; i < parts; i++){
+      const t = i / parts;
+      const x = x1 + (x2 - x1) * t;
+      const y = y1 + (y2 - y1) * t;
+
+      const nx = -(y2 - y1);
+      const ny = x2 - x1;
+      const len = Math.hypot(nx, ny) || 1;
+
+      pts.push({
+        x: x + nx / len * (Math.random() * 2 - 1) * jitter,
+        y: y + ny / len * (Math.random() * 2 - 1) * jitter
+      });
+    }
+
+    pts.push({x:x2, y:y2});
+
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+
+    for(let i = 1; i < pts.length; i++){
+      ctx.lineTo(pts[i].x, pts[i].y);
+    }
+
+    ctx.stroke();
+  }
+
+  function drawGoldAwakenLightning(ctx, p, wx, wy, time){
+    if(!p || !p.goldAwaken) return;
+
+    const x = wx(p.x);
+    const y = wy(p.y);
+    const cx = x + p.w / 2;
+    const cy = y + p.h / 2 + 4;
+    const t = time || 0;
+
+    ctx.save();
+
+    /*
+      電撃線のみ。
+      波動拡散に見える大きな円形塗りは入れない。
+    */
+    ctx.globalAlpha = 0.92;
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 2.2;
+    ctx.lineCap = "round";
+    ctx.shadowBlur = 18;
+    ctx.shadowColor = "#fff7a8";
+
+    const count = 5 + ((t / 7) | 0) % 3;
+
+    for(let i = 0; i < count; i++){
+      const a1 = t * 0.10 + i / count * TWO_PI;
+      const a2 = a1 + 0.65 + Math.sin(t * 0.04 + i) * 0.25;
+
+      const x1 = cx + Math.cos(a1) * 24;
+      const y1 = cy + Math.sin(a1) * 34;
+      const x2 = cx + Math.cos(a2) * 40;
+      const y2 = cy + Math.sin(a2) * 52;
+
+      drawBolt(ctx, x1, y1, x2, y2, 5, 7);
+    }
+
+    /*
+      小さい金色粒子
+    */
+    ctx.globalAlpha = 0.90;
+    ctx.fillStyle = "#fff7a8";
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = "#ffd84d";
+
+    for(let i = 0; i < 10; i++){
+      const a = t * 0.06 + i / 10 * TWO_PI;
+      const r = 24 + (i % 4) * 6;
+      const px = cx + Math.cos(a) * r;
+      const py = cy + Math.sin(a) * r * 1.25;
+
+      ctx.beginPath();
+      ctx.arc(px, py, 1.4 + (i % 2), 0, TWO_PI);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
+  /*
+    重要:
+    以前のマント/電撃パッチは「全Lv5以上」で発動する可能性がある。
+    そこで旧 drawHeroAdventurer3D を呼ぶ間だけ、一時的にLvを4扱いにして、
+    旧Lv5マント/電撃/波動を抑止する。
+    ただし p.trueGold は保持するので、Lv5の金色見た目は残る。
+  */
+  const oldHeroDraw = window.drawHeroAdventurer3D || drawHeroAdventurer3D;
+
+  function finalTierHeroDraw(ctx, p, wx, wy, time, atkBox){
+    if(!p) return;
+
+    syncFinalTierFlags(p);
+
+    const saved = {
+      swordLv: p.swordLv,
+      shieldLv: p.shieldLv,
+      bookLv: p.bookLv,
+      magicLv: p.magicLv,
+
+      goldAwaken: p.goldAwaken,
+      trueGoldAwaken: p.trueGoldAwaken,
+      legendAwaken: p.legendAwaken
+    };
+
+    /*
+      旧Lv5演出を止めるための一時抑止。
+      trueGold / curseLifted は触らない。
+    */
+    p.swordLv = Math.min(lv(saved.swordLv), 4);
+    p.shieldLv = Math.min(lv(saved.shieldLv), 4);
+    p.bookLv = Math.min(lv(saved.bookLv), 4);
+    p.magicLv = Math.min(lv(saved.magicLv), 4);
+
+    p.goldAwaken = false;
+    p.trueGoldAwaken = false;
+    p.legendAwaken = false;
+
+    if(typeof oldHeroDraw === "function"){
+      oldHeroDraw.call(this, ctx, p, wx, wy, time, atkBox);
+    }
+
+    /*
+      元に戻す。
+    */
+    p.swordLv = saved.swordLv;
+    p.shieldLv = saved.shieldLv;
+    p.bookLv = saved.bookLv;
+    p.magicLv = saved.magicLv;
+
+    p.goldAwaken = saved.goldAwaken;
+    p.trueGoldAwaken = saved.trueGoldAwaken;
+    p.legendAwaken = saved.legendAwaken;
+
+    /*
+      最終条件を再同期。
+    */
+    syncFinalTierFlags(p);
+
+    /*
+      新仕様:
+      Lv7以上だけマント + 電撃。
+    */
+    drawGoldAwakenCape(ctx, p, wx, wy, time);
+    drawGoldAwakenLightning(ctx, p, wx, wy, time);
+  }
+
+  window.drawHeroAdventurer3D = finalTierHeroDraw;
+
+  try{
+    drawHeroAdventurer3D = finalTierHeroDraw;
+  }catch(e){}
+
+  /*
+    load / update 後にもフラグ同期。
+  */
+  if(typeof load === "function"){
+    const oldLoadFinalTier = load;
+
+    load = function(s, keep){
+      oldLoadFinalTier.apply(this, arguments);
+
+      if(typeof G !== "undefined" && G.player){
+        applyFinalTierRules(G.player);
+      }
+    };
+  }
+
+  if(typeof update === "function"){
+    const oldUpdateFinalTier = update;
+
+    update = function(){
+      oldUpdateFinalTier.apply(this, arguments);
+
+      if(typeof G !== "undefined" && G.player){
+        syncFinalTierFlags(G.player);
+      }
+    };
+  }
+
+  if(typeof G !== "undefined" && G.player){
+    applyFinalTierRules(G.player);
+  }
+
+  console.log("finalTierAwakeningRulesPatch loaded");
+})();
+/* =========================================================
+   覚醒段階 最終上書きパッチ
+   貼る場所:
+   - game.js の一番最後
+   - これまでの覚醒 / マント / 電撃 / 金色覚醒パッチより後ろ
+
+   最終仕様:
+   - 全Lv0〜2: 通常
+   - 全Lv3以上: 青い人
+   - 全Lv5以上: 覚醒前金色
+       金色の見た目だけ
+       マントなし / 電撃なし / 波動拡散なし
+   - 全Lv7以上: 覚醒後金色
+       マント + 電撃
+   ========================================================= */
+(function(){
+  if(window.__FINAL_AWAKENING_OVERRIDE_V2_APPLIED) return;
+  window.__FINAL_AWAKENING_OVERRIDE_V2_APPLIED = true;
+
+  const TWO_PI = Math.PI * 2;
+
+  function lv(v){
+    return Math.max(0, v | 0);
+  }
+
+  function gearMin(p){
+    if(!p) return 0;
+    return Math.min(
+      lv(p.swordLv),
+      lv(p.shieldLv),
+      lv(p.bookLv || p.magicLv)
+    );
+  }
+
+  function tierOf(p){
+    const m = gearMin(p);
+    if(m >= 7) return "gold_awaken";
+    if(m >= 5) return "pre_gold";
+    if(m >= 3) return "blue";
+    return "normal";
+  }
+
+  function syncAwakeningFinal(p){
+    if(!p) return;
+
+    const tier = tierOf(p);
+
+    p.curseLifted = tier === "blue" || tier === "pre_gold" || tier === "gold_awaken";
+    p.trueGold = tier === "pre_gold" || tier === "gold_awaken";
+
+    /*
+      重要:
+      Lv7以上だけ true。
+      Lv5では絶対に false。
+    */
+    p.goldAwaken = tier === "gold_awaken";
+    p.trueGoldAwaken = tier === "gold_awaken";
+    p.legendAwaken = tier === "gold_awaken";
+
+    p.awakenTier = tier;
+
+    if(tier === "gold_awaken"){
+      p.awakenName = "覚醒後金色";
+    }else if(tier === "pre_gold"){
+      p.awakenName = "覚醒前金色";
+    }else if(tier === "blue"){
+      p.awakenName = "青い人";
+    }else{
+      p.awakenName = "通常";
+    }
+  }
+
+  /*
+    旧パッチ由来の「Lv5で覚醒後っぽいメッセージ」を抑止。
+    Lv7未満では波動砲 / 電撃 / マント解放系の表示を出さない。
+  */
+  if(typeof msg === "function" && !msg.__finalAwakeningMsgWrapped){
+    const oldMsg = msg;
+
+    msg = function(text, t){
+      try{
+        const p = typeof G !== "undefined" ? G.player : null;
+        const isLv7 = p && gearMin(p) >= 7;
+        const s = String(text || "");
+
+        if(!isLv7){
+          if(
+            s.includes("波動") ||
+            s.includes("八方向") ||
+            s.includes("電撃") ||
+            s.includes("マント") ||
+            s.includes("覚醒後") ||
+            s.includes("伝説の力")
+          ){
+            return;
+          }
+        }
+      }catch(e){}
+
+      return oldMsg.apply(this, arguments);
+    };
+
+    msg.__finalAwakeningMsgWrapped = true;
+  }
+
+  function colorsByTier(p){
+    const tier = tierOf(p);
+
+    if(tier === "gold_awaken"){
+      return {
+        tier,
+        body: "#ffd84d",
+        bodyDark: "#d99a22",
+        outline: "#7b5b16",
+        face: "#ffe4bd",
+        hair: "#fff7a8",
+        sword: "#fff7a8",
+        swordCore: "#ffffff",
+        shield: "#ffd84d",
+        trail: "#fff7a8",
+        trail2: "#ffffff",
+        cape1: "#fff7a8",
+        cape2: "#ffd84d",
+        cape3: "#8f5f18"
+      };
+    }
+
+    if(tier === "pre_gold"){
+      return {
+        tier,
+        body: "#ffd84d",
+        bodyDark: "#d99a22",
+        outline: "#7b5b16",
+        face: "#ffe4bd",
+        hair: "#fff7a8",
+        sword: "#fff7a8",
+        swordCore: "#ffffff",
+        shield: "#ffd84d",
+        trail: "#ffd84d",
+        trail2: "#fff7a8",
+        cape1: "",
+        cape2: "",
+        cape3: ""
+      };
+    }
+
+    if(tier === "blue"){
+      return {
+        tier,
+        body: "#2f8cff",
+        bodyDark: "#1f62d0",
+        outline: "#143f8f",
+        face: "#ffe4bd",
+        hair: "#f4c35a",
+        sword: "#9ef7ff",
+        swordCore: "#ffffff",
+        shield: "#35c7ff",
+        trail: "#9ef7ff",
+        trail2: "#63d8ff",
+        cape1: "",
+        cape2: "",
+        cape3: ""
+      };
+    }
+
+    return {
+      tier,
+      body: "#8b5a32",
+      bodyDark: "#6b4328",
+      outline: "#4a2c1c",
+      face: "#a8784a",
+      hair: "#5b3520",
+      sword: "#e9fbff",
+      swordCore: "#ffffff",
+      shield: "#346bd8",
+      trail: "#fff7a8",
+      trail2: "#ffffff",
+      cape1: "",
+      cape2: "",
+      cape3: ""
+    };
+  }
+
+  function clamp(v,a,b){
+    return Math.max(a, Math.min(b, v));
+  }
+
+  function easeInOut(t){
+    return 0.5 - Math.cos(t * Math.PI) * 0.5;
+  }
+
+  function easeOutBack(t){
+    const c1 = 1.70158;
+    const c3 = c1 + 1;
+    return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+  }
+
+  function rr(ctx,x,y,w,h,r){
+    r = Math.min(r || 0, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function drawShadow(ctx){
+    ctx.save();
+    ctx.globalAlpha = 0.28;
+    ctx.fillStyle = "rgba(0,25,40,.42)";
+    ctx.beginPath();
+    ctx.ellipse(0, 23, 27, 8, 0, 0, TWO_PI);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawSword(ctx, c, length){
+    length = length || 42;
+
+    ctx.save();
+
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = c.sword;
+
+    ctx.strokeStyle = "rgba(20,25,35,.72)";
+    ctx.lineWidth = 7;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(0, 5);
+    ctx.lineTo(0, -length);
+    ctx.stroke();
+
+    const grad = ctx.createLinearGradient(-3, -length, 3, 6);
+    grad.addColorStop(0, c.swordCore);
+    grad.addColorStop(0.45, c.sword);
+    grad.addColorStop(1, "#89cfff");
+
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(0, 5);
+    ctx.lineTo(0, -length);
+    ctx.stroke();
+
+    ctx.fillStyle = c.swordCore;
+    ctx.beginPath();
+    ctx.moveTo(0, -length - 7);
+    ctx.lineTo(-4, -length + 2);
+    ctx.lineTo(4, -length + 2);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = "#6b4a2a";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(-9, 5);
+    ctx.lineTo(9, 5);
+    ctx.stroke();
+
+    ctx.strokeStyle = "#3b2b20";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(0, 5);
+    ctx.lineTo(0, 15);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  function drawShield(ctx, c, scale){
+    scale = scale || 1;
+
+    ctx.save();
+    ctx.scale(scale, scale);
+
+    const grad = ctx.createLinearGradient(-12, -14, 14, 18);
+    grad.addColorStop(0, "#ffffff");
+    grad.addColorStop(0.35, c.shield);
+    grad.addColorStop(1, "#1a418e");
+
+    ctx.fillStyle = grad;
+    ctx.strokeStyle = c.swordCore;
+    ctx.lineWidth = 2;
+
+    ctx.beginPath();
+    ctx.moveTo(-11, -15);
+    ctx.lineTo(8, -17);
+    ctx.lineTo(15, -1);
+    ctx.lineTo(4, 18);
+    ctx.lineTo(-14, 7);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = "rgba(255,255,255,.24)";
+    ctx.beginPath();
+    ctx.moveTo(-5, -10);
+    ctx.lineTo(5, -12);
+    ctx.lineTo(8, -1);
+    ctx.lineTo(1, 11);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function getProgress(p, combo){
+    if(!(p.attackT > 0)) return 0;
+    const total = combo === 3 ? 18 : 12;
+    return clamp(1 - p.attackT / total, 0, 1);
+  }
+
+  function getPose(p, dir, combo, progress){
+    const hit = Math.sin(progress * Math.PI);
+    const cut = easeInOut(progress);
+
+    const pose = {
+      bodyRot: 0,
+      bodyX: 0,
+      bodyY: 0,
+      headX: 0,
+      headY: 0,
+      swordX: 18,
+      swordY: 2,
+      swordAngle: -0.35,
+      swordLen: 38,
+      shieldX: -18,
+      shieldY: 4,
+      shieldAngle: -0.15,
+      shieldScale: 0.86,
+      footA: 0,
+      footB: 0
+    };
+
+    if(!(p.attackT > 0)){
+      return pose;
+    }
+
+    const isUp = dir === "up";
+    const isSide = dir === "left" || dir === "right";
+
+    if(combo === 1){
+      const s = easeOutBack(clamp((progress - 0.10) / 0.75, 0, 1));
+
+      if(isSide){
+        pose.bodyX = 4 * hit;
+        pose.bodyRot = -0.05 + 0.12 * s;
+        pose.swordX = 18 + 18 * s;
+        pose.swordY = -12 + 18 * s;
+        pose.swordAngle = -2.00 + 1.95 * s;
+        pose.shieldX = -16;
+        pose.shieldY = 5;
+      }else if(isUp){
+        pose.bodyY = -2 * hit;
+        pose.bodyRot = 0.08 - 0.14 * s;
+        pose.swordX = -16 - 9 * s;
+        pose.swordY = -6 - 15 * s;
+        pose.swordAngle = 2.15 - 1.85 * s;
+        pose.shieldX = 18;
+        pose.shieldY = 4;
+      }else{
+        pose.bodyY = 1 * hit;
+        pose.bodyRot = -0.10 + 0.18 * s;
+        pose.swordX = 12 + 14 * s;
+        pose.swordY = -10 + 18 * s;
+        pose.swordAngle = -2.35 + 2.15 * s;
+        pose.shieldX = -18;
+        pose.shieldY = 4;
+      }
+
+      pose.swordLen = 42;
+      pose.footA = -3 * hit;
+      pose.footB = 5 * hit;
+    }
+
+    if(combo === 2){
+      const s = cut;
+
+      if(isSide){
+        pose.bodyX = 6 * hit;
+        pose.bodyRot = 0.12 - 0.20 * s;
+        pose.swordX = 38 - 30 * s;
+        pose.swordY = 3 - 18 * s;
+        pose.swordAngle = 0.50 - 1.95 * s;
+        pose.shieldX = -16 + 4 * hit;
+        pose.shieldY = 2;
+      }else if(isUp){
+        pose.bodyY = -1 * hit;
+        pose.bodyRot = -0.12 + 0.22 * s;
+        pose.swordX = 24 - 30 * s;
+        pose.swordY = -18 + 18 * s;
+        pose.swordAngle = -0.45 + 1.95 * s;
+        pose.shieldX = 18 - 5 * hit;
+        pose.shieldY = 3;
+      }else{
+        pose.bodyY = 1 * hit;
+        pose.bodyRot = 0.16 - 0.30 * s;
+        pose.swordX = 28 - 22 * s;
+        pose.swordY = 8 - 22 * s;
+        pose.swordAngle = 0.72 - 2.15 * s;
+        pose.shieldX = -18 + 5 * hit;
+        pose.shieldY = 2;
+      }
+
+      pose.swordLen = 44;
+      pose.footA = 4 * hit;
+      pose.footB = -4 * hit;
+    }
+
+    if(combo === 3){
+      const spin = progress * TWO_PI;
+      const r = isSide ? 25 : 23;
+
+      pose.bodyRot = isSide ? Math.sin(spin) * 0.12 : spin * 0.10;
+      pose.bodyX = isSide ? 3 * hit : 0;
+      pose.bodyY = isUp ? -1 * hit : 1 * hit;
+
+      if(isSide){
+        pose.swordX = Math.cos(spin) * r + 8;
+        pose.swordY = Math.sin(spin) * r * 0.72;
+      }else if(isUp){
+        pose.swordX = Math.cos(spin + Math.PI) * r;
+        pose.swordY = -4 + Math.sin(spin + Math.PI) * r * 0.72;
+      }else{
+        pose.swordX = Math.cos(spin - 0.15) * r;
+        pose.swordY = Math.sin(spin - 0.15) * r * 0.72;
+      }
+
+      pose.swordAngle = spin + Math.PI / 2;
+      pose.swordLen = 48;
+
+      pose.shieldX = -pose.swordX * 0.65;
+      pose.shieldY = -pose.swordY * 0.55;
+      pose.shieldAngle = spin * 0.7;
+      pose.shieldScale = 0.78;
+
+      pose.footA = Math.sin(spin) * 5;
+      pose.footB = -Math.sin(spin) * 5;
+    }
+
+    return pose;
+  }
+
+  function drawSlash(ctx, p, c, dir, combo, progress){
+    if(!(p.attackT > 0)) return;
+
+    const alpha = Math.sin(progress * Math.PI);
+    if(alpha <= 0.01) return;
+
+    const isUp = dir === "up";
+    const isSide = dir === "left" || dir === "right";
+
+    ctx.save();
+    ctx.globalAlpha = 0.65 * alpha;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.shadowBlur = 18;
+    ctx.shadowColor = c.trail;
+    ctx.strokeStyle = c.trail;
+
+    if(combo === 1){
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+
+      if(isSide){
+        ctx.moveTo(14, -26);
+        ctx.quadraticCurveTo(42, -8, 43, 20);
+      }else if(isUp){
+        ctx.moveTo(-12, -30);
+        ctx.quadraticCurveTo(-36, -14, -40, 16);
+      }else{
+        ctx.moveTo(8, -28);
+        ctx.quadraticCurveTo(36, -12, 42, 20);
+      }
+
+      ctx.stroke();
+    }else if(combo === 2){
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+
+      if(isSide){
+        ctx.moveTo(45, -16);
+        ctx.quadraticCurveTo(18, 4, 2, 24);
+      }else if(isUp){
+        ctx.moveTo(36, -18);
+        ctx.quadraticCurveTo(12, 2, -20, 22);
+      }else{
+        ctx.moveTo(42, -20);
+        ctx.quadraticCurveTo(20, 2, -3, 24);
+      }
+
+      ctx.stroke();
+    }else{
+      ctx.scale(1, 0.72);
+      ctx.lineWidth = 8;
+      ctx.beginPath();
+      ctx.arc(0, 0, 50 + alpha * 8, progress * TWO_PI, progress * TWO_PI + Math.PI * 1.55);
+      ctx.stroke();
+
+      ctx.globalAlpha = 0.38 * alpha;
+      ctx.strokeStyle = c.trail2;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(0, 0, 34 + alpha * 5, progress * TWO_PI + Math.PI * 0.7, progress * TWO_PI + Math.PI * 2.05);
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+
+  function drawLegs(ctx, c, pose, walk, view){
+    ctx.save();
+
+    const side = view === "side";
+
+    ctx.strokeStyle = c.outline;
+    ctx.lineWidth = 7;
+    ctx.lineCap = "round";
+
+    ctx.beginPath();
+
+    if(side){
+      ctx.moveTo(-4, 9);
+      ctx.lineTo(-8 + pose.footA + walk * 2, 28);
+      ctx.moveTo(5, 9);
+      ctx.lineTo(10 + pose.footB - walk * 2, 28);
+    }else{
+      ctx.moveTo(-6, 9);
+      ctx.lineTo(-11 + pose.footA + walk * 2, 28);
+      ctx.moveTo(6, 9);
+      ctx.lineTo(11 + pose.footB - walk * 2, 28);
+    }
+
+    ctx.stroke();
+
+    ctx.strokeStyle = c.bodyDark;
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+
+    if(side){
+      ctx.moveTo(-4, 10);
+      ctx.lineTo(-8 + pose.footA + walk * 2, 28);
+      ctx.moveTo(5, 10);
+      ctx.lineTo(10 + pose.footB - walk * 2, 28);
+    }else{
+      ctx.moveTo(-6, 10);
+      ctx.lineTo(-11 + pose.footA + walk * 2, 28);
+      ctx.moveTo(6, 10);
+      ctx.lineTo(11 + pose.footB - walk * 2, 28);
+    }
+
+    ctx.stroke();
+
+    ctx.fillStyle = "#263149";
+    rr(ctx, -17 + pose.footA + walk * 2, 27, 14, 5, 3);
+    ctx.fill();
+    rr(ctx, 3 + pose.footB - walk * 2, 27, 14, 5, 3);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function drawBody(ctx, c, pose, view){
+    ctx.save();
+    ctx.translate(pose.bodyX, pose.bodyY);
+    ctx.rotate(pose.bodyRot);
+
+    const grad = ctx.createLinearGradient(0, -18, 0, 16);
+    grad.addColorStop(0, c.body);
+    grad.addColorStop(1, c.bodyDark);
+
+    ctx.fillStyle = grad;
+    ctx.strokeStyle = c.outline;
+    ctx.lineWidth = 2;
+
+    if(view === "side"){
+      ctx.beginPath();
+      ctx.ellipse(0, -2, 9, 17, 0, 0, TWO_PI);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = "#6b4a2a";
+      ctx.fillRect(-8, 7, 16, 4);
+    }else{
+      ctx.beginPath();
+      ctx.moveTo(0, -18);
+      ctx.lineTo(13, -5);
+      ctx.lineTo(9, 14);
+      ctx.lineTo(-9, 14);
+      ctx.lineTo(-13, -5);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      if(view === "front"){
+        ctx.fillStyle = "rgba(255,255,255,.18)";
+        ctx.beginPath();
+        ctx.moveTo(-5, -13);
+        ctx.lineTo(0, -4);
+        ctx.lineTo(5, -13);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      ctx.fillStyle = "#6b4a2a";
+      ctx.fillRect(-10, 7, 20, 4);
+    }
+
+    ctx.restore();
+  }
+
+  function drawHead(ctx, p, c, pose, view){
+    ctx.save();
+    ctx.translate(pose.headX, pose.headY);
+
+    ctx.fillStyle = c.face;
+    rr(ctx, -4, -21, 8, 7, 3);
+    ctx.fill();
+
+    ctx.fillStyle = view === "back" && p.curseLifted ? c.hair : c.face;
+    ctx.strokeStyle = c.outline;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.ellipse(0, -30, 10, 10.5, 0, 0, TWO_PI);
+    ctx.fill();
+    ctx.stroke();
+
+    if(p.curseLifted){
+      ctx.fillStyle = c.hair;
+      ctx.beginPath();
+      ctx.ellipse(0, -36, 10.8, 5.6, 0, 0, TWO_PI);
+      ctx.fill();
+
+      if(view !== "back"){
+        ctx.beginPath();
+        ctx.ellipse(-5, -35, 4, 4, -0.4, 0, TWO_PI);
+        ctx.ellipse(2, -37, 5, 4, 0.2, 0, TWO_PI);
+        ctx.ellipse(6, -34, 3, 4, 0.4, 0, TWO_PI);
+        ctx.fill();
+      }
+    }else{
+      ctx.fillStyle = "#6b3e24";
+      ctx.strokeStyle = c.outline;
+      ctx.lineWidth = 1;
+
+      ctx.beginPath();
+      ctx.ellipse(-8, -37, 5, 7, -0.8, 0, TWO_PI);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.ellipse(8, -37, 5, 7, 0.8, 0, TWO_PI);
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    if(view !== "back"){
+      ctx.fillStyle = "#172334";
+
+      if(view === "side"){
+        ctx.fillRect(4, -31, 2, 2);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(4.4, -31, 1, 1);
+      }else{
+        ctx.fillRect(-4, -31, 2, 2);
+        ctx.fillRect(3, -31, 2, 2);
+
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(-3.6, -31, 1, 1);
+        ctx.fillRect(3.4, -31, 1, 1);
+      }
+    }
+
+    ctx.restore();
+  }
+
+  function drawArmsGear(ctx, c, pose, view){
+    const back = view === "back";
+
+    const swordShoulderX = back ? -10 : 10;
+    const shieldShoulderX = back ? 10 : -10;
+
+    ctx.save();
+    ctx.strokeStyle = c.outline;
+    ctx.lineWidth = 7;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(shieldShoulderX, -6);
+    ctx.lineTo(pose.shieldX, pose.shieldY);
+    ctx.stroke();
+
+    ctx.strokeStyle = c.bodyDark;
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(shieldShoulderX, -6);
+    ctx.lineTo(pose.shieldX, pose.shieldY);
+    ctx.stroke();
+
+    ctx.translate(pose.shieldX, pose.shieldY);
+    ctx.rotate(pose.shieldAngle);
+    drawShield(ctx, c, pose.shieldScale);
+    ctx.restore();
+
+    ctx.save();
+    ctx.strokeStyle = c.outline;
+    ctx.lineWidth = 7;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(swordShoulderX, -6);
+    ctx.lineTo(pose.swordX, pose.swordY);
+    ctx.stroke();
+
+    ctx.strokeStyle = c.bodyDark;
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(swordShoulderX, -6);
+    ctx.lineTo(pose.swordX, pose.swordY);
+    ctx.stroke();
+
+    ctx.translate(pose.swordX, pose.swordY);
+    ctx.rotate(pose.swordAngle);
+    drawSword(ctx, c, pose.swordLen);
+    ctx.restore();
+  }
+
+  function drawCape(ctx, p, c, dir, time){
+    /*
+      Lv7以上だけ。
+      Lv5では呼ばれない。
+    */
+    if(tierOf(p) !== "gold_awaken") return;
+
+    const flap = Math.sin((time || 0) * 0.08) * 3;
+
+    ctx.save();
+
+    if(dir === "up"){
+      const g = ctx.createLinearGradient(0, -22, 0, 45);
+      g.addColorStop(0, c.cape1);
+      g.addColorStop(0.36, c.cape2);
+      g.addColorStop(1, c.cape3);
+
+      ctx.fillStyle = g;
+      ctx.strokeStyle = "rgba(255,255,255,.34)";
+      ctx.lineWidth = 1.5;
+
+      ctx.beginPath();
+      ctx.moveTo(-19, -18);
+      ctx.lineTo(19, -18);
+      ctx.quadraticCurveTo(28, 3 + flap, 22, 35);
+      ctx.lineTo(10, 28 + flap * 0.45);
+      ctx.lineTo(0, 44);
+      ctx.lineTo(-10, 28 - flap * 0.45);
+      ctx.lineTo(-22, 35);
+      ctx.quadraticCurveTo(-28, 3 - flap, -19, -18);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }else if(dir === "left" || dir === "right"){
+      const g = ctx.createLinearGradient(-34, -18, 8, 38);
+      g.addColorStop(0, c.cape1);
+      g.addColorStop(0.36, c.cape2);
+      g.addColorStop(1, c.cape3);
+
+      ctx.fillStyle = g;
+      ctx.strokeStyle = "rgba(255,255,255,.28)";
+      ctx.lineWidth = 1.3;
+
+      ctx.beginPath();
+      ctx.moveTo(-5, -15);
+      ctx.quadraticCurveTo(-29, -8 + flap, -34, 16);
+      ctx.quadraticCurveTo(-28, 36, -8, 30);
+      ctx.quadraticCurveTo(4, 20 + flap * 0.25, 6, 0);
+      ctx.lineTo(5, -13);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }else{
+      const g = ctx.createLinearGradient(0, -16, 0, 38);
+      g.addColorStop(0, c.cape1);
+      g.addColorStop(0.36, c.cape2);
+      g.addColorStop(1, c.cape3);
+
+      ctx.fillStyle = g;
+      ctx.strokeStyle = "rgba(255,255,255,.26)";
+      ctx.lineWidth = 1.2;
+
+      /*
+        正面は前掛け防止で外側と下端だけ。
+      */
+      ctx.beginPath();
+      ctx.moveTo(-13, -13);
+      ctx.quadraticCurveTo(-30, 0 + flap, -28, 24);
+      ctx.quadraticCurveTo(-22, 36 + flap, -10, 28);
+      ctx.quadraticCurveTo(-14, 10, -13, -13);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(13, -13);
+      ctx.quadraticCurveTo(30, 0 - flap, 28, 24);
+      ctx.quadraticCurveTo(22, 36 - flap, 10, 28);
+      ctx.quadraticCurveTo(14, 10, 13, -13);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+
+  function drawBolt(ctx, x1, y1, x2, y2, parts, jitter){
+    const pts = [{x:x1, y:y1}];
+
+    for(let i = 1; i < parts; i++){
+      const t = i / parts;
+      const x = x1 + (x2 - x1) * t;
+      const y = y1 + (y2 - y1) * t;
+
+      const nx = -(y2 - y1);
+      const ny = x2 - x1;
+      const len = Math.hypot(nx, ny) || 1;
+
+      pts.push({
+        x: x + nx / len * (Math.random() * 2 - 1) * jitter,
+        y: y + ny / len * (Math.random() * 2 - 1) * jitter
+      });
+    }
+
+    pts.push({x:x2, y:y2});
+
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for(let i = 1; i < pts.length; i++){
+      ctx.lineTo(pts[i].x, pts[i].y);
+    }
+    ctx.stroke();
+  }
+
+  function drawLightningScreen(ctx, p, wx, wy, time){
+    /*
+      Lv7以上だけ。
+      Lv5では出さない。
+      波動拡散系の丸いオーラは描かない。
+    */
+    if(tierOf(p) !== "gold_awaken") return;
+
+    const x = wx(p.x);
+    const y = wy(p.y);
+    const cx = x + p.w / 2;
+    const cy = y + p.h / 2 + 4;
+    const t = time || 0;
+
+    ctx.save();
+
+    ctx.globalAlpha = 0.92;
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 2.2;
+    ctx.lineCap = "round";
+    ctx.shadowBlur = 18;
+    ctx.shadowColor = "#fff7a8";
+
+    const count = 5 + ((t / 7) | 0) % 3;
+
+    for(let i = 0; i < count; i++){
+      const a1 = t * 0.10 + i / count * TWO_PI;
+      const a2 = a1 + 0.65 + Math.sin(t * 0.04 + i) * 0.25;
+
+      const x1 = cx + Math.cos(a1) * 24;
+      const y1 = cy + Math.sin(a1) * 34;
+      const x2 = cx + Math.cos(a2) * 40;
+      const y2 = cy + Math.sin(a2) * 52;
+
+      drawBolt(ctx, x1, y1, x2, y2, 5, 7);
+    }
+
+    ctx.globalAlpha = 0.90;
+    ctx.fillStyle = "#fff7a8";
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = "#ffd84d";
+
+    for(let i = 0; i < 10; i++){
+      const a = t * 0.06 + i / 10 * TWO_PI;
+      const r = 24 + (i % 4) * 6;
+      const px = cx + Math.cos(a) * r;
+      const py = cy + Math.sin(a) * r * 1.25;
+
+      ctx.beginPath();
+      ctx.arc(px, py, 1.4 + (i % 2), 0, TWO_PI);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
+  function finalHeroDraw(ctx, p, wx, wy, time, atkBox){
+    if(!p) return;
+
+    syncAwakeningFinal(p);
+
+    if(p.inv > 0 && p.inv % 8 < 4){
+      return;
+    }
+
+    /*
+      Lv5以下で旧波動メッセージが残っていたら消す。
+    */
+    if(tierOf(p) !== "gold_awaken" && typeof G !== "undefined"){
+      const s = String(G.message || "");
+      if(
+        s.includes("波動") ||
+        s.includes("八方向") ||
+        s.includes("電撃") ||
+        s.includes("マント") ||
+        s.includes("覚醒後")
+      ){
+        G.message = "";
+        G.messageT = 0;
+      }
+    }
+
+    const x = wx(p.x);
+    const y = wy(p.y);
+    const cx = x + p.w / 2;
+    const cy = y + p.h / 2;
+
+    const moveAmount =
+      Math.abs(p.vx || 0) +
+      Math.abs(p.vy || 0) +
+      ((p.dashT || 0) > 0 ? 1.0 : 0);
+
+    p.anim = (p.anim || 0) + moveAmount * 0.10 + 0.035;
+
+    const walk = Math.sin(p.anim) * (moveAmount > 0.05 ? 1 : 0.25);
+    const bob = moveAmount > 0.05
+      ? Math.abs(walk) * 1.8
+      : Math.sin((time || 0) * 0.05) * 0.5;
+
+    const dir = p.dir || "down";
+    const combo = clamp(p.combo || 1, 1, 3);
+    const progress = getProgress(p, combo);
+
+    const c = colorsByTier(p);
+    const pose = getPose(p, dir, combo, progress);
+
+    let view = "front";
+    let flip = 1;
+
+    if(dir === "up"){
+      view = "back";
+    }else if(dir === "left"){
+      view = "side";
+      flip = -1;
+    }else if(dir === "right"){
+      view = "side";
+      flip = 1;
+    }else{
+      view = "front";
+    }
+
+    ctx.save();
+    ctx.translate(cx, cy + bob + 4);
+    ctx.scale(flip, 1);
+    ctx.scale(1, 0.86);
+
+    drawShadow(ctx);
+
+    /*
+      Lv7のマントは本体と同じ座標系で描く。
+      背面は大きく、正面は外側だけ。
+    */
+    drawCape(ctx, p, c, dir, time);
+
+    drawSlash(ctx, p, c, dir, combo, progress);
+
+    if(view === "back"){
+      drawArmsGear(ctx, c, pose, view);
+      drawLegs(ctx, c, pose, walk, view);
+      drawBody(ctx, c, pose, view);
+      drawHead(ctx, p, c, pose, view);
+    }else{
+      drawLegs(ctx, c, pose, walk, view);
+      drawBody(ctx, c, pose, view);
+      drawArmsGear(ctx, c, pose, view);
+      drawHead(ctx, p, c, pose, view);
+    }
+
+    ctx.restore();
+
+    /*
+      Lv7の電撃は画面座標で上乗せ。
+    */
+    drawLightningScreen(ctx, p, wx, wy, time);
+  }
+
+  /*
+    ここで完全に上書き。
+    旧マント・旧電撃・旧波動系の drawHero ラッパーは呼ばない。
+  */
+  window.drawHeroAdventurer3D = finalHeroDraw;
+
+  try{
+    drawHeroAdventurer3D = finalHeroDraw;
+  }catch(e){}
+
+  /*
+    checkAwaken も最終仕様にする。
+    ステータスやコインには触らない。
+  */
+  checkAwaken = function(){
+    if(typeof G === "undefined" || !G.player) return;
+
+    const before = G.player.awakenTier;
+    syncAwakeningFinal(G.player);
+    const after = G.player.awakenTier;
+
+    if(before !== after && typeof msg === "function"){
+      if(after === "blue"){
+        msg("青い力に目覚めた！", 130);
+      }else if(after === "pre_gold"){
+        msg("覚醒前金色になった！", 130);
+      }else if(after === "gold_awaken"){
+        msg("覚醒後金色！ マントと電撃が解放された！", 170);
+      }
+    }
+  };
+
+  if(typeof update === "function" && !update.__finalAwakeningOverrideWrapped){
+    const oldUpdate = update;
+
+    update = function(){
+      oldUpdate.apply(this, arguments);
+
+      if(typeof G !== "undefined" && G.player){
+        syncAwakeningFinal(G.player);
+
+        /*
+          Lv7未満で旧演出の残留メッセージを消す。
+        */
+        if(tierOf(G.player) !== "gold_awaken"){
+          const s = String(G.message || "");
+          if(
+            s.includes("波動") ||
+            s.includes("八方向") ||
+            s.includes("電撃") ||
+            s.includes("マント") ||
+            s.includes("覚醒後")
+          ){
+            G.message = "";
+            G.messageT = 0;
+          }
+        }
+      }
+    };
+
+    update.__finalAwakeningOverrideWrapped = true;
+  }
+
+  if(typeof G !== "undefined" && G.player){
+    syncAwakeningFinal(G.player);
+  }
+
+  console.log("FINAL awakening override v2 loaded");
+})();
