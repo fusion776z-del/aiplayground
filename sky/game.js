@@ -8,28 +8,26 @@ const STAGES=[Stage1,Stage2,Stage3,Stage4,Stage5,Stage6,Stage7];
 ctx.imageSmoothingEnabled=false;
 
 // ─── バランステーブル（旧 balance_patch.js） ───────────────────────────────
+// 注: bossHpMul / bossAtkMul / bossShotMul は以前ここにあったが、
+// ボス生成処理が魔法陣ワープ式パッチ側に完全に置き換わった際に
+// 参照されなくなった（実質デッドコード）。ボスHPは BOSS_HP_SCALE
+// （このファイル内の「ステージ進行型 ボスHP大幅強化パッチ」）が
+// 単独で管理しているため、ここでは雑魚敵用の値だけを残す。
 const BALANCE=[
   {name:"Stage 1",enemyHpMul:0.70,enemyAtkMul:0.55,enemySpeedMul:0.68,
-   enemyAggro:135,enemyGiveUp:195,enemyContactInv:92,
-   bossHpMul:0.78,bossAtkMul:0.55,bossShotMul:1.55,coinBonus:1.00},
+   enemyAggro:135,enemyGiveUp:195,enemyContactInv:92,coinBonus:1.00},
   {name:"Stage 2",enemyHpMul:0.90,enemyAtkMul:0.75,enemySpeedMul:0.82,
-   enemyAggro:155,enemyGiveUp:220,enemyContactInv:84,
-   bossHpMul:0.95,bossAtkMul:0.78,bossShotMul:1.30,coinBonus:1.00},
+   enemyAggro:155,enemyGiveUp:220,enemyContactInv:84,coinBonus:1.00},
   {name:"Stage 3",enemyHpMul:1.08,enemyAtkMul:0.95,enemySpeedMul:0.96,
-   enemyAggro:178,enemyGiveUp:250,enemyContactInv:78,
-   bossHpMul:1.12,bossAtkMul:1.00,bossShotMul:1.12,coinBonus:1.00},
+   enemyAggro:178,enemyGiveUp:250,enemyContactInv:78,coinBonus:1.00},
   {name:"Stage 4",enemyHpMul:1.32,enemyAtkMul:1.15,enemySpeedMul:1.06,
-   enemyAggro:205,enemyGiveUp:285,enemyContactInv:72,
-   bossHpMul:1.35,bossAtkMul:1.18,bossShotMul:1.00,coinBonus:1.05},
+   enemyAggro:205,enemyGiveUp:285,enemyContactInv:72,coinBonus:1.05},
   {name:"Stage 5",enemyHpMul:1.62,enemyAtkMul:1.35,enemySpeedMul:1.16,
-   enemyAggro:230,enemyGiveUp:320,enemyContactInv:66,
-   bossHpMul:1.60,bossAtkMul:1.35,bossShotMul:0.92,coinBonus:1.08},
+   enemyAggro:230,enemyGiveUp:320,enemyContactInv:66,coinBonus:1.08},
   {name:"Stage 6",enemyHpMul:1.95,enemyAtkMul:1.55,enemySpeedMul:1.26,
-   enemyAggro:255,enemyGiveUp:355,enemyContactInv:62,
-   bossHpMul:1.90,bossAtkMul:1.55,bossShotMul:0.84,coinBonus:1.12},
+   enemyAggro:255,enemyGiveUp:355,enemyContactInv:62,coinBonus:1.12},
   {name:"Stage 7",enemyHpMul:2.30,enemyAtkMul:1.80,enemySpeedMul:1.34,
-   enemyAggro:285,enemyGiveUp:395,enemyContactInv:58,
-   bossHpMul:2.25,bossAtkMul:1.85,bossShotMul:0.76,coinBonus:1.15}
+   enemyAggro:285,enemyGiveUp:395,enemyContactInv:58,coinBonus:1.15}
 ];
 
 function getBalance(){
@@ -49,11 +47,13 @@ const DASH_PUSH_ENEMY=18;
 const DASH_PUSH_BOSS=8;
 let dashSerial=0;
 
-// ─── ステージ7ボス弱体化定数（旧 stage7_boss_nerf_patch.js） ────────────
-const S7_HP_RATE=0.85;
-const S7_ATK_RATE=0.82;
-const S7_SHOT_RATE=1.22;
-const S7_MOVE_RATE=0.88;
+// 注: 旧 stage7_boss_nerf_patch.js の S7_HP_RATE / S7_ATK_RATE /
+// S7_SHOT_RATE / S7_MOVE_RATE はここにあったが、参照元だった旧
+// spawnBoss() が魔法陣ワープ式パッチで完全に上書きされたため、
+// 実際には一度も使われていなかった（デッドコード）。
+// b.__s7MoveRate は他の場所で参照されているが、設定箇所がなくなった
+// ことで常に undefined → ||1 のフォールバックになる。これは現状の
+// 実機動作と同じなので挙動は変わらない。
 
 const input={
   up:0,down:0,left:0,right:0,
@@ -798,24 +798,14 @@ function spawnBoss(){
 
   G.boss=b;
 
-  // バランス倍率適用
-  const bl=getBalance();
-  const st=G.stageIndex||0;
-  b.maxHp=Math.max(8,Math.round(b.maxHp*bl.bossHpMul));
-  b.hp=Math.max(1,Math.round(b.hp*bl.bossHpMul));
-  if(b.hp>b.maxHp)b.hp=b.maxHp;
-  b.atk=Math.max(1,Math.round((b.atk||2)*bl.bossAtkMul));
-  b.shot=Math.max(30,Math.round(b.shot*bl.bossShotMul));
-
-  // ステージ7だけ追加弱体化
-  if(st===6){
-    b.maxHp=Math.max(40,Math.round(b.maxHp*S7_HP_RATE));
-    b.hp=Math.min(b.maxHp,Math.max(1,Math.round(b.hp*S7_HP_RATE)));
-    b.atk=Math.max(2,Math.round(b.atk*S7_ATK_RATE));
-    b.shot=Math.max(36,Math.round(b.shot*S7_SHOT_RATE));
-    b.__s7MoveRate=S7_MOVE_RATE;
-  }
+  // 注: この spawnBoss() は実際のゲーム中には呼ばれない。
+  // 魔法陣ワープ式パッチが起動時に spawnBoss を完全に上書きするため、
+  // ここにあった bossHpMul / bossAtkMul / bossShotMul やステージ7弱体化の
+  // 適用処理はずっとデッドコードだった（数値は一度も反映されていない）。
+  // ボスのHP管理は BOSS_HP_SCALE（ステージ進行型 ボスHP大幅強化パッチ）
+  // 側の1箇所に統一したので、ここでは何もしない。
 }
+
 
 function dmgE(e,d){
   if(!e)return;
@@ -5712,6 +5702,13 @@ loop();
 
    調整したい場合:
    - BOSS_HP_SCALE の mult / flat を変更する
+
+   2024-06 追記:
+   - 以前ファイル先頭の BALANCE.bossHpMul と二重に効いているように
+     見えていたが、調査の結果 bossHpMul 側は既にデッドコードだった
+     ため実際には二重スケーリングは発生していなかった。
+   - bossHpMul 関連のコードは削除済み。ボスHPはこのパッチの
+     BOSS_HP_SCALE が唯一の計算元。数値はそのまま変更なし。
    ========================================================= */
 (function(){
   if(window.__stageProgressBossHpScalePatchApplied) return;
@@ -7501,262 +7498,6 @@ loop();
 
 })();
 /* =========================================================
-   スマホ左ジョイスティック有効化パッチ 完全版
-   貼る場所:
-   - game.js の一番下
-   - これまで貼った全パッチよりさらに後ろ
-
-   効果:
-   - index.html の #joystick / #stick を使って移動できる
-   - 左下ジョイスティックで上下左右・斜め移動
-   - PCのキーボード操作はそのまま維持
-   - 指を離したら自動で停止
-   - タイトル画面でもジョイスティック操作中に誤作動しにくい
-   ========================================================= */
-(function(){
-  if(window.__mobileJoystickControlPatchApplied) return;
-  window.__mobileJoystickControlPatchApplied = true;
-
-  const JOY_RADIUS = 54;
-  const STICK_MAX = 42;
-  const DEAD_ZONE = 0.16;
-
-  const joy = document.getElementById("joystick");
-  const stick = document.getElementById("stick");
-
-  if(!joy || !stick){
-    console.warn("[JoystickPatch] #joystick または #stick が見つかりません");
-    return;
-  }
-
-  let active = false;
-  let pointerId = null;
-  let centerX = 0;
-  let centerY = 0;
-
-  /*
-    キーボード入力と競合しないように、
-    ジョイスティック専用の値を input.ax / input.ay に入れる。
-  */
-  input.ax = 0;
-  input.ay = 0;
-
-  function resetStick(){
-    active = false;
-    pointerId = null;
-
-    input.ax = 0;
-    input.ay = 0;
-
-    /*
-      ジョイスティック由来の方向入力だけ戻す。
-      キーボード操作中でも変になりにくいよう、
-      ここでは ax/ay を主に使う。
-    */
-    stick.style.transform = "translate(-50%,-50%)";
-  }
-
-  function updateCenter(){
-    const rect = joy.getBoundingClientRect();
-    centerX = rect.left + rect.width / 2;
-    centerY = rect.top + rect.height / 2;
-  }
-
-  function applyPointer(clientX, clientY){
-    let dx = clientX - centerX;
-    let dy = clientY - centerY;
-
-    const len = Math.hypot(dx,dy);
-
-    if(len > JOY_RADIUS){
-      dx = dx / len * JOY_RADIUS;
-      dy = dy / len * JOY_RADIUS;
-    }
-
-    const nx = dx / JOY_RADIUS;
-    const ny = dy / JOY_RADIUS;
-
-    const mag = Math.hypot(nx,ny);
-
-    if(mag < DEAD_ZONE){
-      input.ax = 0;
-      input.ay = 0;
-    }else{
-      input.ax = nx;
-      input.ay = ny;
-    }
-
-    const sx = nx * STICK_MAX;
-    const sy = ny * STICK_MAX;
-
-    stick.style.transform =
-      "translate(calc(-50% + " + sx + "px), calc(-50% + " + sy + "px))";
-  }
-
-  joy.addEventListener("pointerdown",function(e){
-    e.preventDefault();
-
-    active = true;
-    pointerId = e.pointerId;
-
-    try{
-      joy.setPointerCapture(pointerId);
-    }catch(err){}
-
-    updateCenter();
-    applyPointer(e.clientX,e.clientY);
-  },{passive:false});
-
-  joy.addEventListener("pointermove",function(e){
-    if(!active) return;
-    if(pointerId !== null && e.pointerId !== pointerId) return;
-
-    e.preventDefault();
-    applyPointer(e.clientX,e.clientY);
-  },{passive:false});
-
-  joy.addEventListener("pointerup",function(e){
-    if(pointerId !== null && e.pointerId !== pointerId) return;
-
-    e.preventDefault();
-
-    try{
-      joy.releasePointerCapture(pointerId);
-    }catch(err){}
-
-    resetStick();
-  },{passive:false});
-
-  joy.addEventListener("pointercancel",function(e){
-    if(pointerId !== null && e.pointerId !== pointerId) return;
-
-    e.preventDefault();
-    resetStick();
-  },{passive:false});
-
-  joy.addEventListener("lostpointercapture",function(){
-    resetStick();
-  });
-
-  /*
-    画面回転・リサイズ時に中心座標を取り直す。
-  */
-  window.addEventListener("resize",function(){
-    if(active){
-      updateCenter();
-    }
-  });
-
-  window.addEventListener("orientationchange",function(){
-    resetStick();
-  });
-
-  /*
-    元の updP を上書き。
-    既存コードは input.right - input.left / input.down - input.up だけを見ているので、
-    ここで input.ax / input.ay も移動に反映する。
-  */
-  if(typeof updP === "function"){
-    const __oldUpdPForJoystick = updP;
-
-    updP = function(){
-      const p = G.player;
-
-      if(!p){
-        __oldUpdPForJoystick();
-        return;
-      }
-
-      /*
-        元の updP とほぼ同じ処理を再実装。
-        違いは mx / my に joystick の ax / ay を加えること。
-      */
-      ["inv","dashCd","attackCd","attackT","comboT"].forEach(k=>{
-        if(p[k] > 0) p[k]--;
-      });
-
-      if(p.comboT <= 0){
-        p.combo = 0;
-      }
-
-      /*
-        キーボード入力 + ジョイスティック入力。
-        キーボードが押されていればキーボードも使える。
-      */
-      let mx = input.right - input.left;
-      let my = input.down - input.up;
-
-      const jx = input.ax || 0;
-      const jy = input.ay || 0;
-
-      /*
-        ジョイスティックが入力されている場合はそちらを優先。
-        これで斜め移動がなめらかになる。
-      */
-      if(Math.hypot(jx,jy) > DEAD_ZONE){
-        mx = jx;
-        my = jy;
-      }
-
-      const nn = nrm(mx,my);
-
-      p.vx = nn.l > .001 ? nn.x : 0;
-      p.vy = nn.l > .001 ? nn.y : 0;
-
-      if(Math.abs(mx) + Math.abs(my) > 0.001){
-        p.dir = Math.abs(mx) > Math.abs(my)
-          ? (mx > 0 ? "right" : "left")
-          : (my > 0 ? "down" : "up");
-      }
-
-      let sp = p.speed;
-
-      if(C("dash") && p.dashCd <= 0){
-        p.dashT = 10;
-        p.dashCd = 40;
-        p.inv = Math.max(p.inv,16);
-      }
-
-      if(p.dashT > 0){
-        p.dashT--;
-        sp = 7.4;
-      }
-
-      if(nn.l > .001){
-        move(p,nn.x * sp,nn.y * sp);
-      }
-
-      if(C("attack") && p.attackCd <= 0){
-        attack();
-      }
-
-      if(C("magic")){
-        magic();
-      }
-
-      if(C("action")){
-        action();
-      }
-    };
-  }
-
-  /*
-    念のため、ページ外へ指が出た時も止める。
-  */
-  document.addEventListener("pointerup",function(){
-    if(active){
-      resetStick();
-    }
-  },{passive:true});
-
-  document.addEventListener("visibilitychange",function(){
-    if(document.hidden){
-      resetStick();
-    }
-  });
-
-})();
-/* =========================================================
    スマホ操作 最終安定化パッチ
    - ジョイスティックが右ボタン操作で止まる問題を修正
    - アタック連打で画面が拡大する問題を防止
@@ -8111,27 +7852,59 @@ loop();
     p.vx = nn.l > .001 ? nn.x : 0;
     p.vy = nn.l > .001 ? nn.y : 0;
 
-    if(Math.abs(mx) + Math.abs(my) > 0.001){
+    /*
+      ダッシュ中は向きを固定する。
+      (本来のダッシュ攻撃仕様: ダッシュ中に向きが変わるとヒットボックスの
+      向きがブレるため、ダッシュ中は p.dir を上書きしない)
+    */
+    if(Math.abs(mx) + Math.abs(my) > 0.001 && !(p.dashT > 0)){
       p.dir = Math.abs(mx) > Math.abs(my)
         ? (mx > 0 ? "right" : "left")
         : (my > 0 ? "down" : "up");
     }
 
-    let sp = p.speed;
-
+    /*
+      ダッシュ開始。
+      入力方向が無ければ現在向いている方向へダッシュする。
+    */
     if(C("dash") && p.dashCd <= 0){
-      p.dashT = 10;
-      p.dashCd = 40;
-      p.inv = Math.max(p.inv,16);
+      let dvx = mx, dvy = my;
+
+      if(Math.abs(dvx) + Math.abs(dvy) < 0.001){
+        const dv = {up:{x:0,y:-1},down:{x:0,y:1},left:{x:-1,y:0},right:{x:1,y:0}};
+        const d = dv[p.dir || "down"];
+        dvx = d.x; dvy = d.y;
+      }
+
+      const dn = nrm(dvx,dvy);
+      p.__dashVX = dn.x;
+      p.__dashVY = dn.y;
+      p.__dashDir = Math.abs(dn.x) > Math.abs(dn.y) ? (dn.x > 0 ? "right" : "left") : (dn.y > 0 ? "down" : "up");
+      p.dir = p.__dashDir;
+      p.dashT = DASH_DURATION;
+      p.dashCd = DASH_COOLDOWN;
+      p.inv = Math.max(p.inv || 0, DASH_INVINCIBLE);
+      p.__dashActive = true;
+      dashSerial++;
+      p.__dashSerial = dashSerial;
+      ring(p.x + p.w / 2, p.y + p.h / 2, 22, p.trueGold ? "#ffd84d" : "#9ef7ff");
     }
 
     if(p.dashT > 0){
       p.dashT--;
-      sp = 7.4;
-    }
+      const vx = p.__dashVX || 0;
+      const vy = p.__dashVY || 0;
+      move(p, vx * DASH_SPEED, vy * DASH_SPEED);
+      dashStrike();
 
-    if(nn.l > .001){
-      move(p,nn.x * sp,nn.y * sp);
+      if(p.dashT <= 0){
+        p.__dashActive = false;
+        p.__dashVX = 0;
+        p.__dashVY = 0;
+      }
+    }else{
+      p.__dashActive = false;
+      if(nn.l > .001) move(p, nn.x * p.speed, nn.y * p.speed);
     }
 
     /*
@@ -9039,66 +8812,6 @@ loop();
 })();
 
 
-/* =========================================================
-   FINAL FIX: クリア後/タイトル画面のBOSS RUSH表示消去
-   原因:
-   - Stage7ボスラッシュ用の __stage7RushArena フラグが、
-     clear/title画面に戻ったあとも G.map に残っていた。
-   - drawRushBadge() がそのフラグを見て、タイトル画面の上にも
-     "BOSS RUSH 6/6 真の魔法陣へ" を描いていた。
-
-   対策:
-   - clear / title / gameover ではボスラッシュ表示用フラグを消す。
-   - 念のため draw の最後でも、title中に残った表示を再描画で消す。
-========================================================= */
-(function(){
-  if(window.__hideBossRushBadgeAfterClearPatchApplied)return;
-  window.__hideBossRushBadgeAfterClearPatchApplied=true;
-
-  function clearStage7RushUiFlags(){
-    if(!G||!G.map)return;
-    G.map.__stage7RushArena=false;
-    G.map.__stage7AbyssPortal=null;
-    G.map.__stage7RushDone=false;
-    G.map.__stage7RushIndex=0;
-    G.__stage7NextRushBossT=0;
-    G.__stage7NextRushBossIndex=0;
-  }
-
-  const oldUpdate=update;
-  update=function(){
-    oldUpdate();
-
-    // クリア画面、タイトル画面、ゲームオーバーではボスラッシュUIを出さない。
-    if(G&&(G.state==="clear"||G.state==="title"||G.state==="gameover")){
-      clearStage7RushUiFlags();
-    }
-  };
-
-  const oldDraw=draw;
-  draw=function(){
-    oldDraw();
-
-    // タイトルに戻ったあと、古いdrawRushBadgeが後乗せされても見えないよう、
-    // 最終的にタイトル画面をもう一度きれいに描く。
-    if(G&&G.state==="title"){
-      ctx.save();
-      ctx.setTransform(1,0,0,1,0,0);
-      ctx.fillStyle="#8fe8ff";
-      ctx.fillRect(0,0,VW,VH);
-      ctx.fillStyle="#fff";
-      ctx.textAlign="center";
-      ctx.font="900 34px system-ui";
-      ctx.fillText("SKY ISLAND",VW/2,210);
-      ctx.fillText("ADVENTURE",VW/2,250);
-      ctx.font="800 15px system-ui";
-      ctx.fillText("TAP / Z TO START",VW/2,326);
-      ctx.fillText("direction fixed",VW/2,360);
-      ctx.textAlign="left";
-      ctx.restore();
-    }
-  };
-})();
 
 
 /* =========================================================
