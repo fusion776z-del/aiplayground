@@ -11595,3 +11595,157 @@ if(view === "back"){
 
   console.log("lv7 move speed only patch loaded");
 })();
+/* =========================================================
+   スマホATK押しっぱなし連射 修正版
+   貼る場所:
+   - game.js の一番最後
+   - スマホ操作ボタン再割り当てパッチより後ろ
+
+   効果:
+   - PC: Z / Enter 押しっぱなし連射
+   - スマホ: ATKボタン押しっぱなし連射
+   - NPC会話 / ショップ / 宝箱を邪魔しない
+   ========================================================= */
+
+(function(){
+  if(window.__mobileAndPcAutoAttackHoldFinalApplied) return;
+  window.__mobileAndPcAutoAttackHoldFinalApplied = true;
+
+  const AUTO_ATTACK_INTERVAL = 2;
+
+  const hold = {
+    attack:false,
+    pointerId:null,
+    timer:0
+  };
+
+  function isAttackKey(e){
+    if(!e) return false;
+    const k = String(e.key || "").toLowerCase();
+    return k === "z" || e.key === "Enter";
+  }
+
+  function isAttackButtonEvent(e){
+    const t = e.target;
+    if(!t) return false;
+
+    if(t.id === "attackBtn") return true;
+
+    if(typeof t.closest === "function"){
+      return !!t.closest("#attackBtn");
+    }
+
+    return false;
+  }
+
+  function canAutoAttack(){
+    if(typeof G === "undefined") return false;
+    if(!G.player) return false;
+
+    // フィールド中だけ自動連射
+    if(G.state !== "field") return false;
+
+    // 入力ロック中は連射しない
+    if((G.lock || 0) > 0) return false;
+
+    return true;
+  }
+
+  function attackCooldown(){
+    if(typeof G === "undefined" || !G.player) return 999;
+    return G.player.attackCd || 0;
+  }
+
+  /*
+    PC用
+  */
+  window.addEventListener("keydown", function(e){
+    if(!isAttackKey(e)) return;
+    hold.attack = true;
+  }, {capture:true, passive:true});
+
+  window.addEventListener("keyup", function(e){
+    if(!isAttackKey(e)) return;
+    hold.attack = false;
+    hold.timer = 0;
+  }, {capture:true, passive:true});
+
+  /*
+    スマホ用。
+    attackBtn 自体ではなく document capture で拾う。
+    これにより、attackBtn 側の stopImmediatePropagation より先に反応できる。
+  */
+  document.addEventListener("pointerdown", function(e){
+    if(!isAttackButtonEvent(e)) return;
+
+    hold.attack = true;
+    hold.pointerId = e.pointerId;
+    hold.timer = 0;
+  }, {capture:true, passive:true});
+
+  document.addEventListener("pointerup", function(e){
+    if(hold.pointerId !== null && e.pointerId !== hold.pointerId) return;
+
+    hold.attack = false;
+    hold.pointerId = null;
+    hold.timer = 0;
+  }, {capture:true, passive:true});
+
+  document.addEventListener("pointercancel", function(e){
+    if(hold.pointerId !== null && e.pointerId !== hold.pointerId) return;
+
+    hold.attack = false;
+    hold.pointerId = null;
+    hold.timer = 0;
+  }, {capture:true, passive:true});
+
+  window.addEventListener("blur", function(){
+    hold.attack = false;
+    hold.pointerId = null;
+    hold.timer = 0;
+  });
+
+  document.addEventListener("visibilitychange", function(){
+    if(document.hidden){
+      hold.attack = false;
+      hold.pointerId = null;
+      hold.timer = 0;
+    }
+  });
+
+  /*
+    updateを包む。
+    既存の updP() は C("attack") で input.attack を消費するので、
+    押しっぱなし中に毎回 input.attack を再投入する。
+  */
+  if(typeof update === "function"){
+    const oldUpdateAutoAttackHoldFinal = update;
+
+    update = function(){
+      if(hold.attack && canAutoAttack()){
+        if(hold.timer > 0){
+          hold.timer--;
+        }
+
+        if(hold.timer <= 0 && attackCooldown() <= 0){
+          input.attack = 1;
+
+          /*
+            重要:
+            action/start は入れない。
+            入れると押しっぱなし中にNPC会話・宝箱・ショップが暴発する。
+            最初のタップ時の action/start は既存ATKボタン処理が担当する。
+          */
+
+          hold.timer = AUTO_ATTACK_INTERVAL;
+        }
+      }else{
+        hold.timer = 0;
+      }
+
+      oldUpdateAutoAttackHoldFinal.apply(this, arguments);
+    };
+  }
+
+  console.log("mobile and pc auto attack hold final loaded");
+})();
