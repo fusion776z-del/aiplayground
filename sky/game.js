@@ -399,68 +399,11 @@ function move(o,dx,dy){
   o.y=cl(o.y,28,G.map.height-28-o.h);
 }
 
-function updP(){
-  const p=G.player;
-
-  ["inv","dashCd","attackCd","attackT","comboT"].forEach(k=>{
-    if(p[k]>0)p[k]--;
-  });
-
-  if(p.comboT<=0)p.combo=0;
-
-  // ジョイスティック入力を優先
-  let mx=input.right-input.left;
-  let my=input.down-input.up;
-  const jx=window.__mobileJoy?.active?window.__mobileJoy.ax:(input.ax||0);
-  const jy=window.__mobileJoy?.active?window.__mobileJoy.ay:(input.ay||0);
-  if(Math.hypot(jx,jy)>0.16){mx=jx;my=jy;}
-
-  const nn=nrm(mx,my);
-
-  // ダッシュ中は向きを固定
-  if(nn.l>0.001&&!(p.dashT>0)){
-    p.dir=Math.abs(mx)>Math.abs(my)?(mx>0?"right":"left"):(my>0?"down":"up");
-  }
-
-  // ダッシュ開始
-  if(C("dash")&&p.dashCd<=0){
-    // 入力なしなら向いている方向へ
-    let dvx=mx,dvy=my;
-    if(Math.abs(dvx)+Math.abs(dvy)<0.001){
-      const dv={up:{x:0,y:-1},down:{x:0,y:1},left:{x:-1,y:0},right:{x:1,y:0}};
-      const d=dv[p.dir||"down"];
-      dvx=d.x;dvy=d.y;
-    }
-    const dn=nrm(dvx,dvy);
-    p.__dashVX=dn.x;
-    p.__dashVY=dn.y;
-    p.__dashDir=Math.abs(dn.x)>Math.abs(dn.y)?(dn.x>0?"right":"left"):(dn.y>0?"down":"up");
-    p.dir=p.__dashDir;
-    p.dashT=DASH_DURATION;
-    p.dashCd=DASH_COOLDOWN;
-    p.inv=Math.max(p.inv||0,DASH_INVINCIBLE);
-    p.__dashActive=true;
-    dashSerial++;
-    p.__dashSerial=dashSerial;
-    ring(p.x+p.w/2,p.y+p.h/2,22,p.trueGold?"#ffd84d":"#9ef7ff");
-  }
-
-  if(p.dashT>0){
-    p.dashT--;
-    const vx=p.__dashVX||0;
-    const vy=p.__dashVY||0;
-    move(p,vx*DASH_SPEED,vy*DASH_SPEED);
-    dashStrike();
-    if(p.dashT<=0){p.__dashActive=false;p.__dashVX=0;p.__dashVY=0;}
-  }else{
-    p.__dashActive=false;
-    if(nn.l>.001)move(p,nn.x*p.speed,nn.y*p.speed);
-  }
-
-  if(C("attack")&&p.attackCd<=0)attack();
-  if(C("magic"))magic();
-  if(C("action"))action();
-}
+// 注: この updP() は実際には呼ばれない。
+// スマホ操作 最終安定化パッチが起動時に updP を完全に上書きするため、
+// ここにあった移動・ダッシュ・攻撃処理はずっとデッドコードだった。
+// （ダッシュ攻撃自体は dashStrike() ごと最終版の updP に移植済み）
+function updP(){}
 
 // ダッシュ攻撃判定ボックス
 function dashAttackBox(){
@@ -656,45 +599,16 @@ function action(){
   }
 }
 
-function talkNext(){
-  const t=G.talk;
-  if(!t||!t.npc){
-    G.talk=null;
-    G.state="field";
-    return;
-  }
+// 注: この talkNext() は実際には呼ばれない。
+// NPC会話関連パッチが talkNext を二重に上書きしており、最終的に
+// 「NPC会話 一瞬で終わる問題 最終修正版」側の talkNext が使われる
+// （onTalk コールバックは finishTalk() 経由で同等に呼ばれる）。
+function talkNext(){}
 
-  t.index++;
-
-  if(t.index>=t.npc.lines.length){
-    if(typeof t.npc.onTalk==="function"){
-      t.npc.onTalk(G);
-    }
-
-    G.talk=null;
-    G.state="field";
-  }
-}
-
-function checkAwaken(){
-  const p=G.player;
-
-  if(!p.curseLifted&&p.swordLv>=3&&p.shieldLv>=3){
-    p.curseLifted=true;
-    p.maxHp+=8; p.hp=p.maxHp;
-    p.maxMp+=4; p.mp=p.maxMp;
-    p.atk+=3; p.def+=2; p.magic+=2; p.speed+=0.35;
-    msg("たぬきの呪いが解けた！",150);
-  }
-
-  if(!p.trueGold&&p.curseLifted&&p.bookLv>=3){
-    p.trueGold=true;
-    p.maxHp+=7; p.hp=p.maxHp;
-    p.maxMp+=5; p.mp=p.maxMp;
-    p.atk+=3; p.def+=2; p.magic+=4; p.speed+=0.22;
-    msg("金色覚醒！",150);
-  }
-}
+// 注: この checkAwaken() は実際には呼ばれない。
+// 「主人公成長仕様 最終上書きパッチ v3」が checkAwaken を完全に
+// 上書きしており、ステータス成長は applyGrowthStats() に統合されている。
+function checkAwaken(){}
 
 function shopItems(){
   const p=G.player;
@@ -1821,17 +1735,8 @@ loop();
     G.state = "talk";
   }
 
-  function finishTalk(t){
-    const fn = t && t.npc ? t.npc.onTalk : null;
-
-    G.talk = null;
-    G.state = "field";
-
-    if(typeof fn === "function"){
-      fn(G);
-    }
-  }
-
+  // 注: finishTalk はこのパッチ内では使われていない
+  // （呼び出し元の talkNext がさらに後のパッチで上書きされ、デッドコード化したため削除済み）
   // loadを包んで、ステージ読み込み直後にNPCを2人化する
   if(typeof load === "function"){
     const originalLoad = load;
@@ -1846,41 +1751,9 @@ loop();
     };
   }
 
-  // 会話送りを安定版にする
-  talkNext = function(){
-    if(typeof G === "undefined" || !G.talk)return;
-
-    const t = G.talk;
-    const now = G.time || 0;
-
-    if(!t.npc){
-      G.talk = null;
-      G.state = "field";
-      return;
-    }
-
-    cleanNpcLines(t.npc);
-
-    // 会話開始直後の同じ入力で即送り・即終了するのを防ぐ
-    if(typeof t.blockUntil === "number" && now < t.blockUntil){
-      return;
-    }
-
-    // 連打で一瞬で閉じるのを防ぐ
-    if(typeof t.lastAdvanceAt === "number" && now - t.lastAdvanceAt < TALK_NEXT_BLOCK){
-      return;
-    }
-
-    t.index++;
-
-    if(t.index >= t.npc.lines.length){
-      finishTalk(t);
-      return;
-    }
-
-    t.lastAdvanceAt = now;
-    t.blockUntil = now + TALK_NEXT_BLOCK;
-  };
+  // 注: talkNext はこのパッチで一度安定版に上書きされていたが、
+  // さらに後の「NPC会話 一瞬で終わる問題 最終修正版」パッチで
+  // 完全に上書きされ、デッドコード化したため削除済み。
 
   // 話しかけ処理を安定版にする
   action = function(){
@@ -10395,26 +10268,13 @@ if(view === "back"){
   }catch(e){}
 
   /*
-    checkAwaken も最終仕様にする。
-    ステータスやコインには触らない。
+    注: ここで checkAwaken を上書きしていたが、さらに後の
+    「主人公成長仕様 最終上書きパッチ v3」が checkAwaken を
+    再度完全に上書きするため、このバージョンは実際には呼ばれない
+    （該当のメッセージ・色変化は v3 側の applyGrowthStats に統合済み）。
+    削除済み。syncAwakeningFinal 自体は下の update ラップと
+    描画用の colorsByTier/tierOf から使われているため残す。
   */
-  checkAwaken = function(){
-    if(typeof G === "undefined" || !G.player) return;
-
-    const before = G.player.awakenTier;
-    syncAwakeningFinal(G.player);
-    const after = G.player.awakenTier;
-
-    if(before !== after && typeof msg === "function"){
-      if(after === "blue"){
-        msg("青い力に目覚めた！", 130);
-      }else if(after === "pre_gold"){
-        msg("覚醒前金色になった！", 130);
-      }else if(after === "gold_awaken"){
-        msg("覚醒後金色！ マントと電撃が解放された！", 170);
-      }
-    }
-  };
 
   if(typeof update === "function" && !update.__finalAwakeningOverrideWrapped){
     const oldUpdate = update;

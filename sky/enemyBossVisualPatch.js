@@ -4,8 +4,10 @@
   読み込み順:
     characterRenderer.js
     enemyTypes.js
-    gameuse strict";    game.js
-
+    game.js
+*/
+"use strict";
+(function(){
   if(window.__enemyBossVisualPatchApplied){
     return;
   }
@@ -583,6 +585,3 @@
 
   console.log("enemyBossVisualPatch loaded:", window.__enemyBossVisualPatchVersion);
 })();
-    enemyBossVisualPatch.js
-*/
-(function(){
