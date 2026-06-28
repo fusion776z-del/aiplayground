@@ -10562,17 +10562,40 @@ else if(dir === "left" || dir === "right"){
     const cx = x + p.w / 2;
     const cy = y + p.h / 2;
 
-    const moveAmount =
-      Math.abs(p.vx || 0) +
-      Math.abs(p.vy || 0) +
-      ((p.dashT || 0) > 0 ? 1.0 : 0);
+ const moveAmount =
+  Math.abs(p.vx || 0) +
+  Math.abs(p.vy || 0) +
+  ((p.dashT || 0) > 0 ? 1.0 : 0);
 
-    p.anim = (p.anim || 0) + moveAmount * 0.10 + 0.035;
+/*
+  移動量を0〜1に正規化。
+  速く動いているほど歩幅・揺れを大きくする。
+*/
+const moveRate = clamp(moveAmount / 1.8, 0, 1);
 
-    const walk = Math.sin(p.anim) * (moveAmount > 0.05 ? 1 : 0.25);
-    const bob = moveAmount > 0.05
-      ? Math.abs(walk) * 1.8
-      : Math.sin((time || 0) * 0.05) * 0.5;
+/*
+  歩行アニメ速度。
+  止まっている時はゆっくり呼吸、
+  移動中はテンポよく足を動かす。
+*/
+p.anim = (p.anim || 0) + 0.035 + moveRate * 0.16;
+
+/*
+  足の前後運動。
+  旧版より少し大きめにして、歩いている感を出す。
+*/
+const walk = Math.sin(p.anim) * (moveRate > 0.05 ? 1.65 : 0.18);
+
+/*
+  上下の揺れ。
+  人が歩く時は足を出すたびに少し上下するので、
+  sinを2倍周期にして「トン、トン」という感じにする。
+*/
+const stepBounce = Math.max(0, -Math.cos(p.anim * 2));
+
+const bob = moveRate > 0.05
+  ? stepBounce * (1.2 + moveRate * 1.2)
+  : Math.sin((time || 0) * 0.05) * 0.45;
 
     const dir = p.dir || "down";
     const combo = clamp(p.combo || 1, 1, 3);
@@ -10596,13 +10619,24 @@ else if(dir === "left" || dir === "right"){
       view = "front";
     }
 
-    ctx.save();
-    ctx.translate(cx, cy + bob + 4);
-    ctx.scale(flip, 1);
-    ctx.scale(1, 0.86);
+ctx.save();
+ctx.translate(cx, cy + bob + 4);
+ctx.scale(flip, 1);
+ctx.scale(1, 0.86);
 
- drawShadow(ctx);
+/*
+  移動方向への体の傾き。
+  これを入れると、ただ滑っている感じではなく
+  体重移動して歩いている感じになる。
+*/
+const leanX = clamp((p.vx || 0) * 2.2, -2.6, 2.6);
+const leanY = clamp((p.vy || 0) * 1.2, -1.8, 1.8);
+const leanRot = clamp((p.vx || 0) * 0.035, -0.08, 0.08);
 
+ctx.translate(leanX, leanY);
+ctx.rotate(leanRot);
+
+drawShadow(ctx);
 drawSlash(ctx, p, c, dir, combo, progress);
 
 if(view === "back"){
@@ -10704,169 +10738,6 @@ if(view === "back"){
     syncAwakeningFinal(G.player);
   }
 
-})();
-/* =========================================================
-   攻撃ボタン押しっぱなし連射パッチ 修正版
-   貼る場所:
-   - game.js の一番下
-   - 古い連射パッチは必ず削除してから貼る
-
-   修正内容:
-   - PC: Z / Enter 押しっぱなしで連続攻撃
-   - スマホ: ATK押しっぱなしで連続攻撃
-   - NPC会話、宝箱、扉、ショップ操作を邪魔しない
-   - input.action / input.start を勝手に消さない
-   ========================================================= */
-
-(function(){
-  if(window.__autoAttackHoldPatchAppliedV2) return;
-  window.__autoAttackHoldPatchAppliedV2 = true;
-
-  const AUTO_ATTACK_INTERVAL = 2;
-
-  const hold = {
-    attack:false,
-    timer:0,
-    pointerId:null
-  };
-
-  function isAttackKey(e){
-    if(!e) return false;
-    const k = String(e.key || "").toLowerCase();
-    return k === "z" || e.key === "Enter";
-  }
-
-  function canAutoAttack(){
-    if(typeof G === "undefined") return false;
-    if(!G.player) return false;
-
-    // フィールド中だけ自動攻撃する
-    // talk / shop / title / clear / gameover では自動攻撃しない
-    if(G.state !== "field") return false;
-
-    // 入力ロック中は自動攻撃しない
-    if((G.lock || 0) > 0) return false;
-
-    return true;
-  }
-
-  function getPlayerAttackCooldown(){
-    if(typeof G === "undefined" || !G.player) return 999;
-    return G.player.attackCd || 0;
-  }
-
-  /*
-    PC:
-    既存の keydown 処理はそのまま使う。
-    ここでは「押しっぱなし状態」だけ管理する。
-  */
-  window.addEventListener("keydown", function(e){
-    if(!isAttackKey(e)) return;
-    hold.attack = true;
-  }, {passive:true});
-
-  window.addEventListener("keyup", function(e){
-    if(!isAttackKey(e)) return;
-    hold.attack = false;
-    hold.timer = 0;
-  }, {passive:true});
-
-  /*
-    スマホATKボタン:
-    pointerdownで押しっぱなし開始。
-    pointerup / pointercancelで停止。
-  */
-  function installAttackButtonHold(){
-    const btn = document.getElementById("attackBtn");
-    if(!btn) return false;
-
-    btn.addEventListener("pointerdown", function(e){
-      hold.attack = true;
-      hold.pointerId = e.pointerId;
-    }, {capture:true, passive:true});
-
-    btn.addEventListener("pointerup", function(e){
-      if(hold.pointerId !== null && e.pointerId !== hold.pointerId) return;
-      hold.attack = false;
-      hold.pointerId = null;
-      hold.timer = 0;
-    }, {capture:true, passive:true});
-
-    btn.addEventListener("pointercancel", function(e){
-      if(hold.pointerId !== null && e.pointerId !== hold.pointerId) return;
-      hold.attack = false;
-      hold.pointerId = null;
-      hold.timer = 0;
-    }, {capture:true, passive:true});
-
-    btn.addEventListener("lostpointercapture", function(){
-      hold.attack = false;
-      hold.pointerId = null;
-      hold.timer = 0;
-    }, {capture:true, passive:true});
-
-    btn.addEventListener("touchend", function(){
-      hold.attack = false;
-      hold.pointerId = null;
-      hold.timer = 0;
-    }, {capture:true, passive:true});
-
-    return true;
-  }
-
-  if(!installAttackButtonHold()){
-    window.addEventListener("DOMContentLoaded", installAttackButtonHold);
-  }
-
-  window.addEventListener("blur", function(){
-    hold.attack = false;
-    hold.pointerId = null;
-    hold.timer = 0;
-  });
-
-  document.addEventListener("visibilitychange", function(){
-    if(document.hidden){
-      hold.attack = false;
-      hold.pointerId = null;
-      hold.timer = 0;
-    }
-  });
-
-  /*
-    updateを包む。
-    既存の updP 内で C("attack") が input.attack を消費するので、
-    押しっぱなし中に必要なタイミングで input.attack だけ再投入する。
-    
-    注意:
-    input.action / input.start は絶対に消さない。
-    NPC会話・宝箱・扉・ショップ操作が死ぬため。
-  */
-  if(typeof update === "function"){
-    const oldUpdateAutoAttackHoldV2 = update;
-
-    update = function(){
-      if(hold.attack && canAutoAttack()){
-        if(hold.timer > 0){
-          hold.timer--;
-        }
-
-        if(hold.timer <= 0 && getPlayerAttackCooldown() <= 0){
-          input.attack = 1;
-
-          // ここでは input.action / input.start を触らない
-          // ATKボタンのACT機能を残すため
-
-          hold.timer = AUTO_ATTACK_INTERVAL;
-        }
-      }else{
-        hold.timer = 0;
-      }
-
-      oldUpdateAutoAttackHoldV2();
-    };
-  }
-
-  console.log("auto attack hold patch v2 loaded");
 })();
 /* =========================================================
    主人公成長仕様 最終上書きパッチ v3
@@ -11534,7 +11405,7 @@ if(view === "back"){
     1.18 = 体感で速い
     1.25 = かなり速い
   */
-  const LV7_SPEED_RATE = 1.18;
+  const LV7_SPEED_RATE = 1.20;
 
   function lv(v){
     return Math.max(0, v | 0);
