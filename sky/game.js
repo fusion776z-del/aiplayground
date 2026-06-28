@@ -233,6 +233,143 @@ function mkE(e){
   enemy.balanceApplied=true;
   return enemy;
 }
+// ─── 雑魚敵数 増加設定 ─────────────────────────────// ─── 雑魚敵数 増加設定 ─────────────────────────1.00 = そのまま
+// 1.50 = 約1.5倍
+// 2.00 = 約2倍
+// ステージが進むほど多めにする設定
+const ENEMY_COUNT_MUL = [
+  1.35, // Stage1
+  1.50, // Stage2
+  1.65, // Stage3
+  1.80, // Stage4
+  2.00, // Stage5
+  2.20, // Stage6
+  2.40  // Stage7
+];
+
+const ENEMY_EXTRA_OFFSETS = [
+  {x: 34, y: 0},
+  {x: -34, y: 0},
+  {x: 0, y: 34},
+  {x: 0, y: -34},
+  {x: 28, y: 28},
+  {x: -28, y: 28},
+  {x: 28, y: -28},
+  {x: -28, y: -28}
+];
+
+function rectHit(a,b){
+  return a && b &&
+    a.x < b.x + b.w &&
+    a.x + a.w > b.x &&
+    a.y < b.y + b.h &&
+    a.y + a.h > b.y;
+}
+
+function canPlaceExtraEnemy(x,y,w,h){
+  if(!G.map) return true;
+
+  const r = {x,y,w,h};
+
+  // マップ外に出さない
+  if(x < 36 || y < 36) return false;
+  if(x + w > G.map.width - 36) return false;
+  if(y + h > G.map.height - 36) return false;
+
+  // 地形に重ならないようにする
+  for(const t of G.map.terrain || []){
+    if(rectHit(r,t)) return false;
+  }
+
+  // 鍵扉などに重ならないようにする
+  for(const d of G.map.doors || []){
+    if(rectHit(r,d)) return false;
+  }
+
+  // 宝箱・店・NPCに近すぎる位置を避ける
+  for(const c of G.map.chests || []){
+    if(rectHit(r,{x:c.x-12,y:c.y-12,w:c.w+24,h:c.h+24})) return false;
+  }
+
+  for(const s of G.map.shops || []){
+    if(rectHit(r,{x:s.x-12,y:s.y-12,w:s.w+24,h:s.h+24})) return false;
+  }
+
+  for(const n of G.map.npcs || []){
+    if(rectHit(r,{x:n.x-18,y:n.y-18,w:(n.w||24)+36,h:(n.h||32)+36})) return false;
+  }
+
+  // プレイヤー初期位置の近くに増やしすぎない
+  if(G.map.spawn){
+    const dx = x - G.map.spawn.x;
+    const dy = y - G.map.spawn.y;
+    if(dx * dx + dy * dy < 120 * 120) return false;
+  }
+
+  return true;
+}
+
+function enemyPlacementHash(stageIndex,enemyIndex,copyIndex){
+  // Math.random ではなく固定っぽくするための簡易ハッシュ
+  let n = (stageIndex + 1) * 73856093 ^
+          (enemyIndex + 1) * 19349663 ^
+          (copyIndex + 1) * 83492791;
+
+  n = Math.abs(n);
+  return n % 1000 / 1000;
+}
+
+function expandEnemyPlacements(list){
+  const src = Array.isArray(list) ? list : [];
+  const stageIndex = G.stageIndex || 0;
+  const mul = ENEMY_COUNT_MUL[Math.max(0,Math.min(ENEMY_COUNT_MUL.length-1,stageIndex))] || 1;
+
+  const result = [];
+
+  for(let i=0;i<src.length;i++){
+    const base = src[i];
+    if(!base) continue;
+
+    // 元の敵は必ず残す
+    result.push(base);
+
+    const extraFloat = Math.max(0,mul - 1);
+    const guaranteed = Math.floor(extraFloat);
+    const fractional = extraFloat - guaranteed;
+
+    let extraCount = guaranteed;
+
+    // 端数分は固定ハッシュで一部だけ追加
+    if(enemyPlacementHash(stageIndex,i,0) < fractional){
+      extraCount++;
+    }
+
+    for(let c=0;c<extraCount;c++){
+      const off = ENEMY_EXTRA_OFFSETS[(i + c) % ENEMY_EXTRA_OFFSETS.length];
+
+      const w = base.w || 24;
+      const h = base.h || 22;
+
+      const nx = (base.x || 0) + off.x;
+      const ny = (base.y || 0) + off.y;
+
+      if(!canPlaceExtraEnemy(nx,ny,w,h)){
+        continue;
+      }
+
+      result.push({
+        ...base,
+        x: nx,
+        y: ny,
+        __extraEnemy: true,
+        __extraFrom: i,
+        __extraIndex: c
+      });
+    }
+  }
+
+  return result;
+}
 
 function load(s,keep=false){
   const old=G.player;
@@ -2316,65 +2453,76 @@ loop();
     }
   }
 
-  function drawPrettyShop(s){
+function drawPrettyShop(s){
     const th=theme();
     const x=wx(s.x);
     const y=wy(s.y);
     const w=s.w;
     const h=s.h;
 
-    drawSoftShadow(x-4,y+2,w+8,h+8,.25);
+    // 店を大きめに描く。当たり判定は s.x/s.y/s.w/s.h のまま。
+    const bx=x-8;
+    const by=y-18;
+    const bw=w+16;
+    const bh=h+24;
 
-    // 光輪
-    ctx.save();
-    ctx.globalAlpha=.25;
-    ctx.fillStyle=th.glow;
-    ctx.beginPath();
-    ctx.ellipse(x+w/2,y+h/2,w*.95,h*.85,0,0,Math.PI*2);
-    ctx.fill();
+    drawSoftShadow(bx-5,by+8,bw+10,bh+8,.30);
+
     ctx.restore();
 
-    // 台座
-    const grad=ctx.createLinearGradient(x,y,x,y+h);
-    grad.addColorStop(0,th.shop1);
-    grad.addColorStop(1,th.shop2);
+    // 壁
+    const wall=ctx.createLinearGradient(bx,by+24,bx,by+bh);
+    wall.addColorStop(0,"#fff2a5");
+    wall.addColorStop(.32,th.shop1);
+    wall.addColorStop(1,th.shop2);
 
-    ctx.fillStyle=grad;
-    roundRect(x,y,w,h,9);
+    ctx.fillStyle=wall;
+    roundRect(bx,by+24,bw,bh-20,10);
     ctx.fill();
 
-    ctx.strokeStyle="rgba(255,255,255,.55)";
+    ctx.strokeStyle="rgba(255,255,255,.58)";
     ctx.lineWidth=2;
-    roundRect(x+2,y+2,w-4,h-4,7);
+    roundRect(bx+2,by+26,bw-4,bh-24,8);
     ctx.stroke();
 
-    // 祭壇の上面
-    ctx.fillStyle="rgba(255,255,255,.24)";
-    roundRect(x+5,y+4,w-10,h*.24,6);
+
+// 屋根
+const roof=ctx.createLinearGradient(bx,by-14,bx,by+34);
+roof.addColorStop(0,"#ffb0a0");
+roof.addColorStop(.48,"#e64236");
+roof.addColorStop(1,"#8f1f1a");
+
+    ctx.fillStyle=roof;
+    ctx.beginPath();
+    ctx.moveTo(bx-9,by+28);
+    ctx.lineTo(bx+bw/2,by-16);
+    ctx.lineTo(bx+bw+9,by+28);
+    ctx.lineTo(bx+bw+4,by+38);
+    ctx.lineTo(bx-4,by+38);
+    ctx.closePath();
     ctx.fill();
 
-    // 強化アイコン
-    ctx.fillStyle="#fff";
-    ctx.font="900 12px system-ui";
-    ctx.textAlign="center";
-    ctx.fillText("強",x+w/2,y+h*.67);
-    ctx.textAlign="left";
-
-    // きらめき
-    ctx.save();
-    ctx.globalAlpha=.9;
-    ctx.strokeStyle="#fff7b0";
-    ctx.lineWidth=1.5;
+    ctx.strokeStyle="rgba(255,255,255,.75)";
+    ctx.lineWidth=2;
     ctx.beginPath();
-    ctx.moveTo(x+w*.23,y+h*.20);
-    ctx.lineTo(x+w*.23,y+h*.36);
-    ctx.moveTo(x+w*.15,y+h*.28);
-    ctx.lineTo(x+w*.31,y+h*.28);
+    ctx.moveTo(bx-8,by+28);
+    ctx.lineTo(bx+bw/2,by-15);
+    ctx.lineTo(bx+bw+8,by+28);
     ctx.stroke();
-    ctx.restore();
+
+    // 看板
+    ctx.fillStyle="rgba(70,38,20,.90)";
+    roundRect(bx+bw*.16,by+31,bw*.68,20,5);
+    ctx.fill();
+    ctx.fillStyle="#fff7a8";
+    ctx.font="900 11px system-ui";
+    ctx.textAlign="center";
+    ctx.fillText("SHOP",bx+bw/2,by+45);
+    ctx.textAlign="left";
   }
 
-  function drawPrettyCoin(d){
+
+function drawPrettyCoin(d){
     const th=theme();
     if(!d)return;
 
