@@ -585,3 +585,156 @@
 
   console.log("enemyBossVisualPatch loaded:", window.__enemyBossVisualPatchVersion);
 })();
+/*
+  enemyBossVisualPatch.js 追加修正版:
+  Stage7ボスラッシュのボス別見た目補正
+
+  使い方:
+    既存の enemyBossVisualPatch.js の一番最後に追記するか、
+    既存 enemyBossVisualPatch.js より後に読み込んでください。
+
+  目的:
+    enemyBossVisualPatch.js 内の drawBoss3D が G.stageIndex だけを見て、
+    Stage7ボスラッシュ中の全ボスをアビス見た目にする問題を防ぐ。
+*/
+(function(){
+  "use strict";
+
+  if(typeof window !== "undefined" && window.__enemyBossRushVisualStageFixApplied){
+    return;
+  }
+
+  if(typeof window !== "undefined"){
+    window.__enemyBossRushVisualStageFixApplied = true;
+    window.__enemyBossRushVisualStageFixVersion = "enemy-boss-rush-visual-stage-fix-v1";
+  }
+
+  function isNumber(v){
+    return typeof v === "number" && isFinite(v);
+  }
+
+  function clampStageIndex(v){
+    v = Math.floor(Number(v));
+
+    if(!isFinite(v)){
+      return 0;
+    }
+
+    if(typeof STAGES !== "undefined" && STAGES && STAGES.length){
+      return Math.max(0, Math.min(STAGES.length - 1, v));
+    }
+
+    return Math.max(0, Math.min(6, v));
+  }
+
+  function getBossStageIndex(b){
+    if(
+      typeof window !== "undefined" &&
+      typeof window.__getBossStageIndexForRush === "function"
+    ){
+      return window.__getBossStageIndexForRush(b);
+    }
+
+    if(b){
+      if(isNumber(b.rushStageIndex)){
+        return clampStageIndex(b.rushStageIndex);
+      }
+
+      if(isNumber(b.sourceStageIndex)){
+        return clampStageIndex(b.sourceStageIndex);
+      }
+
+      if(isNumber(b.bossStageIndex)){
+        return clampStageIndex(b.bossStageIndex);
+      }
+
+      if(isNumber(b.__stageIndex)){
+        return clampStageIndex(b.__stageIndex);
+      }
+
+      if(isNumber(b.stageIndex) && (b.stage7RushBoss || b.rushBoss)){
+        return clampStageIndex(b.stageIndex);
+      }
+    }
+
+    if(typeof G !== "undefined" && G){
+      return clampStageIndex(G.stageIndex || 0);
+    }
+
+    return 0;
+  }
+
+  function shouldUseRushStage(b){
+    return !!(
+      b &&
+      (b.stage7RushBoss || b.rushBoss || b.__stage7RushBoss) &&
+      (
+        isNumber(b.rushStageIndex) ||
+        isNumber(b.sourceStageIndex) ||
+        isNumber(b.bossStageIndex) ||
+        isNumber(b.__stageIndex) ||
+        isNumber(b.stageIndex)
+      )
+    );
+  }
+
+  function withBossStageIndex(b, fn){
+    if(typeof G === "undefined" || !G || !shouldUseRushStage(b)){
+      return fn();
+    }
+
+    var oldIndex = G.stageIndex;
+    G.stageIndex = getBossStageIndex(b);
+
+    try{
+      return fn();
+    }finally{
+      G.stageIndex = oldIndex;
+    }
+  }
+
+  function installVisualWrapper(){
+    if(typeof drawBoss3D !== "function"){
+      return false;
+    }
+
+    if(drawBoss3D.__enemyBossRushVisualStageFixed){
+      return true;
+    }
+
+    var oldDrawBoss3D = drawBoss3D;
+
+    drawBoss3D = function(ctx, b, wx, wy, t){
+      var self = this;
+
+      return withBossStageIndex(b, function(){
+        return oldDrawBoss3D.call(self, ctx, b, wx, wy, t);
+      });
+    };
+
+    drawBoss3D.__enemyBossRushVisualStageFixed = true;
+    return true;
+  }
+
+  installVisualWrapper();
+
+  /*
+    後から game.js 側や別パッチが drawBoss3D を再上書きした場合の保険。
+  */
+  var tries = 0;
+  var timer = setInterval(function(){
+    tries++;
+    installVisualWrapper();
+
+    if(tries >= 30){
+      clearInterval(timer);
+    }
+  }, 100);
+
+  console.log(
+    "enemyBossVisualPatch rush visual stage fix loaded:",
+    typeof window !== "undefined"
+      ? window.__enemyBossRushVisualStageFixVersion
+      : "v1"
+  );
+})();

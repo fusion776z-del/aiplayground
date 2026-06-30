@@ -12520,3 +12520,185 @@ if(view === "back"){
 
   console.log("doorAutoOpen + rushVisualFix patch loaded");
 })();
+/*
+  game.js 追加修正版:
+  Stage7ボスラッシュのボス別グラフィック/AI補正
+
+  使い方:
+    既存の game.js の一番最後、
+    すべてのボス描画/AIパッチより後ろに追記してください。
+
+  目的:
+    Stage7ボスラッシュ中、既存の drawBoss3D / updBoss が
+    G.stageIndex を参照して、すべてのボスを Stage7=アビス扱いにする問題を防ぐ。
+*/
+(function(){
+  "use strict";
+
+  if(typeof window !== "undefined" && window.__stage7RushBossStageFixInGameApplied){
+    return;
+  }
+
+  if(typeof window !== "undefined"){
+    window.__stage7RushBossStageFixInGameApplied = true;
+    window.__stage7RushBossStageFixInGameVersion = "stage7-rush-boss-stage-fix-game-v1";
+  }
+
+  function hasGameState(){
+    return typeof G !== "undefined" && G;
+  }
+
+  function isNumber(v){
+    return typeof v === "number" && isFinite(v);
+  }
+
+  function clampStageIndex(v){
+    v = Math.floor(Number(v));
+
+    if(!isFinite(v)){
+      return 0;
+    }
+
+    if(typeof STAGES !== "undefined" && STAGES && STAGES.length){
+      return Math.max(0, Math.min(STAGES.length - 1, v));
+    }
+
+    return Math.max(0, Math.min(6, v));
+  }
+
+  /*
+    ボス個体が本来どのステージ由来かを返す。
+
+    基本:
+      b.rushStageIndex
+
+    互換用:
+      b.sourceStageIndex
+      b.bossStageIndex
+      b.__stageIndex
+      b.stageIndex
+  */
+  function getBossStageIndexForRush(b){
+    if(b){
+      if(isNumber(b.rushStageIndex)){
+        return clampStageIndex(b.rushStageIndex);
+      }
+
+      if(isNumber(b.sourceStageIndex)){
+        return clampStageIndex(b.sourceStageIndex);
+      }
+
+      if(isNumber(b.bossStageIndex)){
+        return clampStageIndex(b.bossStageIndex);
+      }
+
+      if(isNumber(b.__stageIndex)){
+        return clampStageIndex(b.__stageIndex);
+      }
+
+      if(isNumber(b.stageIndex) && (b.stage7RushBoss || b.rushBoss)){
+        return clampStageIndex(b.stageIndex);
+      }
+    }
+
+    if(hasGameState()){
+      return clampStageIndex(G.stageIndex || 0);
+    }
+
+    return 0;
+  }
+
+  if(typeof window !== "undefined"){
+    window.__getBossStageIndexForRush = getBossStageIndexForRush;
+  }
+
+  function shouldUseRushStage(b){
+    return !!(
+      b &&
+      (b.stage7RushBoss || b.rushBoss || b.__stage7RushBoss) &&
+      (
+        isNumber(b.rushStageIndex) ||
+        isNumber(b.sourceStageIndex) ||
+        isNumber(b.bossStageIndex) ||
+        isNumber(b.__stageIndex) ||
+        isNumber(b.stageIndex)
+      )
+    );
+  }
+
+  function withBossStageIndex(b, fn){
+    if(!hasGameState() || !shouldUseRushStage(b)){
+      return fn();
+    }
+
+    var oldIndex = G.stageIndex;
+    G.stageIndex = getBossStageIndexForRush(b);
+
+    try{
+      return fn();
+    }finally{
+      G.stageIndex = oldIndex;
+    }
+  }
+
+  function installWrappers(){
+    var installed = false;
+
+    if(typeof drawBoss3D === "function" && !drawBoss3D.__stage7RushBossStageFixed){
+      var oldDrawBoss3D = drawBoss3D;
+
+      drawBoss3D = function(ctxArg, b, wxArg, wyArg, t){
+        var self = this;
+
+        return withBossStageIndex(b, function(){
+          return oldDrawBoss3D.call(self, ctxArg, b, wxArg, wyArg, t);
+        });
+      };
+
+      drawBoss3D.__stage7RushBossStageFixed = true;
+      installed = true;
+    }
+
+    if(typeof updBoss === "function" && !updBoss.__stage7RushBossStageFixed){
+      var oldUpdBoss = updBoss;
+
+      updBoss = function(){
+        var self = this;
+        var args = arguments;
+        var b = hasGameState() ? G.boss : null;
+
+        return withBossStageIndex(b, function(){
+          return oldUpdBoss.apply(self, args);
+        });
+      };
+
+      updBoss.__stage7RushBossStageFixed = true;
+      installed = true;
+    }
+
+    return installed;
+  }
+
+  installWrappers();
+
+  /*
+    後続パッチが drawBoss3D / updBoss を再上書きした場合の保険。
+    起動直後だけ数秒間、包み直しを試みる。
+  */
+  var tries = 0;
+  var timer = setInterval(function(){
+    tries++;
+    installWrappers();
+
+    if(tries >= 30){
+      clearInterval(timer);
+    }
+  }, 100);
+
+  console.log(
+    "game.js stage7 rush boss stage fix loaded:",
+    typeof window !== "undefined"
+      ? window.__stage7RushBossStageFixInGameVersion
+      : "v1"
+  );
+})();
