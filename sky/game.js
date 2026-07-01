@@ -12702,3 +12702,1338 @@ if(view === "back"){
       : "v1"
   );
 })();
+/*
+  ボスHP 2倍パッチ
+
+  目的:
+    通常ボス、決闘空間ボス、Stage7ボスラッシュ、最終アビスを含めて、
+    実際に出現したボスの maxHp / hp を現在値基準で2倍にする。
+
+  注意:
+    何度も2倍、4倍、8倍にならないように、
+    ボスごとに適用済みフラグを持たせています。
+*/
+(function(){
+  "use strict";
+
+  if(typeof window !== "undefined" && window.__bossHpDoublePatchApplied){
+    return;
+  }
+
+  if(typeof window !== "undefined"){
+    window.__bossHpDoublePatchApplied = true;
+    window.__bossHpDoublePatchVersion = "boss-hp-double-v1";
+  }
+
+  const BOSS_HP_DOUBLE_RATE = 2;
+
+  function getNumber(v, fallback){
+    const n = Number(v);
+    return Number.isFinite(n) ? n : fallback;
+  }
+
+  function bossKeyOf(b){
+    if(!b) return "";
+    return [
+      b.id || "",
+      b.name || "",
+      b.rushIndex == null ? "" : String(b.rushIndex),
+      b.rushStageIndex == null ? "" : String(b.rushStageIndex)
+    ].join(":");
+  }
+
+  function applyBossHpDouble(b, options){
+    if(!b) return false;
+
+    options = options || {};
+
+    const currentMax = Math.max(
+      1,
+      getNumber(b.maxHp, 0) || getNumber(b.hp, 0) || 1
+    );
+
+    /*
+      すでにこのボスのこのHP値に対して2倍化済みなら何もしない。
+      これで毎フレーム 2倍 → 4倍 → 8倍 になる事故を防ぐ。
+    */
+    if(
+      b.__bossHpDoubleApplied &&
+      b.__bossHpDoubleTargetMax === currentMax
+    ){
+      return false;
+    }
+
+    /*
+      すでに2倍化済みのボスがコピーされた場合の保険。
+      maxHp が target と一致していれば追加で増やさない。
+    */
+    if(
+      b.__bossHpDoubleTargetMax &&
+      b.maxHp === b.__bossHpDoubleTargetMax
+    ){
+      return false;
+    }
+
+    const oldMax = currentMax;
+    const oldHp = Math.max(0, getNumber(b.hp, oldMax));
+
+    const newMax = Math.max(1, Math.round(oldMax * BOSS_HP_DOUBLE_RATE));
+
+    let newHp;
+
+    if(options.fullHeal || oldHp >= oldMax - 0.001){
+      newHp = newMax;
+    }else{
+      const ratio = Math.max(0.01, Math.min(1, oldHp / oldMax));
+      newHp = Math.max(1, Math.round(newMax * ratio));
+    }
+
+    b.maxHp = newMax;
+    b.hp = Math.min(newMax, newHp);
+
+    b.__bossHpDoubleApplied = true;
+    b.__bossHpDoubleSourceMax = oldMax;
+    b.__bossHpDoubleTargetMax = newMax;
+    b.__bossHpDoubleKey = bossKeyOf(b);
+
+    return true;
+  }
+
+  function applyToMapBoss(){
+    if(typeof G === "undefined" || !G || !G.map || !G.map.boss){
+      return false;
+    }
+
+    return applyBossHpDouble(G.map.boss, {
+      fullHeal: true
+    });
+  }
+
+  function applyToActiveBoss(){
+    if(typeof G === "undefined" || !G || !G.boss){
+      return false;
+    }
+
+    const beforeMax = G.boss.maxHp;
+
+    const changed = applyBossHpDouble(G.boss, {
+      fullHeal: false
+    });
+
+    if(changed && beforeMax !== G.boss.maxHp && typeof msg === "function"){
+      msg(
+        (G.boss.name || "BOSS") + "のHPが2倍になった！ HP " + G.boss.maxHp,
+        90
+      );
+    }
+
+    return changed;
+  }
+
+  function applyAllBossHpDouble(){
+    applyToMapBoss();
+    applyToActiveBoss();
+  }
+
+  /*
+    既存のHPスケール処理がある場合は、その後に2倍化する。
+  */
+  if(
+    typeof window !== "undefined" &&
+    typeof window.__applyStageBossHpScale === "function" &&
+    !window.__applyStageBossHpScale.__bossHpDoubleWrapped
+  ){
+    const oldApplyStageBossHpScale = window.__applyStageBossHpScale;
+
+    window.__applyStageBossHpScale = function(){
+      const result = oldApplyStageBossHpScale.apply(this, arguments);
+      applyAllBossHpDouble();
+      return result;
+    };
+
+    window.__applyStageBossHpScale.__bossHpDoubleWrapped = true;
+  }
+
+  /*
+    spawnBoss 後にも適用。
+    通常ボス、決闘空間ボス、追加パッチ経由のボス生成に対応。
+  */
+  if(typeof spawnBoss === "function" && !spawnBoss.__bossHpDoubleWrapped){
+    const oldSpawnBoss = spawnBoss;
+
+    spawnBoss = function(){
+      const result = oldSpawnBoss.apply(this, arguments);
+      applyAllBossHpDouble();
+      return result;
+    };
+
+    spawnBoss.__bossHpDoubleWrapped = true;
+  }
+
+  /*
+    update 後にも適用。
+    Stage7ボスラッシュのように spawnRushBoss() が内部関数で、
+    直接ラップできない場合の保険。
+  */
+  if(typeof update === "function" && !update.__bossHpDoubleWrapped){
+    const oldUpdate = update;
+
+    update = function(){
+      const result = oldUpdate.apply(this, arguments);
+      applyAllBossHpDouble();
+      return result;
+    };
+
+    update.__bossHpDoubleWrapped = true;
+  }
+
+  /*
+    すでにゲーム中・ボス出現中に貼った場合にも即反映。
+  */
+  applyAllBossHpDouble();
+
+  console.log(
+    "boss HP double patch loaded:",
+    typeof window !== "undefined"
+      ? window.__bossHpDoublePatchVersion
+      : "v1"
+  );
+})();
+/*
+  Stage1〜6 通常ボス撃破コイン報酬パッチ
+
+  目的:
+    Stage1〜6の通常ボスを倒した時に、少額のコイン報酬を直接プレイヤーへ加算する。
+
+  対象:
+    - Stage1〜6の通常ボス
+    - 決闘空間ボスも通常ボス扱いなら対象
+
+  対象外:
+    - Stage7ボスラッシュ中の過去ボス
+    - Stage7最終アビス
+    - 雑魚敵
+*/
+(function(){
+  "use strict";
+
+  if(typeof window !== "undefined" && window.__stage1To6BossCoinRewardPatchApplied){
+    return;
+  }
+
+  if(typeof window !== "undefined"){
+    window.__stage1To6BossCoinRewardPatchApplied = true;
+    window.__stage1To6BossCoinRewardPatchVersion = "stage1-6-boss-coin-reward-v1";
+  }
+
+  /*
+    少しだけ欲しい、という方向なので控えめ。
+    もっと増やしたい場合はここだけ変更。
+  */
+  const BOSS_COIN_REWARD = [
+    80,   // Stage1
+    120,  // Stage2
+    170,  // Stage3
+    230,  // Stage4
+    300,  // Stage5
+    380   // Stage6
+  ];
+
+  function getStageIndex(){
+    if(typeof G === "undefined" || !G){
+      return 0;
+    }
+
+    return Math.max(0, Math.min(6, G.stageIndex || 0));
+  }
+
+  function isStage1To6NormalBoss(b){
+    if(!b){
+      return false;
+    }
+
+    const st = getStageIndex();
+
+    /*
+      Stage1〜6だけ。
+      Stage7はボスラッシュと最終アビスがあるため対象外。
+    */
+    if(st < 0 || st > 5){
+      return false;
+    }
+
+    /*
+      Stage7ボスラッシュの過去ボスは、見た目はStage1〜6でも
+      G.stageIndexが一時差し替えされる可能性がある。
+      そのため、フラグで明確に除外する。
+    */
+    if(
+      b.stage7RushBoss ||
+      b.rushBoss ||
+      b.__stage7RushBoss ||
+      b.__stage7RushLinkedBoss ||
+      b.__rushKind === "rush"
+    ){
+      return false;
+    }
+
+    return true;
+  }
+
+  function rewardKeyOf(b){
+    if(!b){
+      return "";
+    }
+
+    return [
+      getStageIndex(),
+      b.id || "",
+      b.name || "",
+      b.duelBoss ? "duel" : "normal"
+    ].join(":");
+  }
+
+  function giveBossCoinReward(b){
+    if(typeof G === "undefined" || !G || !G.player || !b){
+      return;
+    }
+
+    if(!isStage1To6NormalBoss(b)){
+      return;
+    }
+
+    const key = rewardKeyOf(b);
+
+    /*
+      dmgB が複数回呼ばれたり、同一フレームで処理が重なっても、
+      同じボスに二重報酬を出さないための保険。
+    */
+    if(!G.__bossCoinRewardGiven){
+      G.__bossCoinRewardGiven = {};
+    }
+
+    if(G.__bossCoinRewardGiven[key]){
+      return;
+    }
+
+    const st = getStageIndex();
+    const amount = BOSS_COIN_REWARD[st] || 80;
+
+    G.__bossCoinRewardGiven[key] = true;
+    G.player.coins = (G.player.coins || 0) + amount;
+
+    if(typeof msg === "function"){
+      msg("ボス撃破報酬 +" + amount + "C", 120);
+    }
+  }
+
+  if(typeof dmgB === "function" && !dmgB.__stage1To6BossCoinRewardWrapped){
+    const oldDmgB = dmgB;
+
+    dmgB = function(damage){
+      const beforeBoss = (typeof G !== "undefined" && G) ? G.boss : null;
+      const beforeHp = beforeBoss ? beforeBoss.hp : null;
+
+      const result = oldDmgB.apply(this, arguments);
+
+      /*
+        dmgB 実行後に G.boss が null になった場合、
+        その攻撃でボスを撃破したと判断する。
+      */
+      const bossDefeated =
+        beforeBoss &&
+        typeof beforeHp === "number" &&
+        beforeHp > 0 &&
+        (
+          !G.boss ||
+          G.boss !== beforeBoss ||
+          beforeBoss.hp <= 0
+        );
+
+      if(bossDefeated){
+        giveBossCoinReward(beforeBoss);
+      }
+
+      return result;
+    };
+
+    dmgB.__stage1To6BossCoinRewardWrapped = true;
+  }
+
+  console.log(
+    "stage1-6 boss coin reward patch loaded:",
+    typeof window !== "undefined"
+      ? window.__stage1To6BossCoinRewardPatchVersion
+      : "v1"
+  );
+})();
+/*
+  薬草回復量アップパッチ
+
+  変更内容:
+    small_herb の回復量を +5 から +8 にする。
+
+  目的:
+    後半ステージやボス戦で、薬草を少しだけ頼れる回復量にする。
+*/
+(function(){
+  "use strict";
+
+  if(typeof window !== "undefined" && window.__herbHealBoostPatchApplied){
+    return;
+  }
+
+  if(typeof window !== "undefined"){
+    window.__herbHealBoostPatchApplied = true;
+    window.__herbHealBoostPatchVersion = "herb-heal-boost-v1";
+  }
+
+  const HERB_HEAL_AMOUNT = 8;
+
+  herb = function(){
+    if(typeof G === "undefined" || !G || !G.player){
+      return;
+    }
+
+    const p = G.player;
+
+    const inv = (p.inventory || []).find(v =>
+      typeof v === "object" &&
+      v &&
+      v.id === "small_herb" &&
+      (v.count || 0) > 0
+    );
+
+    if(inv && p.hp < p.maxHp){
+      inv.count--;
+      p.hp = Math.min(p.maxHp, p.hp + HERB_HEAL_AMOUNT);
+
+      if(typeof msg === "function"){
+        msg("薬草を使った！ HP+" + HERB_HEAL_AMOUNT, 50);
+      }
+    }
+  };
+
+  console.log(
+    "herb heal boost patch loaded:",
+    typeof window !== "undefined"
+      ? window.__herbHealBoostPatchVersion
+      : "v1"
+  );
+})();
+/*
+  最終アビス HP残り少しで倒せないバグ修正パッチ
+
+  原因:
+    dmgB() のたびに __applyStageBossHpScale() が呼ばれ、
+    HP補正側の最低HP割合 1% 保護によって、
+    アビスのHPが残り少しから戻され続けることがある。
+
+  修正:
+    最終アビスが低HPになった後は、戦闘中HP補正をスキップする。
+    さらに hp <= 0 になった場合は必ず撃破処理へ進める。
+*/
+(function(){
+  "use strict";
+
+  if(typeof window !== "undefined" && window.__finalAbyssLowHpKillFixApplied){
+    return;
+  }
+
+  if(typeof window !== "undefined"){
+    window.__finalAbyssLowHpKillFixApplied = true;
+    window.__finalAbyssLowHpKillFixVersion = "final-abyss-low-hp-kill-fix-v1";
+  }
+
+  /*
+    2%以下になったらHP補正を止める。
+    元の問題は1%下限なので、少し余裕を持って2%。
+  */
+  const ABYSS_SCALE_STOP_RATE = 0.02;
+
+  function isFinalAbyssBoss(b){
+    if(typeof G === "undefined" || !G || !b){
+      return false;
+    }
+
+    if((G.stageIndex || 0) !== 6){
+      return false;
+    }
+
+    const id = String(b.id || "");
+    const name = String(b.name || "");
+
+    return !!(
+      G.__stage7FinalAbyss ||
+      id.includes("abyss") ||
+      id.includes("overlord") ||
+      name.includes("アビス") ||
+      name.includes("オーバーロード")
+    );
+  }
+
+  function bossHpRate(b){
+    if(!b){
+      return 1;
+    }
+
+    const hp = Number(b.hp);
+    const maxHp = Number(b.maxHp);
+
+    if(!Number.isFinite(hp) || !Number.isFinite(maxHp) || maxHp <= 0){
+      return 1;
+    }
+
+    return hp / maxHp;
+  }
+
+  function finishFinalAbyssDefeat(b){
+    if(typeof G === "undefined" || !G){
+      return;
+    }
+
+    if(!b){
+      b = G.boss;
+    }
+
+    if(!isFinalAbyssBoss(b)){
+      return;
+    }
+
+    G.__stage7FinalAbyssDefeated = true;
+
+    G.boss = null;
+    G.bossDefeatT = 120;
+    G.state = "bossDefeat";
+
+    G.bullets = [];
+    G.bossBullets = [];
+    G.bossZones = [];
+    G.enemyBullets = [];
+
+    if(G.map){
+      G.map.__bossDefeated = true;
+    }
+
+    if(typeof msg === "function"){
+      msg("アビス・オーバーロード撃破！", 150);
+    }
+  }
+
+  /*
+    HP補正を包む。
+    最終アビスが低HPになった後は、補正をスキップする。
+  */
+  if(
+    typeof window !== "undefined" &&
+    typeof window.__applyStageBossHpScale === "function" &&
+    !window.__applyStageBossHpScale.__finalAbyssLowHpKillFixWrapped
+  ){
+    const oldApplyStageBossHpScale = window.__applyStageBossHpScale;
+
+    window.__applyStageBossHpScale = function(){
+      const b = (typeof G !== "undefined" && G) ? G.boss : null;
+
+      if(isFinalAbyssBoss(b)){
+        const rate = bossHpRate(b);
+
+        if(rate <= ABYSS_SCALE_STOP_RATE){
+          b.__finalAbyssHpScaleStopped = true;
+          return false;
+        }
+      }
+
+      return oldApplyStageBossHpScale.apply(this, arguments);
+    };
+
+    window.__applyStageBossHpScale.__finalAbyssLowHpKillFixWrapped = true;
+  }
+
+  /*
+    dmgBも包む。
+    万一、他パッチの影響で hp <= 0 なのに撃破処理が抜けた場合でも、
+    最終アビスだけは必ず撃破状態へ進める。
+  */
+  if(typeof dmgB === "function" && !dmgB.__finalAbyssLowHpKillFixWrapped){
+    const oldDmgB = dmgB;
+
+    dmgB = function(damage){
+      const beforeBoss = (typeof G !== "undefined" && G) ? G.boss : null;
+      const wasFinalAbyss = isFinalAbyssBoss(beforeBoss);
+
+      const result = oldDmgB.apply(this, arguments);
+
+      const afterBoss = (typeof G !== "undefined" && G) ? G.boss : null;
+
+      if(wasFinalAbyss && afterBoss && isFinalAbyssBoss(afterBoss)){
+        const hp = Number(afterBoss.hp);
+
+        if(Number.isFinite(hp) && hp <= 0){
+          finishFinalAbyssDefeat(afterBoss);
+        }
+      }
+
+      return result;
+    };
+
+    dmgB.__finalAbyssLowHpKillFixWrapped = true;
+  }
+
+  /*
+    update後の保険。
+    何らかの処理順で hp <= 0 のアビスが残っても、次フレームで必ず倒す。
+  */
+  if(typeof update === "function" && !update.__finalAbyssLowHpKillFixWrapped){
+    const oldUpdate = update;
+
+    update = function(){
+      const result = oldUpdate.apply(this, arguments);
+
+      if(G && G.boss && isFinalAbyssBoss(G.boss)){
+        const hp = Number(G.boss.hp);
+
+        if(Number.isFinite(hp) && hp <= 0){
+          finishFinalAbyssDefeat(G.boss);
+        }
+      }
+
+      return result;
+    };
+
+    update.__finalAbyssLowHpKillFixWrapped = true;
+  }
+
+  console.log(
+    "final abyss low HP kill fix loaded:",
+    typeof window !== "undefined"
+      ? window.__finalAbyssLowHpKillFixVersion
+      : "v1"
+  );
+})();
+/*
+  タイトル画面 オリジナル絵本風 空島背景パッチ v3
+  - 手前: Stage1草原イメージの空島
+  - 中間: 水晶ステージ風の青い空島
+  - 奥: 火山ステージ風の赤い空島
+
+  貼る場所:
+    game.js の一番最後
+
+  使い方:
+    既存の絵本風タイトル背景パッチ / 火山島版パッチを残したままでもOK。
+    このv3をさらに後ろに貼ると、こちらが優先されます。
+*/
+(function(){
+  "use strict";
+
+  if(typeof window !== "undefined" && window.__titleArtPictureBookCrystalVolcanoApplied){
+    return;
+  }
+
+  if(typeof window !== "undefined"){
+    window.__titleArtPictureBookCrystalVolcanoApplied = true;
+    window.__titleArtPictureBookCrystalVolcanoVersion = "title-art-picture-book-crystal-volcano-v3";
+  }
+
+  function rr(x,y,w,h,r){
+    if(typeof RR === "function"){
+      RR(x,y,w,h,r);
+      return;
+    }
+
+    r = Math.min(r,w / 2,h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r,y);
+    ctx.arcTo(x + w,y,x + w,y + h,r);
+    ctx.arcTo(x + w,y + h,x,y + h,r);
+    ctx.arcTo(x,y + h,x,y,r);
+    ctx.arcTo(x,y,x + w,y,r);
+    ctx.closePath();
+  }
+
+  function blobCloud(x,y,s,a){
+    ctx.save();
+    ctx.globalAlpha = a == null ? 0.82 : a;
+
+    const g = ctx.createLinearGradient(x,y - 28 * s,x,y + 24 * s);
+    g.addColorStop(0,"rgba(255,255,255,.98)");
+    g.addColorStop(1,"rgba(225,248,255,.72)");
+    ctx.fillStyle = g;
+
+    ctx.beginPath();
+    ctx.ellipse(x,y,42 * s,16 * s,0,0,Math.PI * 2);
+    ctx.ellipse(x - 30 * s,y + 2 * s,25 * s,13 * s,0,0,Math.PI * 2);
+    ctx.ellipse(x + 31 * s,y + 3 * s,28 * s,13 * s,0,0,Math.PI * 2);
+    ctx.ellipse(x - 13 * s,y - 11 * s,24 * s,17 * s,0,0,Math.PI * 2);
+    ctx.ellipse(x + 14 * s,y - 10 * s,22 * s,15 * s,0,0,Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function drawBookTree(x,y,s){
+    ctx.save();
+
+    ctx.fillStyle = "#87522d";
+    rr(x - 5 * s,y - 7 * s,10 * s,24 * s,4 * s);
+    ctx.fill();
+
+    const leaf = ctx.createRadialGradient(
+      x - 6 * s,
+      y - 28 * s,
+      4 * s,
+      x,
+      y - 20 * s,
+      28 * s
+    );
+    leaf.addColorStop(0,"#d8ff9a");
+    leaf.addColorStop(0.45,"#6ee178");
+    leaf.addColorStop(1,"#349f55");
+
+    ctx.fillStyle = leaf;
+    ctx.beginPath();
+    ctx.ellipse(x,y - 28 * s,20 * s,17 * s,0,0,Math.PI * 2);
+    ctx.ellipse(x - 15 * s,y - 18 * s,15 * s,13 * s,-0.2,0,Math.PI * 2);
+    ctx.ellipse(x + 15 * s,y - 18 * s,15 * s,13 * s,0.2,0,Math.PI * 2);
+    ctx.ellipse(x,y - 13 * s,17 * s,12 * s,0,0,Math.PI * 2);
+    ctx.fill();
+
+    ctx.globalAlpha = 0.35;
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.ellipse(x - 8 * s,y - 31 * s,6 * s,3 * s,-0.35,0,Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function drawBookRock(x,y,s){
+    ctx.save();
+
+    const g = ctx.createLinearGradient(x - 20 * s,y - 18 * s,x + 22 * s,y + 18 * s);
+    g.addColorStop(0,"#c5d0d4");
+    g.addColorStop(0.55,"#8499a2");
+    g.addColorStop(1,"#52666e");
+
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(x - 21 * s,y + 10 * s);
+    ctx.lineTo(x - 13 * s,y - 8 * s);
+    ctx.lineTo(x + 2 * s,y - 18 * s);
+    ctx.lineTo(x + 19 * s,y - 4 * s);
+    ctx.lineTo(x + 23 * s,y + 11 * s);
+    ctx.lineTo(x + 8 * s,y + 19 * s);
+    ctx.lineTo(x - 12 * s,y + 17 * s);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.globalAlpha = 0.25;
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.moveTo(x - 8 * s,y - 6 * s);
+    ctx.lineTo(x + 2 * s,y - 16 * s);
+    ctx.lineTo(x + 6 * s,y + 4 * s);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function drawBookIsland(cx,cy,s){
+    ctx.save();
+
+    ctx.globalAlpha = 0.22;
+    ctx.fillStyle = "rgba(0,45,80,.38)";
+    ctx.beginPath();
+    ctx.ellipse(cx,cy + 102 * s,120 * s,24 * s,0,0,Math.PI * 2);
+    ctx.fill();
+
+    ctx.globalAlpha = 1;
+
+    const grass = ctx.createLinearGradient(cx,cy - 55 * s,cx,cy + 30 * s);
+    grass.addColorStop(0,"#caff7f");
+    grass.addColorStop(0.45,"#6fe36f");
+    grass.addColorStop(1,"#2f9f52");
+
+    ctx.fillStyle = grass;
+    ctx.beginPath();
+    ctx.ellipse(cx,cy,132 * s,50 * s,0,0,Math.PI * 2);
+    ctx.fill();
+
+    ctx.globalAlpha = 0.36;
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.ellipse(cx - 36 * s,cy - 18 * s,70 * s,15 * s,-0.08,0,Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    const dirt = ctx.createLinearGradient(cx,cy + 10 * s,cx,cy + 118 * s);
+    dirt.addColorStop(0,"#9a733b");
+    dirt.addColorStop(0.48,"#6d4b2b");
+    dirt.addColorStop(1,"#3b2922");
+
+    ctx.fillStyle = dirt;
+    ctx.beginPath();
+    ctx.moveTo(cx - 118 * s,cy + 12 * s);
+    ctx.quadraticCurveTo(cx - 78 * s,cy + 70 * s,cx - 24 * s,cy + 112 * s);
+    ctx.quadraticCurveTo(cx,cy + 132 * s,cx + 28 * s,cy + 110 * s);
+    ctx.quadraticCurveTo(cx + 82 * s,cy + 68 * s,cx + 118 * s,cy + 12 * s);
+    ctx.quadraticCurveTo(cx,cy + 48 * s,cx - 118 * s,cy + 12 * s);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.globalAlpha = 0.25;
+    ctx.strokeStyle = "#e4b76e";
+    ctx.lineWidth = 2 * s;
+    ctx.beginPath();
+    ctx.moveTo(cx - 58 * s,cy + 35 * s);
+    ctx.quadraticCurveTo(cx - 42 * s,cy + 75 * s,cx - 25 * s,cy + 104 * s);
+    ctx.moveTo(cx + 16 * s,cy + 36 * s);
+    ctx.quadraticCurveTo(cx + 5 * s,cy + 78 * s,cx,cy + 118 * s);
+    ctx.moveTo(cx + 66 * s,cy + 30 * s);
+    ctx.quadraticCurveTo(cx + 50 * s,cy + 62 * s,cx + 34 * s,cy + 92 * s);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    drawBookTree(cx - 55 * s,cy - 10 * s,s);
+    drawBookTree(cx + 45 * s,cy - 5 * s,s * 0.72);
+    drawBookRock(cx + 4 * s,cy + 4 * s,s * 0.62);
+    drawBookRock(cx - 90 * s,cy + 4 * s,s * 0.44);
+
+    ctx.globalAlpha = 0.2 + Math.sin((G.time || 0) * 0.05) * 0.04;
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 2 * s;
+    ctx.beginPath();
+    ctx.ellipse(cx,cy + 20 * s,152 * s,58 * s,0,0,Math.PI * 2);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  /*
+    水晶ステージ風 空島
+  */
+  function drawCrystalShard(x,y,s,rot,color1,color2){
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.rotate(rot || 0);
+
+    const g = ctx.createLinearGradient(0,-28 * s,0,30 * s);
+    g.addColorStop(0,"#ffffff");
+    g.addColorStop(0.35,color1 || "#d8ffff");
+    g.addColorStop(1,color2 || "#49bcd4");
+
+    ctx.fillStyle = g;
+    ctx.strokeStyle = "rgba(255,255,255,.78)";
+    ctx.lineWidth = 1.5 * s;
+
+    ctx.beginPath();
+    ctx.moveTo(0,-32 * s);
+    ctx.lineTo(15 * s,-4 * s);
+    ctx.lineTo(8 * s,28 * s);
+    ctx.lineTo(-8 * s,28 * s);
+    ctx.lineTo(-15 * s,-4 * s);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.globalAlpha = 0.34;
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.moveTo(-3 * s,-24 * s);
+    ctx.lineTo(5 * s,-2 * s);
+    ctx.lineTo(0,18 * s);
+    ctx.lineTo(-5 * s,-2 * s);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function drawCrystalRock(x,y,s){
+    ctx.save();
+
+    const g = ctx.createLinearGradient(x - 16 * s,y - 16 * s,x + 18 * s,y + 18 * s);
+    g.addColorStop(0,"#d8ffff");
+    g.addColorStop(0.55,"#65cfe6");
+    g.addColorStop(1,"#2d7f9a");
+
+    ctx.fillStyle = g;
+    ctx.strokeStyle = "rgba(255,255,255,.62)";
+    ctx.lineWidth = 1 * s;
+    ctx.beginPath();
+    ctx.moveTo(x - 18 * s,y + 10 * s);
+    ctx.lineTo(x - 8 * s,y - 12 * s);
+    ctx.lineTo(x + 8 * s,y - 16 * s);
+    ctx.lineTo(x + 20 * s,y + 3 * s);
+    ctx.lineTo(x + 10 * s,y + 16 * s);
+    ctx.lineTo(x - 12 * s,y + 15 * s);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  function drawCrystalIsland(cx,cy,s){
+    const t = G.time || 0;
+
+    ctx.save();
+    ctx.globalAlpha = 0.72;
+
+    /*
+      青い影
+    */
+    ctx.save();
+    ctx.globalAlpha = 0.18;
+    ctx.fillStyle = "rgba(80,220,255,.65)";
+    ctx.beginPath();
+    ctx.ellipse(cx,cy + 78 * s,92 * s,18 * s,0,0,Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    /*
+      水晶地表
+    */
+    const ground = ctx.createLinearGradient(cx,cy - 34 * s,cx,cy + 26 * s);
+    ground.addColorStop(0,"#d8ffff");
+    ground.addColorStop(0.34,"#72f7ff");
+    ground.addColorStop(1,"#2f91ad");
+
+    ctx.fillStyle = ground;
+    ctx.beginPath();
+    ctx.ellipse(cx,cy,98 * s,36 * s,0,0,Math.PI * 2);
+    ctx.fill();
+
+    /*
+      上面ハイライト
+    */
+    ctx.save();
+    ctx.globalAlpha = 0.42;
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.ellipse(cx - 25 * s,cy - 12 * s,52 * s,10 * s,-0.08,0,Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    /*
+      水晶島の下側
+    */
+    const under = ctx.createLinearGradient(cx,cy + 8 * s,cx,cy + 88 * s);
+    under.addColorStop(0,"#4faec4");
+    under.addColorStop(0.5,"#2f718d");
+    under.addColorStop(1,"#1c3c5c");
+
+    ctx.fillStyle = under;
+    ctx.beginPath();
+    ctx.moveTo(cx - 86 * s,cy + 10 * s);
+    ctx.quadraticCurveTo(cx - 54 * s,cy + 52 * s,cx - 17 * s,cy + 84 * s);
+    ctx.quadraticCurveTo(cx + 4 * s,cy + 98 * s,cx + 25 * s,cy + 78 * s);
+    ctx.quadraticCurveTo(cx + 62 * s,cy + 50 * s,cx + 88 * s,cy + 10 * s);
+    ctx.quadraticCurveTo(cx,cy + 34 * s,cx - 86 * s,cy + 10 * s);
+    ctx.closePath();
+    ctx.fill();
+
+    /*
+      下側の水晶筋
+    */
+    ctx.save();
+    ctx.globalAlpha = 0.32;
+    ctx.strokeStyle = "#d8ffff";
+    ctx.lineWidth = 1.5 * s;
+    ctx.beginPath();
+    ctx.moveTo(cx - 42 * s,cy + 28 * s);
+    ctx.quadraticCurveTo(cx - 30 * s,cy + 54 * s,cx - 16 * s,cy + 78 * s);
+    ctx.moveTo(cx + 4 * s,cy + 26 * s);
+    ctx.quadraticCurveTo(cx - 2 * s,cy + 58 * s,cx + 4 * s,cy + 88 * s);
+    ctx.moveTo(cx + 46 * s,cy + 24 * s);
+    ctx.quadraticCurveTo(cx + 32 * s,cy + 50 * s,cx + 20 * s,cy + 72 * s);
+    ctx.stroke();
+    ctx.restore();
+
+    /*
+      水晶の柱
+    */
+    drawCrystalShard(
+      cx - 28 * s,
+      cy - 18 * s + Math.sin(t * 0.03) * 1.5 * s,
+      s * 0.72,
+      -0.18,
+      "#eaffff",
+      "#43cde6"
+    );
+
+    drawCrystalShard(
+      cx + 12 * s,
+      cy - 24 * s + Math.sin(t * 0.035 + 1) * 1.5 * s,
+      s * 0.92,
+      0.10,
+      "#ffffff",
+      "#36b6dc"
+    );
+
+    drawCrystalShard(
+      cx + 46 * s,
+      cy - 9 * s + Math.sin(t * 0.033 + 2) * 1.3 * s,
+      s * 0.55,
+      0.28,
+      "#e5ffff",
+      "#53c7e8"
+    );
+
+    drawCrystalRock(cx - 64 * s,cy + 5 * s,s * 0.42);
+    drawCrystalRock(cx + 65 * s,cy + 8 * s,s * 0.36);
+
+    /*
+      水晶の小粒
+    */
+    ctx.save();
+    for(let i=0;i<7;i++){
+      const a = i * 0.9 + t * 0.015;
+      const px = cx + Math.cos(a) * (56 + i % 3 * 8) * s;
+      const py = cy + Math.sin(a) * (20 + i % 2 * 6) * s;
+      ctx.globalAlpha = 0.30 + (i % 3) * 0.06;
+      ctx.fillStyle = i % 2 === 0 ? "#ffffff" : "#d8ffff";
+      ctx.beginPath();
+      ctx.arc(px,py,2.2 * s,0,Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    /*
+      水晶島の浮遊リング
+    */
+    ctx.save();
+    ctx.globalAlpha = 0.20 + Math.sin(t * 0.06 + 1.5) * 0.04;
+    ctx.strokeStyle = "#d8ffff";
+    ctx.lineWidth = 2 * s;
+    ctx.beginPath();
+    ctx.ellipse(cx,cy + 16 * s,112 * s,40 * s,0,0,Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.restore();
+  }
+
+  /*
+    火山ステージ風 空島
+  */
+  function drawVolcanoSmoke(x,y,s,t){
+    ctx.save();
+
+    for(let i=0;i<4;i++){
+      const k = i / 4;
+      const px = x + Math.sin(t * 0.018 + i * 1.4) * 8 * s + i * 3 * s;
+      const py = y - k * 26 * s - ((t * 0.22 + i * 9) % 18) * s;
+
+      ctx.globalAlpha = 0.22 - i * 0.025;
+      ctx.fillStyle = i % 2 === 0 ? "#5b4a4a" : "#7b6b64";
+      ctx.beginPath();
+      ctx.ellipse(px,py,14 * s + i * 4 * s,8 * s + i * 2 * s,0,0,Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
+  function drawVolcanoLavaTree(x,y,s){
+    ctx.save();
+
+    ctx.fillStyle = "#3a1d16";
+    rr(x - 3 * s,y - 7 * s,6 * s,18 * s,2 * s);
+    ctx.fill();
+
+    const g = ctx.createRadialGradient(x - 3 * s,y - 20 * s,2 * s,x,y - 16 * s,18 * s);
+    g.addColorStop(0,"#ffb347");
+    g.addColorStop(0.45,"#c84d32");
+    g.addColorStop(1,"#5e251f");
+
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.ellipse(x,y - 20 * s,13 * s,11 * s,0,0,Math.PI * 2);
+    ctx.ellipse(x - 8 * s,y - 13 * s,9 * s,8 * s,-0.2,0,Math.PI * 2);
+    ctx.ellipse(x + 8 * s,y - 13 * s,9 * s,8 * s,0.2,0,Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function drawVolcanoRock(x,y,s){
+    ctx.save();
+
+    const g = ctx.createLinearGradient(x - 18 * s,y - 16 * s,x + 18 * s,y + 18 * s);
+    g.addColorStop(0,"#8a6a60");
+    g.addColorStop(0.55,"#573a37");
+    g.addColorStop(1,"#2c1d1b");
+
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(x - 18 * s,y + 10 * s);
+    ctx.lineTo(x - 10 * s,y - 8 * s);
+    ctx.lineTo(x + 2 * s,y - 16 * s);
+    ctx.lineTo(x + 17 * s,y - 3 * s);
+    ctx.lineTo(x + 20 * s,y + 11 * s);
+    ctx.lineTo(x + 7 * s,y + 17 * s);
+    ctx.lineTo(x - 10 * s,y + 16 * s);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.globalAlpha = 0.24;
+    ctx.fillStyle = "#ffc66b";
+    ctx.beginPath();
+    ctx.moveTo(x - 4 * s,y - 4 * s);
+    ctx.lineTo(x + 2 * s,y - 12 * s);
+    ctx.lineTo(x + 5 * s,y + 6 * s);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function drawVolcanoIsland(cx,cy,s){
+    const t = G.time || 0;
+
+    ctx.save();
+    ctx.globalAlpha = 0.78;
+
+    ctx.save();
+    ctx.globalAlpha = 0.20;
+    ctx.fillStyle = "rgba(160,55,30,.58)";
+    ctx.beginPath();
+    ctx.ellipse(cx,cy + 82 * s,96 * s,20 * s,0,0,Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    const ground = ctx.createLinearGradient(cx,cy - 34 * s,cx,cy + 28 * s);
+    ground.addColorStop(0,"#ff9a4a");
+    ground.addColorStop(0.36,"#c95735");
+    ground.addColorStop(1,"#6b2b25");
+
+    ctx.fillStyle = ground;
+    ctx.beginPath();
+    ctx.ellipse(cx,cy,104 * s,38 * s,0,0,Math.PI * 2);
+    ctx.fill();
+
+    ctx.save();
+    ctx.globalAlpha = 0.55 + Math.sin(t * 0.08) * 0.08;
+    ctx.strokeStyle = "#ffd84d";
+    ctx.lineWidth = 3 * s;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(cx - 62 * s,cy - 6 * s);
+    ctx.quadraticCurveTo(cx - 38 * s,cy + 8 * s,cx - 8 * s,cy + 2 * s);
+    ctx.quadraticCurveTo(cx + 18 * s,cy - 4 * s,cx + 58 * s,cy + 8 * s);
+    ctx.stroke();
+
+    ctx.strokeStyle = "#ff7048";
+    ctx.lineWidth = 2 * s;
+    ctx.beginPath();
+    ctx.moveTo(cx - 18 * s,cy + 16 * s);
+    ctx.quadraticCurveTo(cx - 2 * s,cy + 28 * s,cx + 26 * s,cy + 20 * s);
+    ctx.stroke();
+    ctx.restore();
+
+    const volcano = ctx.createLinearGradient(cx,cy - 70 * s,cx,cy + 18 * s);
+    volcano.addColorStop(0,"#6b2b25");
+    volcano.addColorStop(0.5,"#8f3d2d");
+    volcano.addColorStop(1,"#3a1d1a");
+
+    ctx.fillStyle = volcano;
+    ctx.beginPath();
+    ctx.moveTo(cx - 54 * s,cy + 10 * s);
+    ctx.lineTo(cx - 20 * s,cy - 62 * s);
+    ctx.quadraticCurveTo(cx,cy - 78 * s,cx + 22 * s,cy - 62 * s);
+    ctx.lineTo(cx + 58 * s,cy + 10 * s);
+    ctx.quadraticCurveTo(cx,cy + 30 * s,cx - 54 * s,cy + 10 * s);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = "#1d1010";
+    ctx.beginPath();
+    ctx.ellipse(cx,cy - 57 * s,24 * s,9 * s,0,0,Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#ffd84d";
+    ctx.globalAlpha = 0.82 + Math.sin(t * 0.12) * 0.08;
+    ctx.beginPath();
+    ctx.ellipse(cx,cy - 56 * s,16 * s,5 * s,0,0,Math.PI * 2);
+    ctx.fill();
+
+    ctx.globalAlpha = 1;
+
+    ctx.save();
+    ctx.globalAlpha = 0.72 + Math.sin(t * 0.09) * 0.08;
+    const lava = ctx.createLinearGradient(cx,cy - 50 * s,cx,cy + 12 * s);
+    lava.addColorStop(0,"#fff7a8");
+    lava.addColorStop(0.35,"#ff8a35");
+    lava.addColorStop(1,"#b51f1a");
+    ctx.fillStyle = lava;
+    ctx.beginPath();
+    ctx.moveTo(cx - 6 * s,cy - 52 * s);
+    ctx.quadraticCurveTo(cx - 10 * s,cy - 20 * s,cx - 4 * s,cy + 6 * s);
+    ctx.quadraticCurveTo(cx + 5 * s,cy - 10 * s,cx + 8 * s,cy - 51 * s);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    const under = ctx.createLinearGradient(cx,cy + 12 * s,cx,cy + 92 * s);
+    under.addColorStop(0,"#713029");
+    under.addColorStop(0.48,"#4a2520");
+    under.addColorStop(1,"#231413");
+
+    ctx.fillStyle = under;
+    ctx.beginPath();
+    ctx.moveTo(cx - 90 * s,cy + 12 * s);
+    ctx.quadraticCurveTo(cx - 56 * s,cy + 58 * s,cx - 18 * s,cy + 88 * s);
+    ctx.quadraticCurveTo(cx + 4 * s,cy + 102 * s,cx + 26 * s,cy + 82 * s);
+    ctx.quadraticCurveTo(cx + 66 * s,cy + 52 * s,cx + 92 * s,cy + 12 * s);
+    ctx.quadraticCurveTo(cx,cy + 36 * s,cx - 90 * s,cy + 12 * s);
+    ctx.closePath();
+    ctx.fill();
+
+    drawVolcanoLavaTree(cx - 62 * s,cy - 2 * s,s * 0.62);
+    drawVolcanoRock(cx + 58 * s,cy + 7 * s,s * 0.55);
+    drawVolcanoRock(cx - 22 * s,cy + 12 * s,s * 0.42);
+
+    drawVolcanoSmoke(cx,cy - 72 * s,s,t);
+
+    ctx.save();
+    ctx.globalAlpha = 0.20 + Math.sin(t * 0.06) * 0.04;
+    ctx.strokeStyle = "#ffd84d";
+    ctx.lineWidth = 2 * s;
+    ctx.beginPath();
+    ctx.ellipse(cx,cy + 18 * s,118 * s,42 * s,0,0,Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.restore();
+  }
+
+  function drawTitlePictureBookCrystalVolcano(){
+    const t = G.time || 0;
+
+    /*
+      空
+    */
+    const sky = ctx.createLinearGradient(0,0,0,VH);
+    sky.addColorStop(0,"#c9fbff");
+    sky.addColorStop(0.42,"#82e5ff");
+    sky.addColorStop(1,"#57b9ff");
+    ctx.fillStyle = sky;
+    ctx.fillRect(0,0,VW,VH);
+
+    /*
+      太陽光
+    */
+    const glow = ctx.createRadialGradient(78,92,8,78,92,165);
+    glow.addColorStop(0,"rgba(255,255,220,.95)");
+    glow.addColorStop(0.28,"rgba(255,245,170,.38)");
+    glow.addColorStop(1,"rgba(255,245,170,0)");
+    ctx.fillStyle = glow;
+    ctx.fillRect(0,0,VW,VH);
+
+    /*
+      雲
+    */
+    blobCloud(58 + Math.sin(t * 0.006) * 4,112,0.72,0.82);
+    blobCloud(298 + Math.sin(t * 0.007 + 1.4) * 5,92,0.58,0.72);
+    blobCloud(306 + Math.sin(t * 0.005 + 2.3) * 5,246,0.82,0.62);
+    blobCloud(72 + Math.sin(t * 0.006 + 3.2) * 4,302,0.50,0.52);
+
+    /*
+      奥の島: 火山ステージ風
+    */
+    drawVolcanoIsland(
+      304 + Math.sin(t * 0.01 + 1.2) * 2,
+      176 + Math.sin(t * 0.018 + 0.8) * 2,
+      0.34
+    );
+
+    /*
+      火山島まわりの赤い薄光
+    */
+    ctx.save();
+    ctx.globalAlpha = 0.11 + Math.sin(t * 0.04) * 0.02;
+    const vg = ctx.createRadialGradient(304,176,12,304,176,92);
+    vg.addColorStop(0,"rgba(255,112,72,.85)");
+    vg.addColorStop(1,"rgba(255,112,72,0)");
+    ctx.fillStyle = vg;
+    ctx.fillRect(200,64,160,180);
+    ctx.restore();
+
+    /*
+      中間の島: 水晶ステージ風
+      火山島より少し手前、草原島より奥に配置。
+    */
+    drawCrystalIsland(
+      112 + Math.sin(t * 0.012 + 2.1) * 2,
+      232 + Math.sin(t * 0.02 + 1.4) * 2,
+      0.42
+    );
+
+    /*
+      水晶島まわりの青い薄光
+    */
+    ctx.save();
+    ctx.globalAlpha = 0.13 + Math.sin(t * 0.05 + 1.2) * 0.025;
+    const cg = ctx.createRadialGradient(112,232,10,112,232,88);
+    cg.addColorStop(0,"rgba(114,247,255,.9)");
+    cg.addColorStop(1,"rgba(114,247,255,0)");
+    ctx.fillStyle = cg;
+    ctx.fillRect(26,142,180,170);
+    ctx.restore();
+
+    /*
+      手前の島: Stage1草原風
+    */
+    drawBookIsland(VW / 2,360 + Math.sin(t * 0.025) * 4,0.88);
+
+    /*
+      タイトル文字
+    */
+    ctx.save();
+    ctx.textAlign = "center";
+    ctx.shadowBlur = 18;
+    ctx.shadowColor = "rgba(0,35,70,.52)";
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "900 34px system-ui";
+    ctx.fillText("SKY ISLAND",VW / 2,208);
+    ctx.fillText("ADVENTURE",VW / 2,248);
+
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "rgba(8,25,45,.52)";
+    rr(70,292,220,34,999);
+    ctx.fill();
+
+    ctx.fillStyle = "#fff7a8";
+    ctx.font = "900 14px system-ui";
+    ctx.fillText("TAP / Z TO START",VW / 2,315);
+
+    ctx.fillStyle = "rgba(255,255,255,.86)";
+    ctx.font = "800 11px system-ui";
+    ctx.fillText("grass / crystal / volcano islands",VW / 2,334);
+    ctx.restore();
+  }
+
+  if(typeof draw === "function" && !draw.__titleArtPictureBookCrystalVolcanoWrapped){
+    const oldDraw = draw;
+
+    draw = function(){
+      if(typeof G !== "undefined" && G && G.state === "title"){
+        drawTitlePictureBookCrystalVolcano();
+        return;
+      }
+
+      return oldDraw.apply(this,arguments);
+    };
+
+    draw.__titleArtPictureBookCrystalVolcanoWrapped = true;
+  }
+
+  console.log(
+    "title art picture book crystal volcano loaded:",
+    typeof window !== "undefined"
+      ? window.__titleArtPictureBookCrystalVolcanoVersion
+      : "v3"
+  );
+})();
