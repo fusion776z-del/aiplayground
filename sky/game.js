@@ -9665,29 +9665,30 @@ function drawPrettyCoin(d){
     ctx.save();
     ctx.translate(pose.headX, pose.headY);
 
+    // 首を大きく短くするため、頭部一式を胴体側へ7pxシフト(実際に使われているのはこの関数)。
     ctx.fillStyle = c.face;
-    rr(ctx, -4, -21, 8, 7, 3);
+    rr(ctx, -4, -14, 8, 7, 3);
     ctx.fill();
 
     ctx.fillStyle = view === "back" && p.curseLifted ? c.hair : c.face;
     ctx.strokeStyle = c.outline;
     ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.ellipse(0, -30, 10, 10.5, 0, 0, TWO_PI);
+    ctx.ellipse(0, -23, 10, 10.5, 0, 0, TWO_PI);
     ctx.fill();
     ctx.stroke();
 
     if(p.curseLifted){
       ctx.fillStyle = c.hair;
       ctx.beginPath();
-      ctx.ellipse(0, -36, 10.8, 5.6, 0, 0, TWO_PI);
+      ctx.ellipse(0, -29, 10.8, 5.6, 0, 0, TWO_PI);
       ctx.fill();
 
       if(view !== "back"){
         ctx.beginPath();
-        ctx.ellipse(-5, -35, 4, 4, -0.4, 0, TWO_PI);
-        ctx.ellipse(2, -37, 5, 4, 0.2, 0, TWO_PI);
-        ctx.ellipse(6, -34, 3, 4, 0.4, 0, TWO_PI);
+        ctx.ellipse(-5, -28, 4, 4, -0.4, 0, TWO_PI);
+        ctx.ellipse(2, -30, 5, 4, 0.2, 0, TWO_PI);
+        ctx.ellipse(6, -27, 3, 4, 0.4, 0, TWO_PI);
         ctx.fill();
       }
     }else{
@@ -9696,12 +9697,12 @@ function drawPrettyCoin(d){
       ctx.lineWidth = 1;
 
       ctx.beginPath();
-      ctx.ellipse(-8, -37, 5, 7, -0.8, 0, TWO_PI);
+      ctx.ellipse(-8, -30, 5, 7, -0.8, 0, TWO_PI);
       ctx.fill();
       ctx.stroke();
 
       ctx.beginPath();
-      ctx.ellipse(8, -37, 5, 7, 0.8, 0, TWO_PI);
+      ctx.ellipse(8, -30, 5, 7, 0.8, 0, TWO_PI);
       ctx.fill();
       ctx.stroke();
     }
@@ -9710,16 +9711,16 @@ function drawPrettyCoin(d){
       ctx.fillStyle = "#172334";
 
       if(view === "side"){
-        ctx.fillRect(4, -31, 2, 2);
+        ctx.fillRect(4, -24, 2, 2);
         ctx.fillStyle = "#ffffff";
-        ctx.fillRect(4.4, -31, 1, 1);
+        ctx.fillRect(4.4, -24, 1, 1);
       }else{
-        ctx.fillRect(-4, -31, 2, 2);
-        ctx.fillRect(3, -31, 2, 2);
+        ctx.fillRect(-4, -24, 2, 2);
+        ctx.fillRect(3, -24, 2, 2);
 
         ctx.fillStyle = "#ffffff";
-        ctx.fillRect(-3.6, -31, 1, 1);
-        ctx.fillRect(3.4, -31, 1, 1);
+        ctx.fillRect(-3.6, -24, 1, 1);
+        ctx.fillRect(3.4, -24, 1, 1);
       }
     }
 
