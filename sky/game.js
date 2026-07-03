@@ -14038,3 +14038,402 @@ if(view === "back"){
       : "v3"
   );
 })();
+/* =========================================================
+   ステージ7だけ宇宙背景 + ボスラッシュ魔法陣背景復活パッチ
+   貼る場所:
+   - game.js の一番下
+   - 以前の宇宙背景パッチよりさらに後ろ
+
+   効果:
+   - Stage1〜Stage6 は通常背景
+   - Stage7 の通常マップだけ宇宙背景 + 流星
+   - Stage7 のボスラッシュ / 決闘空間では
+     大きな魔法陣背景を表示
+   ========================================================= */
+(function(){
+  if(window.__stage7SpaceAndDuelMagicCircleFixApplied) return;
+  window.__stage7SpaceAndDuelMagicCircleFixApplied = true;
+
+  const oldBg = bg;
+
+  function normalTheme(){
+    const i = G.stageIndex || 0;
+
+    return [
+      {
+        sky1:"#bff7ff",
+        sky2:"#7fe7ff",
+        ground1:"#86e26f",
+        ground2:"#4eb65a"
+      },
+      {
+        sky1:"#d7fff0",
+        sky2:"#8ce8c3",
+        ground1:"#5fc96a",
+        ground2:"#287743"
+      },
+      {
+        sky1:"#dffbff",
+        sky2:"#78e7ff",
+        ground1:"#68d4ea",
+        ground2:"#327c9a"
+      },
+      {
+        sky1:"#ffd4a3",
+        sky2:"#ff8b62",
+        ground1:"#d46a43",
+        ground2:"#7f3029"
+      },
+      {
+        sky1:"#f5fbff",
+        sky2:"#a8e8ff",
+        ground1:"#d8c76c",
+        ground2:"#8f8145"
+      },
+      {
+        sky1:"#edf1ff",
+        sky2:"#9b7cff",
+        ground1:"#7ca7ff",
+        ground2:"#31245f"
+      }
+    ][i] || {
+      sky1:"#bff7ff",
+      sky2:"#7fe7ff",
+      ground1:"#86e26f",
+      ground2:"#4eb65a"
+    };
+  }
+
+  function drawNormalStageBackground(){
+    const th = normalTheme();
+
+    const sky = ctx.createLinearGradient(0, 0, 0, VH);
+    sky.addColorStop(0, th.sky1);
+    sky.addColorStop(1, th.sky2);
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, VW, VH);
+
+    if(G.map){
+      ctx.save();
+      ctx.translate(-G.camera.x, -G.camera.y);
+
+      const islandGrad = ctx.createLinearGradient(0, 0, 0, G.map.height);
+      islandGrad.addColorStop(0, th.ground1);
+      islandGrad.addColorStop(1, th.ground2);
+
+      ctx.fillStyle = islandGrad;
+      RR(28, 28, G.map.width - 56, G.map.height - 56, 36);
+      ctx.fill();
+
+      ctx.save();
+      ctx.globalAlpha = 0.14;
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 1;
+
+      for(let yy = 80; yy < G.map.height - 80; yy += 90){
+        ctx.beginPath();
+        ctx.moveTo(60, yy);
+
+        for(let xx = 60; xx < G.map.width - 60; xx += 80){
+          ctx.quadraticCurveTo(xx + 30, yy + 12, xx + 60, yy);
+        }
+
+        ctx.stroke();
+      }
+
+      ctx.restore();
+      ctx.restore();
+    }
+  }
+
+  function drawSpaceSky(){
+    const t = G.time || 0;
+
+    const sky = ctx.createLinearGradient(0, 0, 0, VH);
+    sky.addColorStop(0, "#03000d");
+    sky.addColorStop(0.35, "#12002d");
+    sky.addColorStop(0.72, "#05051f");
+    sky.addColorStop(1, "#00020a");
+
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, VW, VH);
+
+    // 星
+    ctx.save();
+    for(let i = 0; i < 160; i++){
+      const x = ((i * 83 + t * 0.05 - G.camera.x * 0.07) % VW + VW) % VW;
+      const y = ((i * 47 + t * 0.025 - G.camera.y * 0.05) % VH + VH) % VH;
+      const size = i % 13 === 0 ? 2 : i % 5 === 0 ? 1.5 : 1;
+
+      ctx.globalAlpha = i % 7 === 0 ? 0.95 : 0.55;
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(x, y, size, size);
+    }
+    ctx.restore();
+
+    // 星雲
+    ctx.save();
+
+    ctx.globalAlpha = 0.22;
+    ctx.fillStyle = "#7b5cff";
+    ctx.beginPath();
+    ctx.arc(
+      VW * 0.24 - G.camera.x * 0.018,
+      VH * 0.22 - G.camera.y * 0.014,
+      100,
+      0,
+      Math.PI * 2
+    );
+    ctx.fill();
+
+    ctx.globalAlpha = 0.14;
+    ctx.fillStyle = "#00d5ff";
+    ctx.beginPath();
+    ctx.arc(
+      VW * 0.82 - G.camera.x * 0.014,
+      VH * 0.38 - G.camera.y * 0.01,
+      135,
+      0,
+      Math.PI * 2
+    );
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function drawMeteors(){
+    const t = G.time || 0;
+
+    ctx.save();
+
+    for(let i = 0; i < 7; i++){
+      const cycle = 260 + i * 35;
+      const p = ((t * (1.4 + i * 0.08) + i * 80) % cycle) / cycle;
+
+      const startX = VW + 80 + i * 28;
+      const startY = 40 + i * 72;
+
+      const x = startX - p * (VW + 260);
+      const y = startY + p * 210;
+
+      const len = 42 + i * 5;
+      const alpha = p < 0.08 || p > 0.94 ? 0 : 0.35 + (i % 3) * 0.18;
+
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = i % 2 === 0 ? "#ffffff" : "#b8c7ff";
+      ctx.lineWidth = i % 3 === 0 ? 2.4 : 1.6;
+
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + len, y - len * 0.42);
+      ctx.stroke();
+
+      ctx.globalAlpha = Math.min(1, alpha + 0.25);
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.arc(x, y, i % 3 === 0 ? 2.2 : 1.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
+  function drawStage7SpaceIsland(){
+    if(!G.map) return;
+
+    ctx.save();
+    ctx.translate(-G.camera.x, -G.camera.y);
+
+    const islandGrad = ctx.createLinearGradient(0, 0, 0, G.map.height);
+    islandGrad.addColorStop(0, "#2a1a58");
+    islandGrad.addColorStop(0.48, "#171238");
+    islandGrad.addColorStop(1, "#050510");
+
+    ctx.fillStyle = islandGrad;
+    RR(28, 28, G.map.width - 56, G.map.height - 56, 36);
+    ctx.fill();
+
+    // 地面の星模様
+    ctx.save();
+    ctx.globalAlpha = 0.16;
+    ctx.fillStyle = "#ffffff";
+
+    for(let i = 0; i < 190; i++){
+      const x = 50 + (i * 97) % Math.max(1, G.map.width - 100);
+      const y = 50 + (i * 53) % Math.max(1, G.map.height - 100);
+      const s = i % 11 === 0 ? 2 : 1;
+      ctx.fillRect(x, y, s, s);
+    }
+
+    ctx.restore();
+
+    // 外枠の光
+    ctx.strokeStyle = "rgba(210,220,255,.52)";
+    ctx.lineWidth = 3;
+    RR(28, 28, G.map.width - 56, G.map.height - 56, 36);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  function drawStage7NormalSpaceBackground(){
+    drawSpaceSky();
+    drawMeteors();
+    drawStage7SpaceIsland();
+  }
+
+  function drawDuelMagicCircleSpaceBackground(){
+    const t = G.time || 0;
+
+    drawSpaceSky();
+
+    if(!G.map){
+      return;
+    }
+
+    ctx.save();
+    ctx.translate(-G.camera.x, -G.camera.y);
+
+    const mapW = G.map.width || 920;
+    const mapH = G.map.height || 1180;
+
+    const cx = mapW / 2;
+    const cy = mapH / 2 + 40;
+
+    // 決闘空間の床
+    const floor = ctx.createRadialGradient(
+      cx,
+      cy,
+      80,
+      cx,
+      cy,
+      640
+    );
+    floor.addColorStop(0, "#33206f");
+    floor.addColorStop(0.52, "#171238");
+    floor.addColorStop(1, "#050510");
+
+    ctx.fillStyle = floor;
+    RR(34, 34, mapW - 68, mapH - 68, 42);
+    ctx.fill();
+
+    // 外枠
+    ctx.save();
+    ctx.globalAlpha = 0.42;
+    ctx.strokeStyle = "#cfd8ff";
+    ctx.lineWidth = 8;
+    RR(48, 48, mapW - 96, mapH - 96, 38);
+    ctx.stroke();
+    ctx.restore();
+
+    // 大きな魔法陣
+    ctx.save();
+
+    const spin = t * 0.004;
+
+    ctx.globalAlpha = 0.58;
+    ctx.strokeStyle = "#efe7ff";
+    ctx.lineWidth = 5;
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, 245, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.globalAlpha = 0.46;
+    ctx.lineWidth = 4;
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, 176, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, 96, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // 回転ルーン線
+    ctx.globalAlpha = 0.64;
+    ctx.strokeStyle = "#b8a8ff";
+    ctx.lineWidth = 2;
+
+    for(let i = 0; i < 16; i++){
+      const a = spin + i / 16 * Math.PI * 2;
+
+      const x1 = cx + Math.cos(a) * 104;
+      const y1 = cy + Math.sin(a) * 104;
+
+      const x2 = cx + Math.cos(a) * 236;
+      const y2 = cy + Math.sin(a) * 236;
+
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+    }
+
+    // 魔法陣の星点
+    ctx.fillStyle = "#ffffff";
+
+    for(let i = 0; i < 28; i++){
+      const a = -spin * 2 + i / 28 * Math.PI * 2;
+      const r = i % 2 === 0 ? 176 : 245;
+
+      const x = cx + Math.cos(a) * r;
+      const y = cy + Math.sin(a) * r;
+
+      ctx.globalAlpha = 0.35 + (i % 5) * 0.08;
+      ctx.beginPath();
+      ctx.arc(x, y, 3 + (i % 3), 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // 中心光
+    const core = ctx.createRadialGradient(cx, cy, 8, cx, cy, 130);
+    core.addColorStop(0, "rgba(255,255,255,.86)");
+    core.addColorStop(0.35, "rgba(184,168,255,.36)");
+    core.addColorStop(1, "rgba(120,70,255,0)");
+
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = core;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 130, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+
+    // 流星も少しだけ重ねる
+    ctx.restore();
+
+    drawMeteors();
+  }
+
+  bg = function(){
+    if(!G || !G.map){
+      oldBg();
+      return;
+    }
+
+    /*
+      ここが重要。
+      ボスラッシュ / 決闘空間では、通常の宇宙島背景ではなく、
+      大きな魔法陣つき背景を必ず描く。
+    */
+    if(G.map.__duelSpace){
+      drawDuelMagicCircleSpaceBackground();
+      return;
+    }
+
+    /*
+      Stage7 通常マップだけ宇宙背景。
+      backgroundTheme が space でも、Stage7以外では宇宙にしない。
+    */
+    if(G.stageIndex === 6){
+      drawStage7NormalSpaceBackground();
+      return;
+    }
+
+    /*
+      Stage1〜Stage6 は通常背景に戻す。
+    */
+    drawNormalStageBackground();
+  };
+})();

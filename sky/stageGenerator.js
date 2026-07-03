@@ -147,7 +147,6 @@ function getEnemyPool(theme){
       "wind_bat",
       "spike_beast"
     ],
-
     forest: [
       "slime",
       "slime",
@@ -159,7 +158,6 @@ function getEnemyPool(theme){
       "spike_beast",
       "rune_mage"
     ],
-
     cave: [
       "blue_slime",
       "blue_slime",
@@ -171,7 +169,6 @@ function getEnemyPool(theme){
       "rune_mage",
       "star_drone"
     ],
-
     fire: [
       "slime",
       "armored_slime",
@@ -184,7 +181,6 @@ function getEnemyPool(theme){
       "spike_beast",
       "shadow_knight"
     ],
-
     ruin: [
       "armored_slime",
       "armored_slime",
@@ -198,7 +194,6 @@ function getEnemyPool(theme){
       "star_drone",
       "star_drone"
     ],
-
     star: [
       "crystal_slime",
       "crystal_slime",
@@ -212,7 +207,6 @@ function getEnemyPool(theme){
       "star_drone",
       "abyss_wraith"
     ],
-
     void: [
       "armored_slime",
       "void_fast",
@@ -228,7 +222,6 @@ function getEnemyPool(theme){
       "abyss_wraith"
     ]
   };
-
   return pools[theme] || ["slime"];
 }
 
@@ -239,12 +232,10 @@ function pickEnemy(theme, index){
 
 function generateTerrain(layout, width, height){
   const terrain = [];
-
   terrain.push({x:0, y:0, w:width, h:30, type:"cliff"});
   terrain.push({x:0, y:0, w:30, h:height, type:"cliff"});
   terrain.push({x:width - 30, y:0, w:30, h:height, type:"cliff"});
   terrain.push({x:0, y:height - 30, w:width, h:30, type:"cliff"});
-
   terrain.push({x:30, y:270, w:Math.floor(width / 2) - 108, h:44, type:"stone"});
   terrain.push({x:Math.floor(width / 2) + 78, y:270, w:Math.floor(width / 2) - 108, h:44, type:"stone"});
 
@@ -322,7 +313,6 @@ function generateTerrain(layout, width, height){
 
 function generateChests(theme, width, height){
   const keyId = theme + "_key";
-
   return [
     {
       id:"key",
@@ -387,7 +377,6 @@ function generateShops(theme, width, height){
 function generateEnemies(theme, width, height, stageId){
   const enemies = [];
   const count = 18 + stageId * 6;
-
   for(let i = 0; i < count; i++){
     enemies.push({
       id:pickEnemy(theme, i + rand(0, 5)),
@@ -395,7 +384,6 @@ function generateEnemies(theme, width, height, stageId){
       y:rand(360, height - 260)
     });
   }
-
   return enemies;
 }
 
@@ -409,6 +397,8 @@ function createStage(id, theme, layout){
   return {
     id:"stage" + id,
     name:getStageName(theme),
+    theme:theme,
+    backgroundTheme: theme === "void" ? "space" : "normal",
     width:width,
     height:height,
     spawn:{x:190, y:height - 200},
