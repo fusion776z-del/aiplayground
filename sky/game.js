@@ -11961,240 +11961,14 @@ if(view === "back"){
   }
 
   /*
-    宇宙背景。
-    既存の bg が Stage7 ボスラッシュ中に草原系 fallback になる場合を上書きする。
+    宇宙背景の描画はここでは行わない。
+    Stage7の背景（通常マップ／ボスラッシュ・決闘空間）は
+    ファイル末尾の「Stage7背景統合パッチ」が bg() を一括で担当する。
+    ここで bg を上書きすると、末尾パッチの bg 上書きと競合し、
+    ボスラッシュ／決闘空間の魔法陣背景が描かれなくなるため、
+    このパッチでは状態フラグ（__stage7RushArena など）の管理のみ行い、
+    背景描画そのものには関与しない。
   */
-  var oldBgStage7Space = typeof bg === "function" ? bg : null;
-
-  function drawStage7SpaceBackground(){
-    if(typeof ctx === "undefined") return;
-
-    var time = (typeof G !== "undefined" && G) ? (G.time || 0) : 0;
-    var vw = typeof VW !== "undefined" ? VW : 360;
-    var vh = typeof VH !== "undefined" ? VH : 640;
-
-    /*
-      宇宙グラデーション
-    */
-    var sky = ctx.createLinearGradient(0, 0, 0, vh);
-    sky.addColorStop(0, "#050014");
-    sky.addColorStop(0.30, "#10002c");
-    sky.addColorStop(0.62, "#22104d");
-    sky.addColorStop(1, "#04000b");
-    ctx.fillStyle = sky;
-    ctx.fillRect(0, 0, vw, vh);
-
-    /*
-      星雲
-    */
-    ctx.save();
-
-    ctx.globalAlpha = 0.34;
-    var nebula1 = ctx.createRadialGradient(
-      vw * 0.26,
-      vh * 0.22,
-      10,
-      vw * 0.26,
-      vh * 0.22,
-      vh * 0.56
-    );
-    nebula1.addColorStop(0, "rgba(181,107,255,0.62)");
-    nebula1.addColorStop(0.45, "rgba(99,216,255,0.22)");
-    nebula1.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = nebula1;
-    ctx.fillRect(0, 0, vw, vh);
-
-    ctx.globalAlpha = 0.25;
-    var nebula2 = ctx.createRadialGradient(
-      vw * 0.78,
-      vh * 0.45,
-      12,
-      vw * 0.78,
-      vh * 0.45,
-      vh * 0.52
-    );
-    nebula2.addColorStop(0, "rgba(255,216,77,0.30)");
-    nebula2.addColorStop(0.42, "rgba(139,92,255,0.25)");
-    nebula2.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = nebula2;
-    ctx.fillRect(0, 0, vw, vh);
-
-    ctx.restore();
-
-    /*
-      星
-    */
-    ctx.save();
-
-    for(var i = 0; i < 110; i++){
-      var x = (i * 73 + 19) % vw;
-      var y = (i * 131 + 47 + Math.floor(time * 0.10)) % vh;
-      var twinkle = 0.35 + Math.sin(time * 0.06 + i * 1.7) * 0.28;
-      var size = 1 + (i % 3) * 0.45;
-
-      ctx.globalAlpha = Math.max(0.12, twinkle);
-      ctx.fillStyle = i % 7 === 0 ? "#fff7a8" : i % 5 === 0 ? "#9ef7ff" : "#ffffff";
-      ctx.fillRect(x, y, size, size);
-    }
-
-    ctx.restore();
-
-    /*
-      流れ星
-    */
-    ctx.save();
-    ctx.globalAlpha = 0.56;
-    ctx.strokeStyle = "#9ef7ff";
-    ctx.lineWidth = 1.4;
-    ctx.lineCap = "round";
-
-    for(var s = 0; s < 3; s++){
-      var sx = (time * (1.6 + s * 0.45) + s * 120) % (vw + 160) - 80;
-      var sy = 90 + s * 145 + Math.sin(time * 0.015 + s) * 28;
-
-      ctx.beginPath();
-      ctx.moveTo(sx, sy);
-      ctx.lineTo(sx - 42, sy + 18);
-      ctx.stroke();
-    }
-
-    ctx.restore();
-
-    /*
-      宇宙に浮かぶアリーナ床。
-      terrain は後で drawTerrain が描くので、ここでは土台と魔法円を描く。
-    */
-    if(typeof G !== "undefined" && G && G.map && G.camera){
-      ctx.save();
-      ctx.translate(-G.camera.x, -G.camera.y);
-
-      var mapW = G.map.width || 920;
-      var mapH = G.map.height || 1180;
-
-      var floorGrad = ctx.createRadialGradient(
-        mapW / 2,
-        mapH / 2,
-        80,
-        mapW / 2,
-        mapH / 2,
-        Math.max(mapW, mapH) * 0.70
-      );
-
-      floorGrad.addColorStop(0, "#3b2a7a");
-      floorGrad.addColorStop(0.45, "#241052");
-      floorGrad.addColorStop(0.82, "#10051f");
-      floorGrad.addColorStop(1, "#05000d");
-
-      ctx.fillStyle = floorGrad;
-
-      if(typeof RR === "function"){
-        RR(34, 34, mapW - 68, mapH - 68, 42);
-        ctx.fill();
-      }else{
-        ctx.fillRect(34, 34, mapW - 68, mapH - 68);
-      }
-
-      /*
-        外周ライン
-      */
-      ctx.save();
-      ctx.globalAlpha = 0.38;
-      ctx.strokeStyle = "#b56bff";
-      ctx.lineWidth = 6;
-
-      if(typeof RR === "function"){
-        RR(52, 52, mapW - 104, mapH - 104, 38);
-        ctx.stroke();
-      }else{
-        ctx.strokeRect(52, 52, mapW - 104, mapH - 104);
-      }
-
-      /*
-        魔法円
-      */
-      ctx.globalAlpha = 0.30;
-      ctx.strokeStyle = "#9ef7ff";
-      ctx.lineWidth = 3;
-
-      ctx.beginPath();
-      ctx.arc(mapW / 2, mapH / 2 + 70, 220, 0, TWO_PI);
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.arc(mapW / 2, mapH / 2 + 70, 145, 0, TWO_PI);
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.arc(mapW / 2, mapH / 2 + 70, 72, 0, TWO_PI);
-      ctx.stroke();
-
-      /*
-        回転ルーン線
-      */
-      ctx.globalAlpha = 0.44;
-      ctx.strokeStyle = "#efe7ff";
-      ctx.lineWidth = 2;
-
-      var spin = time * 0.006;
-
-      for(var r = 0; r < 12; r++){
-        var a = spin + r / 12 * TWO_PI;
-        var x1 = mapW / 2 + Math.cos(a) * 90;
-        var y1 = mapH / 2 + 70 + Math.sin(a) * 90;
-        var x2 = mapW / 2 + Math.cos(a) * 218;
-        var y2 = mapH / 2 + 70 + Math.sin(a) * 218;
-
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.stroke();
-      }
-
-      /*
-        浮遊する光粒
-      */
-      ctx.fillStyle = "#ffffff";
-
-      for(var p = 0; p < 36; p++){
-        var pa = p * 0.83 + time * 0.012;
-        var pr = 260 + Math.sin(time * 0.02 + p) * 46;
-        var px = mapW / 2 + Math.cos(pa) * pr;
-        var py = mapH / 2 + 70 + Math.sin(pa) * pr * 0.72;
-
-        ctx.globalAlpha = 0.18 + (p % 5) * 0.05;
-        ctx.beginPath();
-        ctx.arc(px, py, 2 + (p % 3), 0, TWO_PI);
-        ctx.fill();
-      }
-
-      ctx.restore();
-      ctx.restore();
-    }
-  }
-
-  bg = function(){
-    if(
-      typeof G !== "undefined" &&
-      G &&
-      G.map &&
-      (
-        G.map.__stage7RushArena ||
-        G.__stage7Rush ||
-        G.__stage7FinalAbyss ||
-        (
-          G.stageIndex === 6 &&
-          String(G.map.name || "").indexOf("ボスラッシュ") >= 0
-        )
-      )
-    ){
-      drawStage7SpaceBackground();
-      return;
-    }
-
-    if(oldBgStage7Space){
-      oldBgStage7Space();
-    }
-  };
 
   /*
     oldUpdate の前に Stage7扉入力を奪う。
@@ -14406,6 +14180,31 @@ if(view === "back"){
     drawMeteors();
   }
 
+  /*
+    Stage7が「ボスラッシュ／真の魔法陣／アビス決戦」のいずれかの
+    状態にあるかどうかを判定する。
+    stage7FlowPatch (ファイル前半) が管理するフラグをすべて見るため、
+    ここだけを見れば背景の判定が完結する。
+  */
+  function isStage7BossFightScene(){
+    if(!G) return false;
+
+    if(G.map && G.map.__duelSpace) return true;
+    if(G.map && G.map.__stage7RushArena) return true;
+    if(G.__stage7Rush) return true;
+    if(G.__stage7FinalAbyss) return true;
+
+    if(
+      G.map &&
+      G.stageIndex === 6 &&
+      String(G.map.name || "").indexOf("ボスラッシュ") >= 0
+    ){
+      return true;
+    }
+
+    return false;
+  }
+
   bg = function(){
     if(!G || !G.map){
       oldBg();
@@ -14414,10 +14213,10 @@ if(view === "back"){
 
     /*
       ここが重要。
-      ボスラッシュ / 決闘空間では、通常の宇宙島背景ではなく、
+      Stage7のボスラッシュ／決闘空間では、通常の宇宙島背景ではなく、
       大きな魔法陣つき背景を必ず描く。
     */
-    if(G.map.__duelSpace){
+    if(isStage7BossFightScene()){
       drawDuelMagicCircleSpaceBackground();
       return;
     }
@@ -14432,8 +14231,9 @@ if(view === "back"){
     }
 
     /*
-      Stage1〜Stage6 は通常背景に戻す。
+      Stage1〜Stage6 は既存の背景処理（通常背景／決闘空間の背景）に
+      そのまま委ねる。ここで独自に描き直さない。
     */
-    drawNormalStageBackground();
+    oldBg();
   };
 })();
