@@ -14237,3 +14237,1672 @@ if(view === "back"){
     oldBg();
   };
 })();
+/* =========================================================
+   カギ扉前ガーディアン 完全統合版 v4
+   貼る場所:
+   - game.js の一番下
+   - 以前貼った v3 / v3.1 は削除して、これだけ貼る
+
+   内容:
+   - Stage2〜Stage7 のボス扉前に前ステージのボス再戦版を出す
+   - 雑魚敵を少し追加する
+   - ガーディアンを全滅させるまで扉は開かない
+   - 全滅後に扉を開くと、今まで通り魔法陣が出る
+   - 扉前ボス/雑魚が壁・扉・地形に埋まっていたら安全位置へ移動
+   - 扉前ボスがプレイヤーを追う
+   - 扉前ボスが近距離衝撃波で攻撃する
+   ========================================================= */
+(function(){
+  if(window.__keyDoorGuardianCombinedV4Applied) return;
+  window.__keyDoorGuardianCombinedV4Applied = true;
+
+  const TABLE = {
+    1:{prev:0,mobs:["slime","slime"]},
+    2:{prev:1,mobs:["slime","fast","wind_bat"]},
+    3:{prev:2,mobs:["slime","fast","fast"]},
+    4:{prev:3,mobs:["slime","fast","wind_bat","slime"]},
+    5:{prev:4,mobs:["fast","fast","wind_bat","slime"]},
+    6:{prev:5,mobs:["fast","fast","wind_bat","wind_bat","slime"]}
+  };
+
+  function hit2(a,b){
+    return a && b &&
+      a.x < b.x + b.w &&
+      a.x + a.w > b.x &&
+      a.y < b.y + b.h &&
+      a.y + a.h > b.y;
+  }
+
+  function say(text,time){
+    if(typeof msg === "function"){
+      msg(text,time || 80);
+    }
+  }
+
+  function clearInput(){
+    if(typeof flush === "function"){
+      flush();
+    }
+  }
+
+  function stageIndex(){
+    return G && typeof G.stageIndex === "number" ? G.stageIndex : 0;
+  }
+
+  function config(){
+    return TABLE[stageIndex()] || null;
+  }
+
+  function groupId(){
+    return "keyDoorGuardianStage" + stageIndex();
+  }
+
+  function isBossDoor(d){
+    if(!d) return false;
+
+    return (
+      d.id === "boss_door" ||
+      String(d.id || "").includes("boss") ||
+      String(d.requiredItem || "").includes("key") ||
+      String(d.label || "").includes("扉")
+    );
+  }
+
+  function hasItem2(id){
+    if(!id) return true;
+
+    if(typeof hasItem === "function"){
+      try{
+        if(hasItem(id)) return true;
+      }catch(e){}
+    }
+
+    const inv = G && G.player && Array.isArray(G.player.inventory)
+      ? G.player.inventory
+      : [];
+
+    return inv.some(function(v){
+      return (
+        v === id ||
+        (
+          v &&
+          typeof v === "object" &&
+          v.id === id &&
+          (v.count == null || v.count > 0)
+        )
+      );
+    });
+  }
+
+  function doorTouchRect(){
+    if(!G || !G.player) return null;
+
+    const p = G.player;
+
+    return {
+      x:p.x - 34,
+      y:p.y - 34,
+      w:p.w + 68,
+      h:p.h + 68
+    };
+  }
+
+  function actionRect2(){
+    if(!G || !G.player) return null;
+
+    const p = G.player;
+
+    return {
+      x:p.x - 12,
+      y:p.y - 12,
+      w:p.w + 24,
+      h:p.h + 24
+    };
+  }
+
+  function getTouchedDoor2(){
+    if(!G || !Array.isArray(G.doors)) return null;
+
+    const r = doorTouchRect();
+    if(!r) return null;
+
+    for(const d of G.doors){
+      if(d && hit2(r,d)){
+        return d;
+      }
+    }
+
+    return null;
+  }
+
+  function aliveGuardians(){
+    if(!G || !Array.isArray(G.enemies)) return [];
+
+    const g = groupId();
+
+    return G.enemies.filter(function(e){
+      return e &&
+        e.__keyDoorGuardian === true &&
+        e.__guardianGroup === g;
+    });
+  }
+
+  function placeNearDoor(d,ox,oy,w,h){
+    const mapW = G && G.map ? G.map.width : 900;
+    const mapH = G && G.map ? G.map.height : 1200;
+
+    let x = d.x + d.w / 2 + ox - w / 2;
+    let y = d.y + d.h + oy;
+
+    x = Math.max(42,Math.min(mapW - w - 42,x));
+    y = Math.max(42,Math.min(mapH - h - 42,y));
+
+    return {x:x,y:y};
+  }
+
+  function getPreviousBossSource(prevIndex){
+    if(
+      Array.isArray(STAGES) &&
+      STAGES[prevIndex] &&
+      STAGES[prevIndex].boss
+    ){
+      return STAGES[prevIndex].boss;
+    }
+
+    if(G && G.map && G.map.boss){
+      return G.map.boss;
+    }
+
+    return {
+      name:"再戦ボス",
+      hp:80,
+      maxHp:80,
+      atk:3,
+      w:96,
+      h:82
+    };
+  }
+
+  function makeGuardianBoss(d,prevIndex){
+    const src = getPreviousBossSource(prevIndex);
+    const st = stageIndex();
+
+    const w = Math.max(70,Math.round((src.w || 110) * 0.72));
+    const h = Math.max(60,Math.round((src.h || 90) * 0.72));
+
+    const pos = placeNearDoor(d,0,62,w,h);
+
+    const baseHp = Number(src.maxHp || src.hp || 80);
+    const hp = Math.max(
+      70 + st * 28,
+      Math.round(baseHp * 0.62 + st * 34)
+    );
+
+    const baseAtk = Number(src.atk || src.touchDamage || 3);
+    const atk = Math.max(
+      2,
+      Math.round(baseAtk * 0.75 + st * 0.75)
+    );
+
+    return {
+      ...src,
+      id:"guardian_prev_boss_" + (prevIndex + 1),
+      name:(src.name || ((prevIndex + 1) + "面ボス")) + "・再戦",
+      x:pos.x,
+      y:pos.y,
+      w:w,
+      h:h,
+      hp:hp,
+      maxHp:hp,
+      atk:atk,
+      speed:0.62 + st * 0.03,
+      t:0,
+      hitT:0,
+      wake:true,
+      attackPause:0,
+      color:"#ffd84d",
+
+      __keyDoorGuardian:true,
+      __guardianGroup:groupId(),
+      __guardianBoss:true
+    };
+  }
+
+  function makeGuardianMob(d,id,i){
+    const offsets = [
+      {x:-72,y:112},
+      {x: 72,y:112},
+      {x:-112,y:64},
+      {x:112,y:64},
+      {x:0,y:142}
+    ];
+
+    const off = offsets[i % offsets.length];
+
+    let e;
+
+    if(typeof mkE === "function"){
+      e = mkE({
+        id:id,
+        x:d.x + d.w / 2 + off.x,
+        y:d.y + d.h + off.y
+      });
+    }else{
+      e = {
+        id:id,
+        type:id,
+        w:24,
+        h:22,
+        hp:3,
+        maxHp:3,
+        atk:2,
+        speed:0.9,
+        t:0,
+        hitT:0,
+        color:"#78df72"
+      };
+    }
+
+    const ew = e.w || 24;
+    const eh = e.h || 22;
+    const pos = placeNearDoor(d,off.x,off.y,ew,eh);
+
+    e.x = pos.x;
+    e.y = pos.y;
+    e.w = ew;
+    e.h = eh;
+    e.hp = Math.max(1,e.hp || 3);
+    e.maxHp = e.hp;
+    e.atk = Math.max(1,e.atk || 2);
+    e.wake = true;
+    e.t = e.t || 0;
+    e.hitT = e.hitT || 0;
+    e.attackPause = e.attackPause || 0;
+
+    e.__keyDoorGuardian = true;
+    e.__guardianGroup = groupId();
+    e.__guardianMob = true;
+
+    return e;
+  }
+
+  function isGuardian(e){
+    return e && e.__keyDoorGuardian === true;
+  }
+
+  function isGuardianBoss(e){
+    return e && e.__keyDoorGuardian === true && e.__guardianBoss === true;
+  }
+
+  function findBossDoor(){
+    if(!G || !Array.isArray(G.doors)) return null;
+
+    for(const d of G.doors){
+      if(d && isBossDoor(d)){
+        return d;
+      }
+    }
+
+    return G.doors[0] || null;
+  }
+
+  function clamp2(v,a,b){
+    return Math.max(a,Math.min(b,v));
+  }
+
+  function canStandAt(x,y,w,h){
+    if(!G || !G.map) return true;
+
+    const r = {x:x,y:y,w:w,h:h};
+
+    if(x < 42 || y < 42) return false;
+    if(x + w > G.map.width - 42) return false;
+    if(y + h > G.map.height - 42) return false;
+
+    for(const t of G.terrain || []){
+      if(hit2(r,t)) return false;
+    }
+
+    for(const d of G.doors || []){
+      if(hit2(r,d)) return false;
+    }
+
+    return true;
+  }
+
+  function overlapsBadPlace(e){
+    if(!G || !G.map || !e) return false;
+
+    const r = {
+      x:e.x,
+      y:e.y,
+      w:e.w || 24,
+      h:e.h || 22
+    };
+
+    if(e.x < 34 || e.y < 34) return true;
+    if(e.x + r.w > G.map.width - 34) return true;
+    if(e.y + r.h > G.map.height - 34) return true;
+
+    for(const t of G.terrain || []){
+      if(hit2(r,t)) return true;
+    }
+
+    for(const d of G.doors || []){
+      if(hit2(r,d)) return true;
+    }
+
+    return false;
+  }
+
+  function moveGuardianToSafeSpot(e,index){
+    if(!G || !G.map || !e) return;
+
+    const d = findBossDoor();
+    const w = e.w || 24;
+    const h = e.h || 22;
+
+    const baseX = d ? d.x + d.w / 2 : G.map.width / 2;
+    const baseY = d ? d.y + d.h + 120 : G.map.height / 2;
+
+    const candidates = [
+      {x:0,y:150},
+      {x:-90,y:150},
+      {x:90,y:150},
+      {x:-140,y:210},
+      {x:140,y:210},
+      {x:0,y:240},
+      {x:-70,y:270},
+      {x:70,y:270},
+      {x:-160,y:300},
+      {x:160,y:300}
+    ];
+
+    const shift = isGuardianBoss(e) ? 0 : index * 30 - 60;
+
+    for(const c of candidates){
+      let x = baseX + c.x + shift - w / 2;
+      let y = baseY + c.y - h / 2;
+
+      x = clamp2(x,42,G.map.width - w - 42);
+      y = clamp2(y,42,G.map.height - h - 42);
+
+      if(canStandAt(x,y,w,h)){
+        e.x = x;
+        e.y = y;
+        e.w = w;
+        e.h = h;
+        e.wake = true;
+        e.attackPause = 0;
+        e.__guardianFixedPosition = true;
+        return;
+      }
+    }
+
+    e.x = clamp2(G.map.width / 2 - w / 2 + shift,42,G.map.width - w - 42);
+    e.y = clamp2(G.map.height / 2 - h / 2,42,G.map.height - h - 42);
+    e.wake = true;
+    e.attackPause = 0;
+    e.__guardianFixedPosition = true;
+  }
+
+  function fixGuardianPositions(){
+    if(!G || !Array.isArray(G.enemies)) return;
+
+    let n = 0;
+
+    for(const e of G.enemies){
+      if(!isGuardian(e)) continue;
+
+      e.wake = true;
+
+      if(!e.__guardianFixedPosition || overlapsBadPlace(e)){
+        moveGuardianToSafeSpot(e,n);
+      }
+
+      n++;
+    }
+  }
+
+  function centerOf2(o){
+    return {
+      x:o.x + o.w / 2,
+      y:o.y + o.h / 2
+    };
+  }
+
+  function guardianBossAttackAI(){
+    if(!G || !G.player || !Array.isArray(G.enemies)) return;
+
+    const p = G.player;
+
+    for(const e of G.enemies){
+      if(!isGuardianBoss(e)) continue;
+
+      e.wake = true;
+      e.__guardianAtkCd = Math.max(0,(e.__guardianAtkCd || 0) - 1);
+
+      const ec = centerOf2(e);
+      const pc = centerOf2(p);
+      const dx = pc.x - ec.x;
+      const dy = pc.y - ec.y;
+      const len = Math.hypot(dx,dy) || 1;
+
+      if(len > 56){
+        const spd = e.speed || 0.75;
+        e.x += dx / len * spd * 0.45;
+        e.y += dy / len * spd * 0.45;
+      }
+
+      if(e.__guardianAtkCd <= 0 && len < 135){
+        e.__guardianAtkCd = 78;
+
+        if(typeof ring === "function"){
+          ring(ec.x,ec.y,92,"#ffd84d");
+        }
+
+        if(typeof fx === "function"){
+          fx(ec.x,ec.y,"#ffd84d",22,4);
+        }
+
+        if(len < 96 && typeof hurt === "function"){
+          const damage = 2 + Math.floor((G.stageIndex || 0) / 2);
+          hurt(damage);
+          say("再戦ボスの衝撃波！",42);
+        }else{
+          say("再戦ボスが力をためた！",36);
+        }
+      }
+    }
+  }
+
+  function spawnGuardians(d){
+    if(!G || !G.map || !d) return false;
+    if(G.map.__duelSpace) return false;
+
+    if(G.map.__keyDoorGuardianSpawned){
+      return true;
+    }
+
+    const c = config();
+
+    if(!c) return false;
+    if(!isBossDoor(d)) return false;
+
+    if(d.requiredItem && !hasItem2(d.requiredItem)){
+      say("鍵が必要だ",60);
+      return true;
+    }
+
+    G.map.__keyDoorGuardianSpawned = true;
+    G.map.__keyDoorGuardianCleared = false;
+
+    G.enemies.push(makeGuardianBoss(d,c.prev));
+
+    for(let i=0;i<c.mobs.length;i++){
+      G.enemies.push(makeGuardianMob(d,c.mobs[i],i));
+    }
+
+    fixGuardianPositions();
+
+    G.map.objective = "扉前のガーディアンを倒す";
+    say("扉前に前のボスが現れた！",110);
+
+    return true;
+  }
+
+  function checkGuardianClear(){
+    if(!G || !G.map) return;
+
+    if(
+      G.map.__keyDoorGuardianSpawned &&
+      !G.map.__keyDoorGuardianCleared &&
+      aliveGuardians().length === 0
+    ){
+      G.map.__keyDoorGuardianCleared = true;
+      G.map.objective = "ボス扉を開ける";
+      say("扉前のガーディアンを倒した！",90);
+    }
+  }
+
+  function createWarpCircleOrOpenDoor(d){
+    if(!d) return false;
+
+    if(d.requiredItem && !hasItem2(d.requiredItem)){
+      say("鍵が必要だ",60);
+      return true;
+    }
+
+    d.locked = false;
+
+    if(isBossDoor(d) && G.map && G.map.boss && !G.map.__duelSpace){
+      const cx = d.x + d.w / 2;
+      const cy = Math.max(70,d.y - 72);
+
+      G.map.__bossDoorOpened = true;
+      G.map.__bossWarpCircle = {
+        x:cx - 34,
+        y:cy - 22,
+        w:68,
+        h:44,
+        cx:cx,
+        cy:cy,
+        r:38,
+        active:true,
+        doorLabel:d.label || "扉"
+      };
+
+      G.map.objective = "魔法陣に乗る";
+      say((d.label || "扉") + "が開いた！ 奥の魔法陣へ向かおう",120);
+      return true;
+    }
+
+    say((d.label || "扉") + "が開いた！",80);
+    return true;
+  }
+
+  function tryGuardianDoor(d){
+    if(!d) return false;
+
+    const c = config();
+
+    if(c && isBossDoor(d)){
+      if(!G.map.__keyDoorGuardianSpawned){
+        return spawnGuardians(d);
+      }
+
+      if(!G.map.__keyDoorGuardianCleared || aliveGuardians().length > 0){
+        say("まず扉前のガーディアンを倒そう",70);
+        return true;
+      }
+    }
+
+    return createWarpCircleOrOpenDoor(d);
+  }
+
+  if(typeof update === "function"){
+    const oldUpdate = update;
+
+    update = function(){
+      oldUpdate();
+
+      if(G && G.state === "field" && G.map && !G.map.__duelSpace){
+        const d = getTouchedDoor2();
+
+        if(
+          d &&
+          config() &&
+          isBossDoor(d) &&
+          !G.map.__keyDoorGuardianSpawned &&
+          hasItem2(d.requiredItem)
+        ){
+          spawnGuardians(d);
+        }
+
+        checkGuardianClear();
+        fixGuardianPositions();
+        guardianBossAttackAI();
+      }
+    };
+  }
+
+  action = function(){
+    if(typeof G === "undefined") return;
+
+    if(G.state === "title"){
+      start();
+      return;
+    }
+
+    if(G.talk){
+      talkNext();
+      return;
+    }
+
+    if(G.state !== "field"){
+      if(G.state === "shop"){
+        closeShop();
+      }
+      return;
+    }
+
+    if(G.map && G.map.__duelSpace){
+      return;
+    }
+
+    const pr = actionRect2();
+    if(!pr) return;
+
+    for(const s of G.shops || []){
+      if(hit2(pr,s)){
+        G.shop = {shop:s};
+        G.state = "shop";
+        clearInput();
+        return;
+      }
+    }
+
+    for(const n of G.npcs || []){
+      if(hit2(pr,n)){
+        if(typeof window.beginTalk === "function"){
+          window.beginTalk(n);
+        }else{
+          G.talk = {npc:n,index:0};
+          G.state = "talk";
+        }
+        clearInput();
+        return;
+      }
+    }
+
+    for(const c of G.chests || []){
+      if(!c.opened && hit2(pr,c)){
+        openChest(c);
+        clearInput();
+        return;
+      }
+    }
+
+    const d = getTouchedDoor2();
+
+    if(d){
+      tryGuardianDoor(d);
+      clearInput();
+      return;
+    }
+  };
+
+  tryDoor = function(d){
+    return tryGuardianDoor(d);
+  };
+
+  if(typeof load === "function"){
+    const oldLoad = load;
+
+    load = function(s,keep){
+      oldLoad(s,keep);
+
+      if(G && G.map){
+        G.map.__keyDoorGuardianSpawned = false;
+        G.map.__keyDoorGuardianCleared = false;
+      }
+    };
+  }
+
+  console.log("key door guardian combined v4 loaded");
+})();
+/* =========================================================
+   カギ扉前・新中ボスガーディアン 完全版 v5
+   貼る場所:
+   - game.js の一番下
+   - stage7FlowPatch.js を使っている場合は、それより後ろ
+   - 以前貼った v3 / v3.1 / v4 は削除して、これだけ貼る
+
+   内容:
+   - Stage1〜Stage7 のボス扉前に新しい中ボスを出す
+   - 前ステージボスは使わない
+   - 既存ボスグラフィックは使わない
+   - ガーディアンを倒すまで扉は開かない
+   - ガーディアン未討伐中に魔法陣が出ても即消す
+   - ガーディアン撃破後だけ、元の扉処理に戻して魔法陣を出す
+   ========================================================= */
+(function(){
+  if(window.__newKeyDoorGuardianV5Applied) return;
+  window.__newKeyDoorGuardianV5Applied = true;
+
+  const oldTryDoorForGuardianV5 = typeof tryDoor === "function" ? tryDoor : null;
+  const oldDrawEnemy3DForGuardianV5 = typeof drawEnemy3D === "function" ? drawEnemy3D : null;
+
+  const GUARDIAN_TABLE = [
+    {
+      name:"門番ゴーレム",
+      hp:62,
+      atk:2,
+      speed:0.58,
+      color:"#6ee7ff",
+      accent:"#ffffff",
+      mobs:["slime"]
+    },
+    {
+      name:"森門のビースト",
+      hp:95,
+      atk:3,
+      speed:0.64,
+      color:"#78df72",
+      accent:"#eaffd2",
+      mobs:["slime","slime"]
+    },
+    {
+      name:"水晶の番人",
+      hp:135,
+      atk:4,
+      speed:0.66,
+      color:"#72f7ff",
+      accent:"#ffffff",
+      mobs:["slime","fast","wind_bat"]
+    },
+    {
+      name:"溶岩の中ボス",
+      hp:185,
+      atk:5,
+      speed:0.70,
+      color:"#ff7048",
+      accent:"#ffd84d",
+      mobs:["slime","fast","fast"]
+    },
+    {
+      name:"古代門の騎士",
+      hp:250,
+      atk:6,
+      speed:0.72,
+      color:"#ffd84d",
+      accent:"#fff7a8",
+      mobs:["slime","fast","wind_bat","slime"]
+    },
+    {
+      name:"星門の守護者",
+      hp:340,
+      atk:7,
+      speed:0.76,
+      color:"#9b7cff",
+      accent:"#cfd8ff",
+      mobs:["fast","fast","wind_bat","slime"]
+    },
+    {
+      name:"虚空門の中ボス",
+      hp:470,
+      atk:8,
+      speed:0.80,
+      color:"#8b5cff",
+      accent:"#efe7ff",
+      mobs:["fast","fast","wind_bat","wind_bat","slime"]
+    }
+  ];
+
+  function stageIndex(){
+    return G && typeof G.stageIndex === "number" ? G.stageIndex : 0;
+  }
+
+  function guardianConfig(){
+    return GUARDIAN_TABLE[Math.max(0,Math.min(GUARDIAN_TABLE.length - 1,stageIndex()))];
+  }
+
+  function guardianGroupId(){
+    return "newMidGuardianStage" + stageIndex();
+  }
+
+  function say(text,time){
+    if(typeof msg === "function"){
+      msg(text,time || 80);
+    }
+  }
+
+  function clearInput(){
+    if(typeof flush === "function"){
+      flush();
+    }
+  }
+
+  function hit2(a,b){
+    return a && b &&
+      a.x < b.x + b.w &&
+      a.x + a.w > b.x &&
+      a.y < b.y + b.h &&
+      a.y + a.h > b.y;
+  }
+
+  function clamp2(v,a,b){
+    return Math.max(a,Math.min(b,v));
+  }
+
+  function isBossDoor(d){
+    if(!d) return false;
+
+    return (
+      d.id === "boss_door" ||
+      String(d.id || "").includes("boss") ||
+      String(d.requiredItem || "").includes("key") ||
+      String(d.label || "").includes("扉")
+    );
+  }
+
+  function hasItem2(id){
+    if(!id) return true;
+
+    if(typeof hasItem === "function"){
+      try{
+        if(hasItem(id)) return true;
+      }catch(e){}
+    }
+
+    const inv = G && G.player && Array.isArray(G.player.inventory)
+      ? G.player.inventory
+      : [];
+
+    return inv.some(function(v){
+      return (
+        v === id ||
+        (
+          v &&
+          typeof v === "object" &&
+          v.id === id &&
+          (v.count == null || v.count > 0)
+        )
+      );
+    });
+  }
+
+  function actionRect2(){
+    if(!G || !G.player) return null;
+
+    const p = G.player;
+
+    return {
+      x:p.x - 12,
+      y:p.y - 12,
+      w:p.w + 24,
+      h:p.h + 24
+    };
+  }
+
+  function doorTouchRect(){
+    if(!G || !G.player) return null;
+
+    const p = G.player;
+
+    return {
+      x:p.x - 38,
+      y:p.y - 38,
+      w:p.w + 76,
+      h:p.h + 76
+    };
+  }
+
+  function getTouchedDoor2(){
+    if(!G || !Array.isArray(G.doors)) return null;
+
+    const r = doorTouchRect();
+    if(!r) return null;
+
+    for(const d of G.doors){
+      if(d && hit2(r,d)){
+        return d;
+      }
+    }
+
+    return null;
+  }
+
+  function getBossDoor(){
+    if(!G || !Array.isArray(G.doors)) return null;
+
+    for(const d of G.doors){
+      if(d && isBossDoor(d)){
+        return d;
+      }
+    }
+
+    return null;
+  }
+
+  function isGuardian(e){
+    return e && e.__newKeyDoorGuardian === true;
+  }
+
+  function isGuardianBoss(e){
+    return isGuardian(e) && e.__newGuardianBoss === true;
+  }
+
+  function aliveGuardians(){
+    if(!G || !Array.isArray(G.enemies)) return [];
+
+    const group = guardianGroupId();
+
+    return G.enemies.filter(function(e){
+      return e &&
+        e.__newKeyDoorGuardian === true &&
+        e.__guardianGroup === group;
+    });
+  }
+
+  function guardiansAlive(){
+    return aliveGuardians().length > 0;
+  }
+
+  function guardianSpawned(){
+    return !!(G && G.map && G.map.__newGuardianSpawned);
+  }
+
+  function guardianCleared(){
+    return !!(G && G.map && G.map.__newGuardianCleared);
+  }
+
+  function canStandAt(x,y,w,h){
+    if(!G || !G.map) return true;
+
+    const r = {x:x,y:y,w:w,h:h};
+
+    if(x < 42 || y < 42) return false;
+    if(x + w > G.map.width - 42) return false;
+    if(y + h > G.map.height - 42) return false;
+
+    for(const t of G.terrain || []){
+      if(hit2(r,t)) return false;
+    }
+
+    for(const d of G.doors || []){
+      if(hit2(r,d)) return false;
+    }
+
+    for(const c of G.chests || []){
+      if(hit2(r,{x:c.x - 8,y:c.y - 8,w:c.w + 16,h:c.h + 16})) return false;
+    }
+
+    for(const n of G.npcs || []){
+      if(hit2(r,{x:n.x - 12,y:n.y - 12,w:(n.w || 24) + 24,h:(n.h || 32) + 24})) return false;
+    }
+
+    for(const s of G.shops || []){
+      if(hit2(r,{x:s.x - 12,y:s.y - 12,w:s.w + 24,h:s.h + 24})) return false;
+    }
+
+    return true;
+  }
+
+  function safeSpotNearDoor(d,index,w,h,isBoss){
+    const mapW = G && G.map ? G.map.width : 900;
+    const mapH = G && G.map ? G.map.height : 1200;
+
+    const baseX = d ? d.x + d.w / 2 : mapW / 2;
+    const baseY = d ? d.y + d.h : mapH / 2;
+
+    const bossCandidates = [
+      {x:0,y:190},
+      {x:-90,y:210},
+      {x:90,y:210},
+      {x:0,y:260},
+      {x:-140,y:260},
+      {x:140,y:260},
+      {x:0,y:330}
+    ];
+
+    const mobCandidates = [
+      {x:-86,y:145},
+      {x:86,y:145},
+      {x:-136,y:205},
+      {x:136,y:205},
+      {x:0,y:235},
+      {x:-70,y:285},
+      {x:70,y:285}
+    ];
+
+    const list = isBoss ? bossCandidates : mobCandidates;
+
+    for(let i=0;i<list.length;i++){
+      const c = list[(index + i) % list.length];
+
+      let x = baseX + c.x - w / 2;
+      let y = baseY + c.y - h / 2;
+
+      x = clamp2(x,42,mapW - w - 42);
+      y = clamp2(y,42,mapH - h - 42);
+
+      if(canStandAt(x,y,w,h)){
+        return {x:x,y:y};
+      }
+    }
+
+    return {
+      x:clamp2(mapW / 2 - w / 2 + index * 24,42,mapW - w - 42),
+      y:clamp2(mapH / 2 - h / 2,42,mapH - h - 42)
+    };
+  }
+
+  function makeNewMidBoss(d){
+    const cfg = guardianConfig();
+    const st = stageIndex();
+
+    const w = 76 + st * 5;
+    const h = 68 + st * 5;
+    const hp = cfg.hp;
+    const pos = safeSpotNearDoor(d,0,w,h,true);
+
+    return {
+      id:"new_mid_guardian_stage_" + (st + 1),
+      type:"new_mid_guardian",
+      name:cfg.name,
+      x:pos.x,
+      y:pos.y,
+      w:w,
+      h:h,
+      hp:hp,
+      maxHp:hp,
+      atk:cfg.atk,
+      speed:cfg.speed,
+      t:0,
+      hitT:0,
+      wake:true,
+      attackPause:0,
+      color:cfg.color,
+      accent:cfg.accent,
+
+      __newKeyDoorGuardian:true,
+      __newGuardianBoss:true,
+      __guardianGroup:guardianGroupId(),
+      __guardianFixedPosition:true,
+      __guardianAtkCd:60
+    };
+  }
+
+  function makeGuardianMob(d,id,i){
+    let e;
+
+    if(typeof mkE === "function"){
+      e = mkE({
+        id:id,
+        x:d.x,
+        y:d.y
+      });
+    }else{
+      e = {
+        id:id,
+        type:id,
+        w:24,
+        h:22,
+        hp:3,
+        maxHp:3,
+        atk:2,
+        speed:0.9,
+        t:0,
+        hitT:0,
+        color:"#78df72"
+      };
+    }
+
+    const w = e.w || 24;
+    const h = e.h || 22;
+    const pos = safeSpotNearDoor(d,i + 1,w,h,false);
+
+    e.x = pos.x;
+    e.y = pos.y;
+    e.w = w;
+    e.h = h;
+    e.wake = true;
+    e.t = e.t || 0;
+    e.hitT = e.hitT || 0;
+    e.attackPause = e.attackPause || 0;
+
+    e.__newKeyDoorGuardian = true;
+    e.__guardianGroup = guardianGroupId();
+    e.__guardianMob = true;
+    e.__guardianFixedPosition = true;
+
+    return e;
+  }
+
+  function spawnNewGuardian(d){
+    if(!G || !G.map || !d) return false;
+    if(G.map.__duelSpace) return false;
+
+    if(G.map.__newGuardianSpawned){
+      return true;
+    }
+
+    if(!isBossDoor(d)){
+      return false;
+    }
+
+    if(d.requiredItem && !hasItem2(d.requiredItem)){
+      say("鍵が必要だ",60);
+      return true;
+    }
+
+    const cfg = guardianConfig();
+
+    G.map.__newGuardianSpawned = true;
+    G.map.__newGuardianCleared = false;
+    G.map.__newGuardianDoorId = d.id || d.label || "boss_door";
+
+    d.locked = true;
+
+    G.enemies.push(makeNewMidBoss(d));
+
+    for(let i=0;i<cfg.mobs.length;i++){
+      G.enemies.push(makeGuardianMob(d,cfg.mobs[i],i));
+    }
+
+    blockMagicCircleUntilGuardianClear();
+
+    G.map.objective = "扉前の中ボスを倒す";
+    say(cfg.name + "が扉を守っている！",120);
+
+    return true;
+  }
+
+  function overlapsBadPlace(e){
+    if(!G || !G.map || !e) return false;
+
+    const r = {
+      x:e.x,
+      y:e.y,
+      w:e.w || 24,
+      h:e.h || 22
+    };
+
+    if(e.x < 34 || e.y < 34) return true;
+    if(e.x + r.w > G.map.width - 34) return true;
+    if(e.y + r.h > G.map.height - 34) return true;
+
+    for(const t of G.terrain || []){
+      if(hit2(r,t)) return true;
+    }
+
+    for(const d of G.doors || []){
+      if(hit2(r,d)) return true;
+    }
+
+    return false;
+  }
+
+  function fixGuardianPositions(){
+    if(!G || !Array.isArray(G.enemies)) return;
+
+    const d = getBossDoor();
+    let index = 0;
+
+    for(const e of G.enemies){
+      if(!isGuardian(e)) continue;
+
+      e.wake = true;
+
+      if(!e.__guardianFixedPosition || overlapsBadPlace(e)){
+        const w = e.w || 24;
+        const h = e.h || 22;
+        const pos = safeSpotNearDoor(d,index,w,h,isGuardianBoss(e));
+
+        e.x = pos.x;
+        e.y = pos.y;
+        e.wake = true;
+        e.attackPause = 0;
+        e.__guardianFixedPosition = true;
+      }
+
+      index++;
+    }
+  }
+
+  function centerOf(o){
+    return {
+      x:o.x + o.w / 2,
+      y:o.y + o.h / 2
+    };
+  }
+
+  function guardianBossAI(){
+    if(!G || !G.player || !Array.isArray(G.enemies)) return;
+
+    const p = G.player;
+
+    for(const e of G.enemies){
+      if(!isGuardianBoss(e)) continue;
+
+      e.wake = true;
+      e.t = (e.t || 0) + 1;
+      e.__guardianAtkCd = Math.max(0,(e.__guardianAtkCd || 0) - 1);
+
+      const ec = centerOf(e);
+      const pc = centerOf(p);
+      const dx = pc.x - ec.x;
+      const dy = pc.y - ec.y;
+      const len = Math.hypot(dx,dy) || 1;
+
+      if(len > 62){
+        const spd = e.speed || 0.7;
+        const nx = e.x + dx / len * spd * 0.62;
+        const ny = e.y + dy / len * spd * 0.62;
+
+        if(canStandAt(nx,e.y,e.w,e.h)){
+          e.x = nx;
+        }
+
+        if(canStandAt(e.x,ny,e.w,e.h)){
+          e.y = ny;
+        }
+      }
+
+      if(e.__guardianAtkCd <= 0 && len < 145){
+        e.__guardianAtkCd = 76;
+
+        if(typeof ring === "function"){
+          ring(ec.x,ec.y,96,e.accent || "#ffd84d");
+        }
+
+        if(typeof fx === "function"){
+          fx(ec.x,ec.y,e.accent || "#ffd84d",22,4);
+        }
+
+        if(len < 98 && typeof hurt === "function"){
+          const damage = e.atk || 2;
+          hurt(damage);
+          say(e.name + "の衝撃波！",42);
+        }else{
+          say(e.name + "が力をためた！",36);
+        }
+      }
+    }
+  }
+
+  function checkGuardianClear(){
+    if(!G || !G.map) return;
+
+    if(
+      G.map.__newGuardianSpawned &&
+      !G.map.__newGuardianCleared &&
+      aliveGuardians().length === 0
+    ){
+      G.map.__newGuardianCleared = true;
+      G.map.objective = "ボス扉を開ける";
+      say("中ボスを倒した！ 扉を開けられる",100);
+    }
+  }
+
+  function blockMagicCircleUntilGuardianClear(){
+    if(!G || !G.map) return;
+
+    const d = getBossDoor();
+
+    if(!d) return;
+
+    if(!guardianCleared()){
+      d.locked = true;
+
+      if(G.map.__bossWarpCircle){
+        G.map.__bossWarpCircle = null;
+      }
+
+      if(G.map.__stage7Circle){
+        G.map.__stage7Circle = null;
+      }
+
+      if(G.map.__bossDoorOpened){
+        G.map.__bossDoorOpened = false;
+      }
+
+      if(G.map.objective === "魔法陣に乗る"){
+        G.map.objective = guardianSpawned()
+          ? "扉前の中ボスを倒す"
+          : "ボス扉へ向かう";
+      }
+    }
+  }
+
+  function createFallbackMagicCircle(d){
+    if(!G || !G.map || !d) return false;
+
+    if(d.requiredItem && !hasItem2(d.requiredItem)){
+      say("鍵が必要だ",60);
+      return true;
+    }
+
+    d.locked = false;
+
+    const cx = d.x + d.w / 2;
+    const cy = Math.max(70,d.y - 72);
+
+    G.map.__bossDoorOpened = true;
+    G.map.__bossWarpCircle = {
+      x:cx - 34,
+      y:cy - 22,
+      w:68,
+      h:44,
+      cx:cx,
+      cy:cy,
+      r:38,
+      active:true,
+      doorLabel:d.label || "扉"
+    };
+
+    G.map.objective = "魔法陣に乗る";
+    say((d.label || "扉") + "が開いた！ 奥の魔法陣へ向かおう",120);
+
+    return true;
+  }
+
+  function openDoorAfterGuardian(d){
+    if(!d) return false;
+
+    if(d.requiredItem && !hasItem2(d.requiredItem)){
+      say("鍵が必要だ",60);
+      return true;
+    }
+
+    d.locked = false;
+
+    /*
+      既存の魔法陣・Stage7フローをなるべく尊重する。
+      ただし、未討伐中にはここへ来られない。
+    */
+    if(oldTryDoorForGuardianV5){
+      try{
+        oldTryDoorForGuardianV5(d);
+      }catch(e){
+        createFallbackMagicCircle(d);
+      }
+    }else{
+      createFallbackMagicCircle(d);
+    }
+
+    /*
+      古い tryDoor が何も作らなかった場合の保険。
+    */
+    if(G && G.map && !G.map.__bossWarpCircle && !G.map.__stage7Circle && !G.map.__duelSpace){
+      createFallbackMagicCircle(d);
+    }
+
+    return true;
+  }
+
+  function tryGuardianDoor(d){
+    if(!d) return false;
+
+    if(isBossDoor(d)){
+      if(!guardianSpawned()){
+        return spawnNewGuardian(d);
+      }
+
+      if(!guardianCleared() || guardiansAlive()){
+        blockMagicCircleUntilGuardianClear();
+        say("まず扉前の中ボスを倒そう",70);
+        return true;
+      }
+
+      return openDoorAfterGuardian(d);
+    }
+
+    if(oldTryDoorForGuardianV5){
+      try{
+        return oldTryDoorForGuardianV5(d);
+      }catch(e){}
+    }
+
+    d.locked = false;
+    say((d.label || "扉") + "が開いた！",80);
+    return true;
+  }
+
+  /*
+    既存 update の後に監視。
+    既存パッチが勝手に魔法陣を出しても、未討伐なら消す。
+  */
+  if(typeof update === "function"){
+    const oldUpdate = update;
+
+    update = function(){
+      oldUpdate();
+
+      if(G && G.state === "field" && G.map && !G.map.__duelSpace){
+        const d = getTouchedDoor2();
+
+        if(
+          d &&
+          isBossDoor(d) &&
+          !guardianSpawned() &&
+          hasItem2(d.requiredItem)
+        ){
+          spawnNewGuardian(d);
+        }
+
+        checkGuardianClear();
+
+        if(!guardianCleared()){
+          blockMagicCircleUntilGuardianClear();
+        }
+
+        fixGuardianPositions();
+        guardianBossAI();
+      }
+    };
+  }
+
+  /*
+    action を最終上書き。
+    扉だけ新ガーディアンルールを通す。
+  */
+  action = function(){
+    if(typeof G === "undefined") return;
+
+    if(G.state === "title"){
+      start();
+      return;
+    }
+
+    if(G.talk){
+      talkNext();
+      return;
+    }
+
+    if(G.state !== "field"){
+      if(G.state === "shop"){
+        closeShop();
+      }
+      return;
+    }
+
+    if(G.map && G.map.__duelSpace){
+      return;
+    }
+
+    const pr = actionRect2();
+    if(!pr) return;
+
+    for(const s of G.shops || []){
+      if(hit2(pr,s)){
+        G.shop = {shop:s};
+        G.state = "shop";
+        clearInput();
+        return;
+      }
+    }
+
+    for(const n of G.npcs || []){
+      if(hit2(pr,n)){
+        if(typeof window.beginTalk === "function"){
+          window.beginTalk(n);
+        }else{
+          G.talk = {npc:n,index:0};
+          G.state = "talk";
+        }
+        clearInput();
+        return;
+      }
+    }
+
+    for(const c of G.chests || []){
+      if(!c.opened && hit2(pr,c)){
+        openChest(c);
+        clearInput();
+        return;
+      }
+    }
+
+    const d = getTouchedDoor2();
+
+    if(d){
+      tryGuardianDoor(d);
+      clearInput();
+      return;
+    }
+  };
+
+  tryDoor = function(d){
+    return tryGuardianDoor(d);
+  };
+
+  /*
+    ガーディアン中ボス専用描画。
+    既存ボスグラフィックは使わず、敵描画だけ差し替える。
+  */
+  if(typeof drawEnemy3D === "function"){
+    drawEnemy3D = function(ctxArg,e,wxArg,wyArg){
+      if(e && e.__newGuardianBoss){
+        drawNewGuardianBoss(e,wxArg,wyArg);
+        return;
+      }
+
+      if(oldDrawEnemy3DForGuardianV5){
+        oldDrawEnemy3DForGuardianV5(ctxArg,e,wxArg,wyArg);
+      }
+    };
+  }
+
+  function drawNewGuardianBoss(e,wxArg,wyArg){
+    if(!e) return;
+
+    const x = wxArg(e.x);
+    const y = wyArg(e.y);
+    const w = e.w || 80;
+    const h = e.h || 70;
+    const cx = x + w / 2;
+    const cy = y + h / 2;
+    const t = G.time || 0;
+    const color = e.color || "#6ee7ff";
+    const accent = e.accent || "#ffffff";
+    const hpRate = Math.max(0,Math.min(1,(e.hp || 1) / (e.maxHp || 1)));
+    const pulse = 1 + Math.sin(t * 0.08) * 0.04;
+
+    ctx.save();
+
+    /*
+      影
+    */
+    ctx.globalAlpha = 0.28;
+    ctx.fillStyle = "rgba(0,20,30,.45)";
+    ctx.beginPath();
+    ctx.ellipse(cx, y + h * 0.88, w * 0.46, h * 0.15, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    /*
+      外側オーラ
+    */
+    ctx.globalAlpha = 0.18 + Math.sin(t * 0.12) * 0.04;
+    ctx.fillStyle = accent;
+    ctx.beginPath();
+    ctx.ellipse(cx,cy,w * 0.68 * pulse,h * 0.58 * pulse,0,0,Math.PI * 2);
+    ctx.fill();
+
+    ctx.globalAlpha = 1;
+
+    /*
+      本体: 既存ボスとは違う、中ボス用の鎧コア
+    */
+    const grad = ctx.createRadialGradient(cx - w * 0.18,cy - h * 0.18,4,cx,cy,w * 0.58);
+    grad.addColorStop(0,"#ffffff");
+    grad.addColorStop(0.32,color);
+    grad.addColorStop(1,"#182033");
+
+    ctx.fillStyle = grad;
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 3;
+
+    ctx.beginPath();
+    ctx.moveTo(cx, y + 3);
+    ctx.lineTo(x + w - 8, cy - 6);
+    ctx.lineTo(x + w * 0.78, y + h - 8);
+    ctx.lineTo(cx, y + h - 2);
+    ctx.lineTo(x + w * 0.22, y + h - 8);
+    ctx.lineTo(x + 8, cy - 6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    /*
+      肩パーツ
+    */
+    ctx.fillStyle = "rgba(255,255,255,.28)";
+    ctx.strokeStyle = "rgba(255,255,255,.75)";
+    ctx.lineWidth = 2;
+
+    ctx.beginPath();
+    ctx.ellipse(x + w * 0.18,cy,w * 0.16,h * 0.24,-0.45,0,Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.ellipse(x + w * 0.82,cy,w * 0.16,h * 0.24,0.45,0,Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    /*
+      中央コア
+    */
+    ctx.fillStyle = accent;
+    ctx.shadowBlur = 16;
+    ctx.shadowColor = accent;
+    ctx.beginPath();
+    ctx.arc(cx,cy,Math.max(9,w * 0.14),0,Math.PI * 2);
+    ctx.fill();
+
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "#071018";
+    ctx.beginPath();
+    ctx.arc(cx,cy,Math.max(4,w * 0.06),0,Math.PI * 2);
+    ctx.fill();
+
+    /*
+      角/アンテナ
+    */
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 3;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(cx - w * 0.16,y + h * 0.18);
+    ctx.quadraticCurveTo(cx - w * 0.30,y - h * 0.12,cx - w * 0.42,y + h * 0.05);
+    ctx.moveTo(cx + w * 0.16,y + h * 0.18);
+    ctx.quadraticCurveTo(cx + w * 0.30,y - h * 0.12,cx + w * 0.42,y + h * 0.05);
+    ctx.stroke();
+
+    /*
+      名前
+    */
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = "#071018";
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "900 11px system-ui";
+    ctx.textAlign = "center";
+    ctx.fillText(e.name || "中ボス",cx,y - 10);
+
+    /*
+      小HPバー
+    */
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "rgba(8,25,45,.65)";
+    RR(cx - 42,y - 5,84,6,999);
+    ctx.fill();
+
+    ctx.fillStyle = hpRate < 0.35 ? "#ff6262" : hpRate < 0.68 ? "#ffd84d" : accent;
+    RR(cx - 42,y - 5,Math.max(2,84 * hpRate),6,999);
+    ctx.fill();
+
+    ctx.textAlign = "left";
+    ctx.restore();
+  }
+
+  /*
+    ステージ切り替え時に状態リセット。
+  */
+  if(typeof load === "function"){
+    const oldLoad = load;
+
+    load = function(s,keep){
+      oldLoad(s,keep);
+
+      if(G && G.map){
+        G.map.__newGuardianSpawned = false;
+        G.map.__newGuardianCleared = false;
+        G.map.__newGuardianDoorId = null;
+      }
+    };
+  }
+
+  console.log("new key door guardian v5 loaded");
+})();
