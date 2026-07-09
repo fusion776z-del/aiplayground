@@ -14113,35 +14113,67 @@ if(view === "back"){
     ctx.arc(cx, cy, 245, 0, Math.PI * 2);
     ctx.stroke();
 
-    ctx.globalAlpha = 0.46;
-    ctx.lineWidth = 4;
-
-    ctx.beginPath();
-    ctx.arc(cx, cy, 176, 0, Math.PI * 2);
-    ctx.stroke();
+    ctx.globalAlpha = 0.4;
+    ctx.lineWidth = 3;
 
     ctx.beginPath();
     ctx.arc(cx, cy, 96, 0, Math.PI * 2);
     ctx.stroke();
 
-    // 回転ルーン線
-    ctx.globalAlpha = 0.64;
+    // 五芒星(星型の頂点を計算)
+    const starOuterR = 236;
+    const starPts = [];
+
+    for(let i = 0; i < 5; i++){
+      const a = spin - Math.PI / 2 + i / 5 * Math.PI * 2;
+
+      starPts.push({
+        x: cx + Math.cos(a) * starOuterR,
+        y: cy + Math.sin(a) * starOuterR
+      });
+    }
+
+    // 五芒星本体(頂点を1つ飛ばしで結ぶ)
+    ctx.globalAlpha = 0.72;
     ctx.strokeStyle = "#b8a8ff";
+    ctx.lineWidth = 4;
+    ctx.shadowBlur = 22;
+    ctx.shadowColor = "#b8a8ff";
+
+    ctx.beginPath();
+    ctx.moveTo(starPts[0].x, starPts[0].y);
+    ctx.lineTo(starPts[2].x, starPts[2].y);
+    ctx.lineTo(starPts[4].x, starPts[4].y);
+    ctx.lineTo(starPts[1].x, starPts[1].y);
+    ctx.lineTo(starPts[3].x, starPts[3].y);
+    ctx.closePath();
+    ctx.stroke();
+
+    ctx.shadowBlur = 0;
+
+    // 内側の五角形(星の中心をなぞる補助線)
+    ctx.globalAlpha = 0.4;
+    ctx.strokeStyle = "#efe7ff";
     ctx.lineWidth = 2;
 
-    for(let i = 0; i < 16; i++){
-      const a = spin + i / 16 * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(starPts[0].x, starPts[0].y);
 
-      const x1 = cx + Math.cos(a) * 104;
-      const y1 = cy + Math.sin(a) * 104;
+    for(let i = 1; i < 5; i++){
+      ctx.lineTo(starPts[i].x, starPts[i].y);
+    }
 
-      const x2 = cx + Math.cos(a) * 236;
-      const y2 = cy + Math.sin(a) * 236;
+    ctx.closePath();
+    ctx.stroke();
 
+    // 星の頂点に光る点
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle = "#ffffff";
+
+    for(let i = 0; i < 5; i++){
       ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      ctx.lineTo(x2, y2);
-      ctx.stroke();
+      ctx.arc(starPts[i].x, starPts[i].y, 6, 0, Math.PI * 2);
+      ctx.fill();
     }
 
     // 魔法陣の星点
@@ -14957,8 +14989,8 @@ if(view === "back"){
     {
       name:"門番ゴーレム",
       hp:62,
-      atk:2,
-      speed:0.58,
+      atk:6,
+      speed:0.66,
       color:"#6ee7ff",
       accent:"#ffffff",
       mobs:["slime"]
@@ -14966,8 +14998,8 @@ if(view === "back"){
     {
       name:"森門のビースト",
       hp:95,
-      atk:3,
-      speed:0.64,
+      atk:8,
+      speed:0.72,
       color:"#78df72",
       accent:"#eaffd2",
       mobs:["slime","slime"]
@@ -14975,8 +15007,8 @@ if(view === "back"){
     {
       name:"水晶の番人",
       hp:135,
-      atk:4,
-      speed:0.66,
+      atk:10,
+      speed:0.74,
       color:"#72f7ff",
       accent:"#ffffff",
       mobs:["slime","fast","wind_bat"]
@@ -14984,8 +15016,8 @@ if(view === "back"){
     {
       name:"溶岩の中ボス",
       hp:185,
-      atk:5,
-      speed:0.70,
+      atk:13,
+      speed:0.78,
       color:"#ff7048",
       accent:"#ffd84d",
       mobs:["slime","fast","fast"]
@@ -14993,8 +15025,8 @@ if(view === "back"){
     {
       name:"古代門の騎士",
       hp:250,
-      atk:6,
-      speed:0.72,
+      atk:16,
+      speed:0.80,
       color:"#ffd84d",
       accent:"#fff7a8",
       mobs:["slime","fast","wind_bat","slime"]
@@ -15002,8 +15034,8 @@ if(view === "back"){
     {
       name:"星門の守護者",
       hp:340,
-      atk:7,
-      speed:0.76,
+      atk:19,
+      speed:0.84,
       color:"#9b7cff",
       accent:"#cfd8ff",
       mobs:["fast","fast","wind_bat","slime"]
@@ -15011,8 +15043,8 @@ if(view === "back"){
     {
       name:"虚空門の中ボス",
       hp:470,
-      atk:8,
-      speed:0.80,
+      atk:22,
+      speed:0.88,
       color:"#8b5cff",
       accent:"#efe7ff",
       mobs:["fast","fast","wind_bat","wind_bat","slime"]
@@ -15290,7 +15322,7 @@ if(view === "back"){
       __newGuardianBoss:true,
       __guardianGroup:guardianGroupId(),
       __guardianFixedPosition:true,
-      __guardianAtkCd:60
+      __guardianAtkCd:32
     };
   }
 
@@ -15470,8 +15502,8 @@ if(view === "back"){
         }
       }
 
-      if(e.__guardianAtkCd <= 0 && len < 145){
-        e.__guardianAtkCd = 76;
+      if(e.__guardianAtkCd <= 0 && len < 180){
+        e.__guardianAtkCd = 40;
 
         if(typeof ring === "function"){
           ring(ec.x,ec.y,96,e.accent || "#ffd84d");
@@ -15481,7 +15513,7 @@ if(view === "back"){
           fx(ec.x,ec.y,e.accent || "#ffd84d",22,4);
         }
 
-        if(len < 98 && typeof hurt === "function"){
+        if(len < 122 && typeof hurt === "function"){
           const damage = e.atk || 2;
           hurt(damage);
           say(e.name + "の衝撃波！",42);
