@@ -14983,7 +14983,6 @@ if(view === "back"){
   window.__newKeyDoorGuardianV5Applied = true;
 
   const oldTryDoorForGuardianV5 = typeof tryDoor === "function" ? tryDoor : null;
-  const oldDrawEnemy3DForGuardianV5 = typeof drawEnemy3D === "function" ? drawEnemy3D : null;
 
   const GUARDIAN_TABLE = [
     {
@@ -15051,12 +15050,40 @@ if(view === "back"){
     }
   ];
 
+  /*
+    Stage2以降の中ボスが「前ステージのボス」の見た目になったときの
+    攻撃演出用テーマ(色・台詞・連打回数)。
+    インデックスは前ステージ番号(0=Stage1のボス,...,5=Stage6のボス)。
+  */
+  const PREV_BOSS_ATTACK_THEME = [
+    {glow:"#9effa1",label:"突風",pulses:1},
+    {glow:"#a8ff86",label:"根の一撃",pulses:1},
+    {glow:"#b9fbff",label:"水晶レーザー",pulses:2},
+    {glow:"#ffb347",label:"火炎波",pulses:2},
+    {glow:"#fff2a5",label:"光の裁き",pulses:3},
+    {glow:"#b8a8ff",label:"星屑の衝撃",pulses:2}
+  ];
+
   function stageIndex(){
     return G && typeof G.stageIndex === "number" ? G.stageIndex : 0;
   }
 
   function guardianConfig(){
     return GUARDIAN_TABLE[Math.max(0,Math.min(GUARDIAN_TABLE.length - 1,stageIndex()))];
+  }
+
+  function prevBossSourceName(prevIndex,fallback){
+    if(
+      typeof STAGES !== "undefined" &&
+      Array.isArray(STAGES) &&
+      STAGES[prevIndex] &&
+      STAGES[prevIndex].boss &&
+      STAGES[prevIndex].boss.name
+    ){
+      return STAGES[prevIndex].boss.name;
+    }
+
+    return fallback;
   }
 
   function guardianGroupId(){
@@ -15293,16 +15320,22 @@ if(view === "back"){
   function makeNewMidBoss(d){
     const cfg = guardianConfig();
     const st = stageIndex();
+    const prevIndex = st - 1;
+    const usesPrevBossLook = st >= 1;
 
     const w = 76 + st * 5;
     const h = 68 + st * 5;
     const hp = cfg.hp;
     const pos = safeSpotNearDoor(d,0,w,h,true);
 
-    return {
+    const name = usesPrevBossLook
+      ? prevBossSourceName(prevIndex,cfg.name)
+      : cfg.name;
+
+    const base = {
       id:"new_mid_guardian_stage_" + (st + 1),
       type:"new_mid_guardian",
-      name:cfg.name,
+      name:name,
       x:pos.x,
       y:pos.y,
       w:w,
@@ -15324,6 +15357,15 @@ if(view === "back"){
       __guardianFixedPosition:true,
       __guardianAtkCd:32
     };
+
+    if(usesPrevBossLook){
+      base.rushBoss = true;
+      base.rushStageIndex = prevIndex;
+      base.__prevBossVisual = true;
+      base.__prevBossThemeIndex = prevIndex;
+    }
+
+    return base;
   }
 
   function makeGuardianMob(d,id,i){
@@ -15503,22 +15545,47 @@ if(view === "back"){
       }
 
       if(e.__guardianAtkCd <= 0 && len < 180){
+        const theme = (
+          e.__prevBossVisual &&
+          typeof e.__prevBossThemeIndex === "number" &&
+          PREV_BOSS_ATTACK_THEME[e.__prevBossThemeIndex]
+        ) || null;
+
+        const glowColor = theme ? theme.glow : (e.accent || "#ffd84d");
+        const pulses = theme ? theme.pulses : 1;
+
         e.__guardianAtkCd = 40;
+        e.__guardianPulsesLeft = Math.max(0,pulses - 1);
+        e.__guardianPulseColor = glowColor;
 
         if(typeof ring === "function"){
-          ring(ec.x,ec.y,96,e.accent || "#ffd84d");
+          ring(ec.x,ec.y,96,glowColor);
         }
 
         if(typeof fx === "function"){
-          fx(ec.x,ec.y,e.accent || "#ffd84d",22,4);
+          fx(ec.x,ec.y,glowColor,22,4);
         }
 
         if(len < 122 && typeof hurt === "function"){
           const damage = e.atk || 2;
           hurt(damage);
-          say(e.name + "の衝撃波！",42);
+          say(e.name + "の" + (theme ? theme.label : "衝撃波") + "！",42);
         }else{
           say(e.name + "が力をためた！",36);
+        }
+      }else if(
+        e.__guardianPulsesLeft > 0 &&
+        e.__guardianAtkCd <= 26 &&
+        e.__guardianAtkCd > 20
+      ){
+        e.__guardianPulsesLeft--;
+
+        if(typeof ring === "function"){
+          ring(ec.x,ec.y,80,e.__guardianPulseColor || "#ffd84d");
+        }
+
+        if(len < 122 && typeof hurt === "function"){
+          hurt(Math.max(1,Math.round((e.atk || 2) * 0.6)));
         }
       }
     }
@@ -15773,18 +15840,100 @@ if(view === "back"){
   /*
     ガーディアン中ボス専用描画。
     既存ボスグラフィックは使わず、敵描画だけ差し替える。
+
+    重要な修正:
+    このゲームは enemyBossVisualPatch.js が本物の window.drawEnemy3D を
+    定義しており、game.js とどちらが先に読み込まれるかによって
+    後勝ち(上書きした側が有効)になってしまう。
+    enemyBossVisualPatch.js が game.js より後に読み込まれた場合、
+    その window.drawEnemy3D = function(...) が無条件でこちらの
+    ガーディアン分岐を丸ごと消してしまうため、一度きりの上書きでは
+    不十分。
+    そこで drawBoss3D 側で既に使われているのと同じ「後から再上書き
+    されても定期的に検知して自分の分岐を復元する」方式にする。
   */
-  if(typeof drawEnemy3D === "function"){
-    drawEnemy3D = function(ctxArg,e,wxArg,wyArg){
+  function installGuardianDrawEnemyWrapper(){
+    if(typeof drawEnemy3D !== "function"){
+      return false;
+    }
+
+    if(drawEnemy3D.__newKeyDoorGuardianV5Wrapped){
+      return true;
+    }
+
+    const baseDrawEnemy3D = drawEnemy3D;
+
+    const wrapped = function(ctxArg,e,wxArg,wyArg){
       if(e && e.__newGuardianBoss){
+        if(e.__prevBossVisual && typeof drawBoss3D === "function"){
+          drawBoss3D(ctxArg,e,wxArg,wyArg,G.time || 0);
+          return;
+        }
+
         drawNewGuardianBoss(e,wxArg,wyArg);
         return;
       }
 
-      if(oldDrawEnemy3DForGuardianV5){
-        oldDrawEnemy3DForGuardianV5(ctxArg,e,wxArg,wyArg);
-      }
+      baseDrawEnemy3D(ctxArg,e,wxArg,wyArg);
     };
+
+    wrapped.__newKeyDoorGuardianV5Wrapped = true;
+    drawEnemy3D = wrapped;
+    return true;
+  }
+
+  if(!installGuardianDrawEnemyWrapper()){
+    /*
+      まだ drawEnemy3D 自体が存在しない(enemyBossVisualPatch.js が
+      game.js より後に読み込まれる構成の場合など)。
+      最低限のフォールバック描画を先に置いておき、後続の
+      setInterval で本物のガーディアン描画に差し替える。
+    */
+    drawEnemy3D = function(ctxArg,e,wxArg,wyArg){
+      if(e && e.__newGuardianBoss){
+        if(e.__prevBossVisual && typeof drawBoss3D === "function"){
+          drawBoss3D(ctxArg,e,wxArg,wyArg,G.time || 0);
+          return;
+        }
+
+        drawNewGuardianBoss(e,wxArg,wyArg);
+        return;
+      }
+
+      drawFallbackEnemyShape(ctxArg,e,wxArg,wyArg);
+    };
+  }
+
+  let __guardianDrawWrapperTries = 0;
+  const __guardianDrawWrapperTimer = setInterval(function(){
+    __guardianDrawWrapperTries++;
+    installGuardianDrawEnemyWrapper();
+
+    if(__guardianDrawWrapperTries >= 50){
+      clearInterval(__guardianDrawWrapperTimer);
+    }
+  },100);
+
+  /*
+    基本の敵描画関数が見つからなかった場合の保険。
+    最低限、色つきの丸型シルエットで敵を表示する。
+  */
+  function drawFallbackEnemyShape(ctxArg,e,wxArg,wyArg){
+    if(!e) return;
+
+    const x = wxArg(e.x);
+    const y = wyArg(e.y);
+    const w = e.w || 24;
+    const h = e.h || 22;
+    const cx = x + w / 2;
+    const cy = y + h / 2;
+
+    ctx.save();
+    ctx.fillStyle = e.color || "#78df72";
+    ctx.beginPath();
+    ctx.ellipse(cx,cy,w / 2,h / 2,0,0,Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
   }
 
   function drawNewGuardianBoss(e,wxArg,wyArg){
