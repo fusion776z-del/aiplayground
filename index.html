@@ -7,473 +7,70 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
   <style>
-    *{
-      margin:0;
-      padding:0;
-      box-sizing:border-box;
-    }
-
-    body{
-      background:#050816;
-      color:white;
-      overflow-x:hidden;
-      font-family:'Inter',sans-serif;
-      min-height:100vh;
-    }
-
-    /* ===== THREE BG ===== */
-    #bgCanvas{
-      position:fixed;
-      top:0;
-      left:0;
-      width:100%;
-      height:100%;
-      z-index:-10;
-    }
-
-    /* ===== 背景 ===== */
-    .bg{
-      position:fixed;
-      inset:0;
-      background:
-        radial-gradient(circle at top left,#1b2a52 0%,transparent 30%),
-        radial-gradient(circle at bottom right,#00f0ff22 0%,transparent 35%),
-        #050816;
-      z-index:-3;
-    }
-
-    /* グリッド */
-    .grid{
-      position:fixed;
-      inset:0;
-      background-image:
-        linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
-      background-size:40px 40px;
-      mask-image:linear-gradient(to bottom, rgba(0,0,0,1), rgba(0,0,0,0.2));
-      z-index:-2;
-    }
-
-    /* 浮遊する光 */
-    .glow{
-      position:absolute;
-      border-radius:50%;
-      filter:blur(100px);
-      opacity:0.5;
-      animation:float 8s ease-in-out infinite;
-      pointer-events:none;
-    }
-
-    .g1{
-      width:300px;
-      height:300px;
-      background:#00ffff;
-      top:10%;
-      left:10%;
-    }
-
-    .g2{
-      width:250px;
-      height:250px;
-      background:#7b61ff;
-      bottom:10%;
-      right:10%;
-      animation-delay:2s;
-    }
-
-    @keyframes float{
-      0%,100%{
-        transform:translateY(0px);
-      }
-      50%{
-        transform:translateY(-30px);
-      }
-    }
-
-    /* ===== HERO ===== */
-    .hero{
-      min-height:100vh;
-      display:flex;
-      flex-direction:column;
-      justify-content:center;
-      align-items:center;
-      text-align:center;
-      padding:40px 20px 80px;
-      position:relative;
-    }
-
-    .badge{
-      border:1px solid #00f0ff55;
-      padding:10px 20px;
-      border-radius:999px;
-      background:#00f0ff10;
-      color:#8efcff;
-      margin-bottom:25px;
-      backdrop-filter:blur(12px);
-      animation:fadeUp 1s ease;
-    }
-
-    .title{
-      font-size:clamp(3rem,8vw,7rem);
-      font-family:'Orbitron',sans-serif;
-      font-weight:700;
-      line-height:1;
-      margin-bottom:25px;
-      background:linear-gradient(
-        90deg,
-        #ffffff,
-        #00ffff,
-        #7b61ff
-      );
-      -webkit-background-clip:text;
-      -webkit-text-fill-color:transparent;
-      animation:glitch 5s infinite;
-    }
-
-    @keyframes glitch{
-      0%,100%{
-        text-shadow:none;
-      }
-      20%{
-        text-shadow:2px 0 #00ffff;
-      }
-      40%{
-        text-shadow:-2px 0 #7b61ff;
-      }
-      60%{
-        text-shadow:3px 0 #00ffff;
-      }
-    }
-
-    .subtitle{
-      max-width:700px;
-      color:#c8d3f5;
-      font-size:1.2rem;
-      line-height:1.8;
-      margin-bottom:50px;
-      animation:fadeUp 1.4s ease;
-    }
-
-    @keyframes fadeUp{
-      from{
-        opacity:0;
-        transform:translateY(30px);
-      }
-      to{
-        opacity:1;
-        transform:translateY(0);
-      }
-    }
-
-    /* ===== カード ===== */
-    .cards{
-      width:100%;
-      max-width:1200px;
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
-      gap:30px;
-      margin-top:20px;
-    }
-
-    .card{
-      position:relative;
-      padding:35px;
-      border-radius:28px;
-      background:rgba(255,255,255,0.05);
-      border:1px solid rgba(255,255,255,0.1);
-      backdrop-filter:blur(20px);
-      transition:0.4s;
-      overflow:hidden;
-      text-decoration:none;
-      color:white;
-      min-height:220px;
-    }
-
-    .card::before{
-      content:"";
-      position:absolute;
-      inset:0;
-      background:linear-gradient(
-        135deg,
-        transparent,
-        rgba(255,255,255,0.08),
-        transparent
-      );
-      opacity:0;
-      transition:0.4s;
-    }
-
-    .card:hover::before{
-      opacity:1;
-    }
-
-    .card:hover{
-      transform:
-        translateY(-10px)
-        rotateX(5deg)
-        rotateY(-5deg);
-      box-shadow:
-        0 10px 40px rgba(0,255,255,0.15);
-    }
-
-    .card.sky-card{
-      border-color:rgba(255,216,77,0.35);
-      background:
-        radial-gradient(circle at top right,rgba(255,216,77,0.18),transparent 36%),
-        radial-gradient(circle at bottom left,rgba(99,216,255,0.16),transparent 42%),
-        rgba(255,255,255,0.05);
-    }
-
-    .card.sky-card:hover{
-      box-shadow:
-        0 0 22px rgba(255,216,77,0.35),
-        0 12px 46px rgba(99,216,255,0.18);
-      border-color:rgba(255,216,77,0.75);
-    }
-
-    .icon{
-      font-size:3rem;
-      margin-bottom:20px;
-    }
-
-    .card h3{
-      font-size:1.5rem;
-      margin-bottom:15px;
-      font-family:'Orbitron',sans-serif;
-    }
-
-    .card p{
-      color:#b7c3ec;
-      line-height:1.8;
-    }
-
-    .sky-card p{
-      color:#fff3b8;
-    }
-
-    /* ===== スクロール ===== */
-    .scroll{
-      position:absolute;
-      bottom:30px;
-      color:#7e8bb6;
-      font-size:0.9rem;
-      letter-spacing:2px;
-      animation:bounce 2s infinite;
-    }
-
-    @keyframes bounce{
-      0%,100%{
-        transform:translateY(0);
-      }
-      50%{
-        transform:translateY(10px);
-      }
-    }
-
-    /* ===== レスポンシブ ===== */
-    @media(max-width:768px){
-      .title{
-        font-size:3rem;
-      }
-      .subtitle{
-        font-size:1rem;
-      }
-      .cards{
-        grid-template-columns:1fr;
-      }
-      .card{
-        text-align:center;
-      }
-    }
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{background:#050816;color:white;overflow-x:hidden;font-family:'Inter',sans-serif;min-height:100vh;}
+    #bgCanvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:-10;}
+    .bg{position:fixed;inset:0;background:radial-gradient(circle at top left,#1b2a52 0%,transparent 30%),radial-gradient(circle at bottom right,#00f0ff22 0%,transparent 35%),#050816;z-index:-3;}
+    .grid{position:fixed;inset:0;background-image:linear-gradient(rgba(255,255,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.04) 1px,transparent 1px);background-size:40px 40px;mask-image:linear-gradient(to bottom,rgba(0,0,0,1),rgba(0,0,0,0.2));z-index:-2;}
+    .glow{position:absolute;border-radius:50%;filter:blur(100px);opacity:0.5;animation:float 8s ease-in-out infinite;pointer-events:none;}
+    .g1{width:300px;height:300px;background:#00ffff;top:10%;left:10%;}
+    .g2{width:250px;height:250px;background:#7b61ff;bottom:10%;right:10%;animation-delay:2s;}
+    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-30px)}}
+    .hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:40px 20px 80px;position:relative;}
+    .badge{border:1px solid #00f0ff55;padding:10px 20px;border-radius:999px;background:#00f0ff10;color:#8efcff;margin-bottom:25px;backdrop-filter:blur(12px);animation:fadeUp 1s ease;}
+    .title{font-size:clamp(3rem,8vw,7rem);font-family:'Orbitron',sans-serif;font-weight:700;line-height:1;margin-bottom:25px;background:linear-gradient(90deg,#fff,#00ffff,#7b61ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:glitch 5s infinite;}
+    @keyframes glitch{0%,100%{text-shadow:none}20%{text-shadow:2px 0 #00ffff}40%{text-shadow:-2px 0 #7b61ff}60%{text-shadow:3px 0 #00ffff}}
+    .subtitle{max-width:700px;color:#c8d3f5;font-size:1.2rem;line-height:1.8;margin-bottom:50px;animation:fadeUp 1.4s ease;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+    .cards{width:100%;max-width:1200px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:30px;margin-top:20px;}
+    .card{position:relative;padding:35px;border-radius:28px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);backdrop-filter:blur(20px);transition:0.4s;overflow:hidden;text-decoration:none;color:white;min-height:220px;}
+    .card::before{content:"";position:absolute;inset:0;background:linear-gradient(135deg,transparent,rgba(255,255,255,0.08),transparent);opacity:0;transition:0.4s;}
+    .card:hover::before{opacity:1;}
+    .card:hover{transform:translateY(-10px) rotateX(5deg) rotateY(-5deg);box-shadow:0 10px 40px rgba(0,255,255,0.15);}
+    .card.sky-card{border-color:rgba(255,216,77,0.35);background:radial-gradient(circle at top right,rgba(255,216,77,0.18),transparent 36%),radial-gradient(circle at bottom left,rgba(99,216,255,0.16),transparent 42%),rgba(255,255,255,0.05);}
+    .card.sky-card:hover{box-shadow:0 0 22px rgba(255,216,77,0.35),0 12px 46px rgba(99,216,255,0.18);border-color:rgba(255,216,77,0.75);}
+    .card.uwasa-card{border-color:rgba(255,55,90,0.38);background:radial-gradient(circle at top right,rgba(155,0,35,0.28),transparent 38%),radial-gradient(circle at bottom left,rgba(105,0,160,0.22),transparent 42%),rgba(18,5,20,0.72);}
+    .card.uwasa-card:hover{border-color:rgba(255,70,110,0.8);box-shadow:0 0 24px rgba(255,40,80,0.32),0 12px 46px rgba(90,0,130,0.28);}
+    .icon{font-size:3rem;margin-bottom:20px;}
+    .card h3{font-size:1.5rem;margin-bottom:15px;font-family:'Orbitron',sans-serif;}
+    .card p{color:#b7c3ec;line-height:1.8;}
+    .sky-card p{color:#fff3b8;}
+    .uwasa-card p{color:#ffd4de;}
+    @media(max-width:768px){.title{font-size:3rem}.subtitle{font-size:1rem}.cards{grid-template-columns:1fr}.card{text-align:center}}
   </style>
 </head>
-
 <body>
   <canvas id="bgCanvas"></canvas>
-  <div class="bg"></div>
-  <div class="grid"></div>
-  <div class="glow g1"></div>
-  <div class="glow g2"></div>
-
+  <div class="bg"></div><div class="grid"></div><div class="glow g1"></div><div class="glow g2"></div>
   <section class="hero">
-    <div class="badge">
-      🚀 AI × GAME × EDUCATION
-    </div>
-
-    <h1 class="title">
-      AI PLAYGROUND
-    </h1>
-
-    <p class="subtitle">
-      AIを使ってゲームや教育コンテンツを制作する
-      実験型クリエイティブポータル。<br>
-      遊びながら学べる未来をつくる。
-    </p>
-
+    <div class="badge">🚀 AI × GAME × EDUCATION</div>
+    <h1 class="title">AI PLAYGROUND</h1>
+    <p class="subtitle">AIを使ってゲームや教育コンテンツを制作する実験型クリエイティブポータル。<br>遊びながら学べる未来をつくる。</p>
     <div class="cards">
-
-      <!-- SKY ISLAND ADVENTURE -->
-      <a href="sky/index.html" class="card sky-card">
-        <div class="icon">🏝️</div>
-        <h3>SKY ISLAND</h3>
-        <p>
-          七つの空島を巡るアクションRPG。<br>
-          鍵・魔法陣・決闘空間・ボス戦を突破しよう。
-        </p>
-      </a>
-
-
-      <!-- NEON STRIKER -->
-      <a href="NEON/index.html" class="card">
-        <div class="icon">⚡</div>
-        <h3>NEON STRIKER</h3>
-        <p>
-          高速シューティング。<br>
-          レーザー・ボム・斬り抜ける王道弾幕。
-        </p>
-      </a>
-
-      <!-- NEON SURVIVOR -->
-      <a href="NEONSURVIVOR/index.html" class="card">
-        <div class="icon">🌀</div>
-        <h3>NEON SURVIVOR</h3>
-        <p>
-          リップルで吸収進化。<br>
-          7ステージ×ボス戦のサバイバル。
-        </p>
-      </a>
-
-      <!-- ENGLISH -->
-      <a href="englishstudy/index.html" class="card">
-        <div class="icon">📘</div>
-        <h3>ENGLISH STUDY</h3>
-        <p>
-          AIに作らせた 英語学習コンテンツ。
-        </p>
-      </a>
-    
-      <!-- EIKEN WRITING TRAINER -->
-<a href="eiken2/index.html" class="card">
-  <div class="icon">✍️</div>
-  <h3>EIKEN WRITING</h3>
-  <p>
-    英検3級、準2級、2級対応の英作文トレーニング。<br>
-    単語を選んで2文を作る学習アプリ。
-  </p>
-</a>
-
-      <!-- CUBE REVERSI 3D -->
-      <a href="cube/index.html" class="card">
-        <div class="icon">🧊</div>
-        <h3>CUBE REVERSI 3D</h3>
-        <p>
-          6面キューブで戦う立体リバーシ。<br>
-          面をまたいで石を返す戦略ゲーム。
-        </p>
-      </a>
-
+      <a href="sky/index.html" class="card sky-card"><div class="icon">🏝️</div><h3>SKY ISLAND</h3><p>七つの空島を巡るアクションRPG。<br>鍵・魔法陣・決闘空間・ボス戦を突破しよう。</p></a>
+      <a href="NEON/index.html" class="card"><div class="icon">⚡</div><h3>NEON STRIKER</h3><p>高速シューティング。<br>レーザー・ボム・斬り抜ける王道弾幕。</p></a>
+      <a href="NEONSURVIVOR/index.html" class="card"><div class="icon">🌀</div><h3>NEON SURVIVOR</h3><p>リップルで吸収進化。<br>7ステージ×ボス戦のサバイバル。</p></a>
+      <a href="uwasa7/index.html" class="card uwasa-card"><div class="icon">👻</div><h3>ウワサ撃退局</h3><p>ちょっとホラー＆シューティングアクション。<br>怪しいウワサの正体を暴いて撃退しよう。</p></a>
+      <a href="englishstudy/index.html" class="card"><div class="icon">📘</div><h3>ENGLISH STUDY</h3><p>AIに作らせた 英語学習コンテンツ。</p></a>
+      <a href="eiken2/index.html" class="card"><div class="icon">✍️</div><h3>EIKEN WRITING</h3><p>英検3級、準2級、2級対応の英作文トレーニング。<br>単語を選んで2文を作る学習アプリ。</p></a>
+      <a href="cube/index.html" class="card"><div class="icon">🧊</div><h3>CUBE REVERSI 3D</h3><p>6面キューブで戦う立体リバーシ。<br>面をまたいで石を返す戦略ゲーム。</p></a>
     </div>
   </section>
-
   <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
   <script>
-    // ===== THREE BG =====
-    const canvas = document.getElementById("bgCanvas");
-
-    const scene = new THREE.Scene();
-
-    const camera = new THREE.PerspectiveCamera(
-      75,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      1000
-    );
-
-    camera.position.z = 5;
-
-    const renderer = new THREE.WebGLRenderer({
-      canvas:canvas,
-      alpha:true,
-      antialias:true
-    });
-
-    renderer.setSize(
-      window.innerWidth,
-      window.innerHeight
-    );
-
-    renderer.setPixelRatio(
-      Math.min(window.devicePixelRatio, 2)
-    );
-
-    // ===== PARTICLES =====
-    const particlesGeometry = new THREE.BufferGeometry();
-    const particlesCount = 2000;
-    const posArray = new Float32Array(particlesCount * 3);
-
-    for(let i = 0; i < particlesCount * 3; i++){
-      posArray[i] = (Math.random() - 0.5) * 20;
-    }
-
-    particlesGeometry.setAttribute(
-      "position",
-      new THREE.BufferAttribute(posArray,3)
-    );
-
-    // ===== MATERIAL =====
-    const particlesMaterial = new THREE.PointsMaterial({
-      size:0.02,
-      color:"#00ffff",
-      transparent:true,
-      opacity:0.8
-    });
-
-    // ===== MESH =====
-    const particlesMesh = new THREE.Points(
-      particlesGeometry,
-      particlesMaterial
-    );
-
-    scene.add(particlesMesh);
-
-    // ===== MOUSE =====
-    let mouseX = 0;
-    let mouseY = 0;
-
-    document.addEventListener("mousemove",(event)=>{
-      mouseX = event.clientX / window.innerWidth - 0.5;
-      mouseY = event.clientY / window.innerHeight - 0.5;
-    });
-
-    // ===== ANIMATE =====
-    function animate(){
-      requestAnimationFrame(animate);
-
-      particlesMesh.rotation.y += 0.001;
-      particlesMesh.rotation.x += 0.0005;
-
-      particlesMesh.rotation.y += mouseX * 0.002;
-      particlesMesh.rotation.x += mouseY * 0.002;
-
-      renderer.render(scene,camera);
-    }
-
-    animate();
-
-    // ===== RESIZE =====
-    window.addEventListener("resize",()=>{
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-
-      renderer.setSize(
-        window.innerWidth,
-        window.innerHeight
-      );
-
-      renderer.setPixelRatio(
-        Math.min(window.devicePixelRatio, 2)
-      );
-    });
+    const canvas=document.getElementById("bgCanvas");
+    const scene=new THREE.Scene();
+    const camera=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,1000);camera.position.z=5;
+    const renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:true});
+    renderer.setSize(window.innerWidth,window.innerHeight);renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+    const particlesGeometry=new THREE.BufferGeometry();const particlesCount=2000;const posArray=new Float32Array(particlesCount*3);
+    for(let i=0;i<particlesCount*3;i++)posArray[i]=(Math.random()-0.5)*20;
+    particlesGeometry.setAttribute("position",new THREE.BufferAttribute(posArray,3));
+    const particlesMaterial=new THREE.PointsMaterial({size:0.02,color:"#00ffff",transparent:true,opacity:0.8});
+    const particlesMesh=new THREE.Points(particlesGeometry,particlesMaterial);scene.add(particlesMesh);
+    let mouseX=0,mouseY=0;document.addEventListener("mousemove",event=>{mouseX=event.clientX/window.innerWidth-0.5;mouseY=event.clientY/window.innerHeight-0.5;});
+    function animate(){requestAnimationFrame(animate);particlesMesh.rotation.y+=0.001+mouseX*0.002;particlesMesh.rotation.x+=0.0005+mouseY*0.002;renderer.render(scene,camera);}animate();
+    window.addEventListener("resize",()=>{camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight);renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));});
   </script>
 </body>
 </html>
