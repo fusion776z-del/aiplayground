@@ -1,1 +1,1836 @@
-<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>英検準2級 模試</title><style>*{box-sizing:border-box}body{margin:0;font-family:system-ui;background:#f1f5f9;color:#0f172a}button,textarea{font:inherit}.hide{display:none!important}.wrap{max-width:620px;margin:auto}.start{min-height:100dvh;background:#08111f;color:white;padding:20px;display:flex;align-items:center}.card{background:white;border-radius:24px;padding:22px;box-shadow:0 12px 30px #0002}.start .card{background:#111c2e}.green{color:#34d399}.modes{display:grid;grid-template-columns:1fr 1fr;gap:8px}.rounds{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:16px 0}.sel{border:2px solid #334155;background:#1e293b;color:white;border-radius:14px;padding:11px 3px;font-weight:800}.sel.on{border-color:#34d399;background:#064e3b}.primary{width:100%;border:0;border-radius:16px;padding:15px;background:#34d399;font-weight:900}header{position:sticky;top:0;background:#08111f;color:white;padding:12px 16px;z-index:2}.row{display:flex;justify-content:space-between;align-items:center}.main{padding:16px 16px 115px}.pass{white-space:pre-line;background:#f8fafc;padding:14px;border-radius:15px;line-height:1.7}.prompt{white-space:pre-line;font-size:18px;font-weight:750;line-height:1.7}.choice{display:block;width:100%;text-align:left;border:2px solid #e2e8f0;background:white;border-radius:15px;padding:14px;margin:9px 0}.choice.on{border-color:#10b981;background:#ecfdf5}.feedback{padding:14px;border-radius:15px;margin-top:12px;line-height:1.7}.ok{background:#ecfdf5}.ng{background:#fff1f2}.sample{background:#eff6ff}.jp{border-top:1px solid #94a3b8;margin-top:8px;padding-top:8px}.grid{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin-top:14px}.jump{aspect-ratio:1;border:0;border-radius:8px;background:white}.jump.cur{background:#08111f;color:white}.jump.done{background:#a7f3d0}textarea{width:100%;height:190px;border:2px solid #e2e8f0;border-radius:15px;padding:13px}.check{width:100%;padding:12px;border:0;border-radius:14px;background:#0f172a;color:white;font-weight:800;margin-top:9px}footer{position:fixed;bottom:0;left:0;right:0;background:white;padding:10px 14px;border-top:1px solid #ddd}.nav{max-width:620px;margin:auto;display:grid;grid-template-columns:1fr 1fr;gap:9px}.nav button{padding:12px;border-radius:14px;border:1px solid #ccc;font-weight:800}</style></head><body><section id="start" class="start"><div class="wrap card"><b class="green">スマホ筆記模試</b><h1>英検準2級 全5回</h1><div class="modes"><button class="sel on" data-m="test">テストモード<small style="display:block">最後に採点</small></button><button class="sel" data-m="practice">練習モード<small style="display:block">1問ごとに解説</small></button></div><div id="rounds" class="rounds"></div><button id="go" class="primary">開始する</button></div></section><section id="exam" class="hide"><header><div class="wrap row"><b id="where"></b><b id="time">80:00</b></div></header><main class="wrap main"><div class="card"><b id="no" class="green"></b><div id="pass" class="pass hide"></div><div id="prompt" class="prompt"></div><div id="input"></div><div id="fb" class="hide"></div></div><div id="grid" class="grid"></div></main><footer><div class="nav"><button id="prev">‹ 前へ</button><button id="next" style="background:#34d399">次へ ›</button></div></footer></section><section id="result" class="hide"><div class="wrap main"><div class="card"><b class="green">採点結果</b><h1 id="score"></h1><div id="reviews"></div><button class="primary" onclick="location.reload()">回選択へ</button></div></div></section><script>const BANK=[[{"s": "語句・会話", "p": "The library will ( ) next month.", "c": ["open", "carry", "borrow", "invite"], "a": 0, "jp": "その図書館は来月開館します。", "ex": "施設が『開館する』は open。will の後は動詞の原形です。"}, {"s": "語句・会話", "p": "She has lived here ( ) five years.", "c": ["for", "since", "during", "until"], "a": 0, "jp": "彼女はここに5年間住んでいます。", "ex": "期間の長さには for、開始時点には since を使います。"}, {"s": "語句・会話", "p": "Please ( ) this form.", "c": ["fill out", "turn off", "give up", "look after"], "a": 0, "jp": "この用紙に記入してください。", "ex": "fill out a form で『用紙に記入する』です。"}, {"s": "語句・会話", "p": "If it ( ) sunny, we will hike.", "c": ["is", "was", "will be", "has been"], "a": 0, "jp": "晴れたら、私たちはハイキングに行きます。", "ex": "未来の条件でも if 節では現在形を使います。"}, {"s": "語句・会話", "p": "This book is ( ) than that one.", "c": ["more interesting", "interesting", "most interesting", "interest"], "a": 0, "jp": "この本はあの本よりおもしろいです。", "ex": "than があるので比較級 more interesting が適切です。"}, {"s": "語句・会話", "p": "Keep your ticket ( ) you leave.", "c": ["until", "among", "during", "without"], "a": 0, "jp": "退出するまで切符を持っていてください。", "ex": "until は動作が続く終点『〜まで』を表します。"}, {"s": "語句・会話", "p": "Aya was ( ) enough to return the wallet.", "c": ["honest", "empty", "ancient", "noisy"], "a": 0, "jp": "アヤは財布を返すほど正直でした。", "ex": "財布を返す行動に合う形容詞は honest『正直な』です。"}, {"s": "語句・会話", "p": "The store will ( ) customers by email.", "c": ["notify", "divide", "repair", "borrow"], "a": 0, "jp": "その店はメールで顧客に知らせます。", "ex": "notify 人で『人に知らせる』です。"}, {"s": "語句・会話", "p": "We arrived early ( ) get good seats.", "c": ["in order to", "because of", "even though", "as soon as"], "a": 0, "jp": "よい席を取るために早く着きました。", "ex": "目的は in order to + 動詞の原形で表します。"}, {"s": "語句・会話", "p": "The bridge ( ) in 1998.", "c": ["was built", "builds", "is build", "has building"], "a": 0, "jp": "その橋は1998年に建設されました。", "ex": "橋は建てられる側なので過去の受動態 was built です。"}, {"s": "語句・会話", "p": "The doctor advised me to get enough ( ).", "c": ["rest", "noise", "traffic", "chance"], "a": 0, "jp": "医師は私に十分な休養を取るよう助言しました。", "ex": "get enough rest で『十分に休養を取る』です。"}, {"s": "語句・会話", "p": "Our class will ( ) a charity event.", "c": ["organize", "escape", "melt", "repeat"], "a": 0, "jp": "私たちのクラスは慈善行事を企画します。", "ex": "organize an event は『行事を企画・運営する』です。"}, {"s": "語句・会話", "p": "This bag is made ( ) recycled material.", "c": ["from", "with", "by", "into"], "a": 0, "jp": "このかばんは再生素材から作られています。", "ex": "原料が変化して製品になる場合は be made from を使います。"}, {"s": "語句・会話", "p": "The meeting was ( ) until Monday.", "c": ["postponed", "covered", "measured", "invented"], "a": 0, "jp": "会議は月曜日まで延期されました。", "ex": "postpone は『延期する』。受動態 was postponed です。"}, {"s": "語句・会話", "p": "Mika is interested ( ) studying abroad.", "c": ["in", "at", "to", "for"], "a": 0, "jp": "ミカは留学に興味があります。", "ex": "be interested in + 名詞・動名詞の形です。"}, {"s": "語句・会話", "p": "The city plans to ( ) a sports center.", "c": ["construct", "translate", "discover", "exchange"], "a": 0, "jp": "市はスポーツセンターを建設する予定です。", "ex": "construct は建物などを『建設する』という意味です。"}, {"s": "語句・会話", "p": "Please ( ) your seat belt.", "c": ["fasten", "fold", "boil", "plant"], "a": 0, "jp": "シートベルトを締めてください。", "ex": "fasten a seat belt が定型表現です。"}, {"s": "語句・会話", "p": "Rina finally ( ) her goal.", "c": ["achieved", "refused", "borrowed", "hid"], "a": 0, "jp": "リナはついに目標を達成しました。", "ex": "achieve a goal で『目標を達成する』です。"}, {"s": "語句・会話", "p": "We need an ( ) route.", "c": ["alternative", "ordinary", "empty", "private"], "a": 0, "jp": "私たちには代わりの経路が必要です。", "ex": "alternative は『代わりの、別の』を表します。"}, {"s": "語句・会話", "p": "By the time we arrived, it ( ).", "c": ["had started", "starts", "will start", "has start"], "a": 0, "jp": "私たちが着いた時までに、それは始まっていました。", "ex": "到着より前に始まったので過去完了 had started です。"}, {"s": "長文読解", "text": "A town started a bicycle-sharing program. Users borrow bicycles with an app and return them to official parking areas. It reduces short car trips.", "textjp": "ある町が自転車共有事業を始めました。利用者はアプリで自転車を借り、指定駐輪場所に返します。この事業は短距離の自動車利用を減らします。", "p": "How do users borrow bicycles?", "c": ["With an app.", "With a ticket.", "By telephone.", "At school."], "a": 0, "jp": "利用者はどのように自転車を借りますか。アプリを使います。", "ex": "本文の with an app が直接の根拠です。"}, {"s": "長文読解", "text": "A town started a bicycle-sharing program. Users borrow bicycles with an app and return them to official parking areas. It reduces short car trips.", "textjp": "ある町が自転車共有事業を始めました。利用者はアプリで自転車を借り、指定駐輪場所に返します。この事業は短距離の自動車利用を減らします。", "p": "Where are bicycles returned?", "c": ["To official parking areas.", "Private homes.", "Only shops.", "Factories."], "a": 0, "jp": "自転車はどこに返されますか。指定駐輪場所です。", "ex": "return them to official parking areas とあります。"}, {"s": "長文読解", "text": "A town started a bicycle-sharing program. Users borrow bicycles with an app and return them to official parking areas. It reduces short car trips.", "textjp": "ある町が自転車共有事業を始めました。利用者はアプリで自転車を借り、指定駐輪場所に返します。この事業は短距離の自動車利用を減らします。", "p": "How do users borrow bicycles?", "c": ["With an app.", "With a ticket.", "By telephone.", "At school."], "a": 0, "jp": "利用者はどのように自転車を借りますか。アプリを使います。", "ex": "本文の with an app が直接の根拠です。"}, {"s": "長文読解", "text": "A town started a bicycle-sharing program. Users borrow bicycles with an app and return them to official parking areas. It reduces short car trips.", "textjp": "ある町が自転車共有事業を始めました。利用者はアプリで自転車を借り、指定駐輪場所に返します。この事業は短距離の自動車利用を減らします。", "p": "Where are bicycles returned?", "c": ["To official parking areas.", "Private homes.", "Only shops.", "Factories."], "a": 0, "jp": "自転車はどこに返されますか。指定駐輪場所です。", "ex": "return them to official parking areas とあります。"}, {"s": "Eメール", "p": "友人への返信を40〜50語で書き、具体的な質問を2つ含めてください。", "min": 40, "max": 50, "sample": "Thank you for your email. I am happy to hear your news. When did you start? Who enjoys it with you? I would like to know more about it. I hope you have a wonderful time.", "samplejp": "メールをありがとう。あなたの知らせを聞いてうれしいです。いつ始めましたか。誰と一緒に楽しんでいますか。もっと詳しく知りたいです。すてきな時間を過ごしてください。", "ex": "相手の内容に反応し、疑問文を2つ入れ、結びの文を加えた構成です。"}, {"s": "英作文", "p": "ボランティアについて賛成か反対かを、理由2つとともに50〜60語で書いてください。", "min": 50, "max": 60, "sample": "I agree with this idea. First, it can help students learn useful things. Second, it can improve their community and daily life. Students can also share ideas with other people and become more confident through the experience.", "samplejp": "私はこの考えに賛成です。第一に、生徒が役立つことを学ぶ助けになります。第二に、地域社会や日常生活をよりよくできます。生徒は他の人と考えを共有し、経験を通してより自信を持つこともできます。", "ex": "冒頭で意見を示し、First と Second で理由を2つ明確にしています。"}], [{"s": "語句・会話", "p": "Aya was ( ) enough to return the wallet.", "c": ["honest", "empty", "ancient", "noisy"], "a": 0, "jp": "アヤは財布を返すほど正直でした。", "ex": "財布を返す行動に合う形容詞は honest『正直な』です。"}, {"s": "語句・会話", "p": "The store will ( ) customers by email.", "c": ["notify", "divide", "repair", "borrow"], "a": 0, "jp": "その店はメールで顧客に知らせます。", "ex": "notify 人で『人に知らせる』です。"}, {"s": "語句・会話", "p": "We arrived early ( ) get good seats.", "c": ["in order to", "because of", "even though", "as soon as"], "a": 0, "jp": "よい席を取るために早く着きました。", "ex": "目的は in order to + 動詞の原形で表します。"}, {"s": "語句・会話", "p": "The bridge ( ) in 1998.", "c": ["was built", "builds", "is build", "has building"], "a": 0, "jp": "その橋は1998年に建設されました。", "ex": "橋は建てられる側なので過去の受動態 was built です。"}, {"s": "語句・会話", "p": "The doctor advised me to get enough ( ).", "c": ["rest", "noise", "traffic", "chance"], "a": 0, "jp": "医師は私に十分な休養を取るよう助言しました。", "ex": "get enough rest で『十分に休養を取る』です。"}, {"s": "語句・会話", "p": "Our class will ( ) a charity event.", "c": ["organize", "escape", "melt", "repeat"], "a": 0, "jp": "私たちのクラスは慈善行事を企画します。", "ex": "organize an event は『行事を企画・運営する』です。"}, {"s": "語句・会話", "p": "This bag is made ( ) recycled material.", "c": ["from", "with", "by", "into"], "a": 0, "jp": "このかばんは再生素材から作られています。", "ex": "原料が変化して製品になる場合は be made from を使います。"}, {"s": "語句・会話", "p": "The meeting was ( ) until Monday.", "c": ["postponed", "covered", "measured", "invented"], "a": 0, "jp": "会議は月曜日まで延期されました。", "ex": "postpone は『延期する』。受動態 was postponed です。"}, {"s": "語句・会話", "p": "Mika is interested ( ) studying abroad.", "c": ["in", "at", "to", "for"], "a": 0, "jp": "ミカは留学に興味があります。", "ex": "be interested in + 名詞・動名詞の形です。"}, {"s": "語句・会話", "p": "The city plans to ( ) a sports center.", "c": ["construct", "translate", "discover", "exchange"], "a": 0, "jp": "市はスポーツセンターを建設する予定です。", "ex": "construct は建物などを『建設する』という意味です。"}, {"s": "語句・会話", "p": "Please ( ) your seat belt.", "c": ["fasten", "fold", "boil", "plant"], "a": 0, "jp": "シートベルトを締めてください。", "ex": "fasten a seat belt が定型表現です。"}, {"s": "語句・会話", "p": "Rina finally ( ) her goal.", "c": ["achieved", "refused", "borrowed", "hid"], "a": 0, "jp": "リナはついに目標を達成しました。", "ex": "achieve a goal で『目標を達成する』です。"}, {"s": "語句・会話", "p": "We need an ( ) route.", "c": ["alternative", "ordinary", "empty", "private"], "a": 0, "jp": "私たちには代わりの経路が必要です。", "ex": "alternative は『代わりの、別の』を表します。"}, {"s": "語句・会話", "p": "By the time we arrived, it ( ).", "c": ["had started", "starts", "will start", "has start"], "a": 0, "jp": "私たちが着いた時までに、それは始まっていました。", "ex": "到着より前に始まったので過去完了 had started です。"}, {"s": "語句・会話", "p": "Exercise can ( ) your health.", "c": ["improve", "invite", "deliver", "prevent"], "a": 0, "jp": "運動は健康を改善できます。", "ex": "improve health で『健康を改善する』です。"}, {"s": "語句・会話", "p": "We must take ( ) for our decisions.", "c": ["responsibility", "direction", "medicine", "temperature"], "a": 0, "jp": "私たちは自分の決定に責任を持たなければなりません。", "ex": "take responsibility for で『〜に責任を持つ』です。"}, {"s": "語句・会話", "p": "The scientist made a ( ).", "c": ["discovery", "entrance", "argument", "appointment"], "a": 0, "jp": "その科学者は発見をしました。", "ex": "make a discovery で『発見をする』です。"}, {"s": "語句・会話", "p": "The hotel is within walking ( ).", "c": ["distance", "height", "weight", "speed"], "a": 0, "jp": "そのホテルは歩いて行ける距離にあります。", "ex": "within walking distance は『徒歩圏内』という定型表現です。"}, {"s": "語句・会話", "p": "You had better ( ) early.", "c": ["make a reservation", "to reserve", "making a reservation", "reserved"], "a": 0, "jp": "早めに予約したほうがよいです。", "ex": "had better の後は動詞の原形です。"}, {"s": "語句・会話", "p": "A: Could you help me? B: ( )", "c": ["Sure. What should I do?", "No, I saw it.", "It was blue.", "Yesterday."], "a": 0, "jp": "A：手伝ってもらえますか。B：もちろん。何をすればよいですか。", "ex": "依頼を受け入れ、内容を確認する自然な応答です。"}, {"s": "長文読解", "text": "Roof gardens keep buildings cooler and provide homes for insects and birds. Students can grow vegetables. Planning is needed because soil and water are heavy.", "textjp": "屋上庭園は建物をより涼しく保ち、昆虫や鳥のすみかを提供します。生徒は野菜を育てられます。土と水が重いため計画が必要です。", "p": "What is one benefit?", "c": ["Buildings stay cooler.", "Buildings get taller.", "Water is unnecessary.", "Parks close."], "a": 0, "jp": "利点の一つは何ですか。建物がより涼しく保たれることです。", "ex": "第1文の keep buildings cooler が根拠です。"}, {"s": "長文読解", "text": "Roof gardens keep buildings cooler and provide homes for insects and birds. Students can grow vegetables. Planning is needed because soil and water are heavy.", "textjp": "屋上庭園は建物をより涼しく保ち、昆虫や鳥のすみかを提供します。生徒は野菜を育てられます。土と水が重いため計画が必要です。", "p": "Why is planning needed?", "c": ["Soil and water are heavy.", "Roofs are cold.", "Birds cannot fly.", "Students dislike food."], "a": 0, "jp": "なぜ計画が必要ですか。土と水が重いからです。", "ex": "最終文の because 以下が理由です。"}, {"s": "長文読解", "text": "Roof gardens keep buildings cooler and provide homes for insects and birds. Students can grow vegetables. Planning is needed because soil and water are heavy.", "textjp": "屋上庭園は建物をより涼しく保ち、昆虫や鳥のすみかを提供します。生徒は野菜を育てられます。土と水が重いため計画が必要です。", "p": "What is one benefit?", "c": ["Buildings stay cooler.", "Buildings get taller.", "Water is unnecessary.", "Parks close."], "a": 0, "jp": "利点の一つは何ですか。建物がより涼しく保たれることです。", "ex": "第1文の keep buildings cooler が根拠です。"}, {"s": "長文読解", "text": "Roof gardens keep buildings cooler and provide homes for insects and birds. Students can grow vegetables. Planning is needed because soil and water are heavy.", "textjp": "屋上庭園は建物をより涼しく保ち、昆虫や鳥のすみかを提供します。生徒は野菜を育てられます。土と水が重いため計画が必要です。", "p": "Why is planning needed?", "c": ["Soil and water are heavy.", "Roofs are cold.", "Birds cannot fly.", "Students dislike food."], "a": 0, "jp": "なぜ計画が必要ですか。土と水が重いからです。", "ex": "最終文の because 以下が理由です。"}, {"s": "Eメール", "p": "友人への返信を40〜50語で書き、具体的な質問を2つ含めてください。", "min": 40, "max": 50, "sample": "Thank you for your email. I am happy to hear your news. When did you start? Who enjoys it with you? I would like to know more about it. I hope you have a wonderful time.", "samplejp": "メールをありがとう。あなたの知らせを聞いてうれしいです。いつ始めましたか。誰と一緒に楽しんでいますか。もっと詳しく知りたいです。すてきな時間を過ごしてください。", "ex": "相手の内容に反応し、疑問文を2つ入れ、結びの文を加えた構成です。"}, {"s": "英作文", "p": "屋外授業について賛成か反対かを、理由2つとともに50〜60語で書いてください。", "min": 50, "max": 60, "sample": "I agree with this idea. First, it can help students learn useful things. Second, it can improve their community and daily life. Students can also share ideas with other people and become more confident through the experience.", "samplejp": "私はこの考えに賛成です。第一に、生徒が役立つことを学ぶ助けになります。第二に、地域社会や日常生活をよりよくできます。生徒は他の人と考えを共有し、経験を通してより自信を持つこともできます。", "ex": "冒頭で意見を示し、First と Second で理由を2つ明確にしています。"}], [{"s": "語句・会話", "p": "This bag is made ( ) recycled material.", "c": ["from", "with", "by", "into"], "a": 0, "jp": "このかばんは再生素材から作られています。", "ex": "原料が変化して製品になる場合は be made from を使います。"}, {"s": "語句・会話", "p": "The meeting was ( ) until Monday.", "c": ["postponed", "covered", "measured", "invented"], "a": 0, "jp": "会議は月曜日まで延期されました。", "ex": "postpone は『延期する』。受動態 was postponed です。"}, {"s": "語句・会話", "p": "Mika is interested ( ) studying abroad.", "c": ["in", "at", "to", "for"], "a": 0, "jp": "ミカは留学に興味があります。", "ex": "be interested in + 名詞・動名詞の形です。"}, {"s": "語句・会話", "p": "The city plans to ( ) a sports center.", "c": ["construct", "translate", "discover", "exchange"], "a": 0, "jp": "市はスポーツセンターを建設する予定です。", "ex": "construct は建物などを『建設する』という意味です。"}, {"s": "語句・会話", "p": "Please ( ) your seat belt.", "c": ["fasten", "fold", "boil", "plant"], "a": 0, "jp": "シートベルトを締めてください。", "ex": "fasten a seat belt が定型表現です。"}, {"s": "語句・会話", "p": "Rina finally ( ) her goal.", "c": ["achieved", "refused", "borrowed", "hid"], "a": 0, "jp": "リナはついに目標を達成しました。", "ex": "achieve a goal で『目標を達成する』です。"}, {"s": "語句・会話", "p": "We need an ( ) route.", "c": ["alternative", "ordinary", "empty", "private"], "a": 0, "jp": "私たちには代わりの経路が必要です。", "ex": "alternative は『代わりの、別の』を表します。"}, {"s": "語句・会話", "p": "By the time we arrived, it ( ).", "c": ["had started", "starts", "will start", "has start"], "a": 0, "jp": "私たちが着いた時までに、それは始まっていました。", "ex": "到着より前に始まったので過去完了 had started です。"}, {"s": "語句・会話", "p": "Exercise can ( ) your health.", "c": ["improve", "invite", "deliver", "prevent"], "a": 0, "jp": "運動は健康を改善できます。", "ex": "improve health で『健康を改善する』です。"}, {"s": "語句・会話", "p": "We must take ( ) for our decisions.", "c": ["responsibility", "direction", "medicine", "temperature"], "a": 0, "jp": "私たちは自分の決定に責任を持たなければなりません。", "ex": "take responsibility for で『〜に責任を持つ』です。"}, {"s": "語句・会話", "p": "The scientist made a ( ).", "c": ["discovery", "entrance", "argument", "appointment"], "a": 0, "jp": "その科学者は発見をしました。", "ex": "make a discovery で『発見をする』です。"}, {"s": "語句・会話", "p": "The hotel is within walking ( ).", "c": ["distance", "height", "weight", "speed"], "a": 0, "jp": "そのホテルは歩いて行ける距離にあります。", "ex": "within walking distance は『徒歩圏内』という定型表現です。"}, {"s": "語句・会話", "p": "You had better ( ) early.", "c": ["make a reservation", "to reserve", "making a reservation", "reserved"], "a": 0, "jp": "早めに予約したほうがよいです。", "ex": "had better の後は動詞の原形です。"}, {"s": "語句・会話", "p": "A: Could you help me? B: ( )", "c": ["Sure. What should I do?", "No, I saw it.", "It was blue.", "Yesterday."], "a": 0, "jp": "A：手伝ってもらえますか。B：もちろん。何をすればよいですか。", "ex": "依頼を受け入れ、内容を確認する自然な応答です。"}, {"s": "語句・会話", "p": "A: How often do you practice? B: ( )", "c": ["Three times a week.", "At seven ago.", "For Monday.", "Very long."], "a": 0, "jp": "A：どのくらいの頻度で練習しますか。B：週に3回です。", "ex": "How often には回数や頻度で答えます。"}, {"s": "語句・会話", "p": "A: I am sorry I am late. B: ( )", "c": ["That is all right.", "You are welcome.", "Here you are.", "Congratulations."], "a": 0, "jp": "A：遅れてすみません。B：大丈夫ですよ。", "ex": "謝罪を受け入れる表現 That is all right. が適切です。"}, {"s": "語句・会話", "p": "A: Have you decided what to order? B: ( )", "c": ["I will have the pasta.", "Last Sunday.", "The waiter did.", "This table."], "a": 0, "jp": "A：何を注文するか決めましたか。B：パスタにします。", "ex": "注文を伝える I will have ... が場面に合います。"}, {"s": "語句・会話", "p": "A: Why don't we take the train? B: ( )", "c": ["Good idea. It will be faster.", "I drove it.", "It was closed.", "A bicycle."], "a": 0, "jp": "A：電車で行きませんか。B：いい考えです。その方が速いでしょう。", "ex": "Why don't we ...? は提案。賛成する応答が自然です。"}, {"s": "語句・会話", "p": "The library will ( ) next month.", "c": ["open", "carry", "borrow", "invite"], "a": 0, "jp": "その図書館は来月開館します。", "ex": "施設が『開館する』は open。will の後は動詞の原形です。"}, {"s": "語句・会話", "p": "She has lived here ( ) five years.", "c": ["for", "since", "during", "until"], "a": 0, "jp": "彼女はここに5年間住んでいます。", "ex": "期間の長さには for、開始時点には since を使います。"}, {"s": "長文読解", "text": "A town started a bicycle-sharing program. Users borrow bicycles with an app and return them to official parking areas. It reduces short car trips.", "textjp": "ある町が自転車共有事業を始めました。利用者はアプリで自転車を借り、指定駐輪場所に返します。この事業は短距離の自動車利用を減らします。", "p": "How do users borrow bicycles?", "c": ["With an app.", "With a ticket.", "By telephone.", "At school."], "a": 0, "jp": "利用者はどのように自転車を借りますか。アプリを使います。", "ex": "本文の with an app が直接の根拠です。"}, {"s": "長文読解", "text": "A town started a bicycle-sharing program. Users borrow bicycles with an app and return them to official parking areas. It reduces short car trips.", "textjp": "ある町が自転車共有事業を始めました。利用者はアプリで自転車を借り、指定駐輪場所に返します。この事業は短距離の自動車利用を減らします。", "p": "Where are bicycles returned?", "c": ["To official parking areas.", "Private homes.", "Only shops.", "Factories."], "a": 0, "jp": "自転車はどこに返されますか。指定駐輪場所です。", "ex": "return them to official parking areas とあります。"}, {"s": "長文読解", "text": "A town started a bicycle-sharing program. Users borrow bicycles with an app and return them to official parking areas. It reduces short car trips.", "textjp": "ある町が自転車共有事業を始めました。利用者はアプリで自転車を借り、指定駐輪場所に返します。この事業は短距離の自動車利用を減らします。", "p": "How do users borrow bicycles?", "c": ["With an app.", "With a ticket.", "By telephone.", "At school."], "a": 0, "jp": "利用者はどのように自転車を借りますか。アプリを使います。", "ex": "本文の with an app が直接の根拠です。"}, {"s": "長文読解", "text": "A town started a bicycle-sharing program. Users borrow bicycles with an app and return them to official parking areas. It reduces short car trips.", "textjp": "ある町が自転車共有事業を始めました。利用者はアプリで自転車を借り、指定駐輪場所に返します。この事業は短距離の自動車利用を減らします。", "p": "Where are bicycles returned?", "c": ["To official parking areas.", "Private homes.", "Only shops.", "Factories."], "a": 0, "jp": "自転車はどこに返されますか。指定駐輪場所です。", "ex": "return them to official parking areas とあります。"}, {"s": "Eメール", "p": "友人への返信を40〜50語で書き、具体的な質問を2つ含めてください。", "min": 40, "max": 50, "sample": "Thank you for your email. I am happy to hear your news. When did you start? Who enjoys it with you? I would like to know more about it. I hope you have a wonderful time.", "samplejp": "メールをありがとう。あなたの知らせを聞いてうれしいです。いつ始めましたか。誰と一緒に楽しんでいますか。もっと詳しく知りたいです。すてきな時間を過ごしてください。", "ex": "相手の内容に反応し、疑問文を2つ入れ、結びの文を加えた構成です。"}, {"s": "英作文", "p": "電車旅行について賛成か反対かを、理由2つとともに50〜60語で書いてください。", "min": 50, "max": 60, "sample": "I agree with this idea. First, it can help students learn useful things. Second, it can improve their community and daily life. Students can also share ideas with other people and become more confident through the experience.", "samplejp": "私はこの考えに賛成です。第一に、生徒が役立つことを学ぶ助けになります。第二に、地域社会や日常生活をよりよくできます。生徒は他の人と考えを共有し、経験を通してより自信を持つこともできます。", "ex": "冒頭で意見を示し、First と Second で理由を2つ明確にしています。"}], [{"s": "語句・会話", "p": "We need an ( ) route.", "c": ["alternative", "ordinary", "empty", "private"], "a": 0, "jp": "私たちには代わりの経路が必要です。", "ex": "alternative は『代わりの、別の』を表します。"}, {"s": "語句・会話", "p": "By the time we arrived, it ( ).", "c": ["had started", "starts", "will start", "has start"], "a": 0, "jp": "私たちが着いた時までに、それは始まっていました。", "ex": "到着より前に始まったので過去完了 had started です。"}, {"s": "語句・会話", "p": "Exercise can ( ) your health.", "c": ["improve", "invite", "deliver", "prevent"], "a": 0, "jp": "運動は健康を改善できます。", "ex": "improve health で『健康を改善する』です。"}, {"s": "語句・会話", "p": "We must take ( ) for our decisions.", "c": ["responsibility", "direction", "medicine", "temperature"], "a": 0, "jp": "私たちは自分の決定に責任を持たなければなりません。", "ex": "take responsibility for で『〜に責任を持つ』です。"}, {"s": "語句・会話", "p": "The scientist made a ( ).", "c": ["discovery", "entrance", "argument", "appointment"], "a": 0, "jp": "その科学者は発見をしました。", "ex": "make a discovery で『発見をする』です。"}, {"s": "語句・会話", "p": "The hotel is within walking ( ).", "c": ["distance", "height", "weight", "speed"], "a": 0, "jp": "そのホテルは歩いて行ける距離にあります。", "ex": "within walking distance は『徒歩圏内』という定型表現です。"}, {"s": "語句・会話", "p": "You had better ( ) early.", "c": ["make a reservation", "to reserve", "making a reservation", "reserved"], "a": 0, "jp": "早めに予約したほうがよいです。", "ex": "had better の後は動詞の原形です。"}, {"s": "語句・会話", "p": "A: Could you help me? B: ( )", "c": ["Sure. What should I do?", "No, I saw it.", "It was blue.", "Yesterday."], "a": 0, "jp": "A：手伝ってもらえますか。B：もちろん。何をすればよいですか。", "ex": "依頼を受け入れ、内容を確認する自然な応答です。"}, {"s": "語句・会話", "p": "A: How often do you practice? B: ( )", "c": ["Three times a week.", "At seven ago.", "For Monday.", "Very long."], "a": 0, "jp": "A：どのくらいの頻度で練習しますか。B：週に3回です。", "ex": "How often には回数や頻度で答えます。"}, {"s": "語句・会話", "p": "A: I am sorry I am late. B: ( )", "c": ["That is all right.", "You are welcome.", "Here you are.", "Congratulations."], "a": 0, "jp": "A：遅れてすみません。B：大丈夫ですよ。", "ex": "謝罪を受け入れる表現 That is all right. が適切です。"}, {"s": "語句・会話", "p": "A: Have you decided what to order? B: ( )", "c": ["I will have the pasta.", "Last Sunday.", "The waiter did.", "This table."], "a": 0, "jp": "A：何を注文するか決めましたか。B：パスタにします。", "ex": "注文を伝える I will have ... が場面に合います。"}, {"s": "語句・会話", "p": "A: Why don't we take the train? B: ( )", "c": ["Good idea. It will be faster.", "I drove it.", "It was closed.", "A bicycle."], "a": 0, "jp": "A：電車で行きませんか。B：いい考えです。その方が速いでしょう。", "ex": "Why don't we ...? は提案。賛成する応答が自然です。"}, {"s": "語句・会話", "p": "The library will ( ) next month.", "c": ["open", "carry", "borrow", "invite"], "a": 0, "jp": "その図書館は来月開館します。", "ex": "施設が『開館する』は open。will の後は動詞の原形です。"}, {"s": "語句・会話", "p": "She has lived here ( ) five years.", "c": ["for", "since", "during", "until"], "a": 0, "jp": "彼女はここに5年間住んでいます。", "ex": "期間の長さには for、開始時点には since を使います。"}, {"s": "語句・会話", "p": "Please ( ) this form.", "c": ["fill out", "turn off", "give up", "look after"], "a": 0, "jp": "この用紙に記入してください。", "ex": "fill out a form で『用紙に記入する』です。"}, {"s": "語句・会話", "p": "If it ( ) sunny, we will hike.", "c": ["is", "was", "will be", "has been"], "a": 0, "jp": "晴れたら、私たちはハイキングに行きます。", "ex": "未来の条件でも if 節では現在形を使います。"}, {"s": "語句・会話", "p": "This book is ( ) than that one.", "c": ["more interesting", "interesting", "most interesting", "interest"], "a": 0, "jp": "この本はあの本よりおもしろいです。", "ex": "than があるので比較級 more interesting が適切です。"}, {"s": "語句・会話", "p": "Keep your ticket ( ) you leave.", "c": ["until", "among", "during", "without"], "a": 0, "jp": "退出するまで切符を持っていてください。", "ex": "until は動作が続く終点『〜まで』を表します。"}, {"s": "語句・会話", "p": "Aya was ( ) enough to return the wallet.", "c": ["honest", "empty", "ancient", "noisy"], "a": 0, "jp": "アヤは財布を返すほど正直でした。", "ex": "財布を返す行動に合う形容詞は honest『正直な』です。"}, {"s": "語句・会話", "p": "The store will ( ) customers by email.", "c": ["notify", "divide", "repair", "borrow"], "a": 0, "jp": "その店はメールで顧客に知らせます。", "ex": "notify 人で『人に知らせる』です。"}, {"s": "長文読解", "text": "Roof gardens keep buildings cooler and provide homes for insects and birds. Students can grow vegetables. Planning is needed because soil and water are heavy.", "textjp": "屋上庭園は建物をより涼しく保ち、昆虫や鳥のすみかを提供します。生徒は野菜を育てられます。土と水が重いため計画が必要です。", "p": "What is one benefit?", "c": ["Buildings stay cooler.", "Buildings get taller.", "Water is unnecessary.", "Parks close."], "a": 0, "jp": "利点の一つは何ですか。建物がより涼しく保たれることです。", "ex": "第1文の keep buildings cooler が根拠です。"}, {"s": "長文読解", "text": "Roof gardens keep buildings cooler and provide homes for insects and birds. Students can grow vegetables. Planning is needed because soil and water are heavy.", "textjp": "屋上庭園は建物をより涼しく保ち、昆虫や鳥のすみかを提供します。生徒は野菜を育てられます。土と水が重いため計画が必要です。", "p": "Why is planning needed?", "c": ["Soil and water are heavy.", "Roofs are cold.", "Birds cannot fly.", "Students dislike food."], "a": 0, "jp": "なぜ計画が必要ですか。土と水が重いからです。", "ex": "最終文の because 以下が理由です。"}, {"s": "長文読解", "text": "Roof gardens keep buildings cooler and provide homes for insects and birds. Students can grow vegetables. Planning is needed because soil and water are heavy.", "textjp": "屋上庭園は建物をより涼しく保ち、昆虫や鳥のすみかを提供します。生徒は野菜を育てられます。土と水が重いため計画が必要です。", "p": "What is one benefit?", "c": ["Buildings stay cooler.", "Buildings get taller.", "Water is unnecessary.", "Parks close."], "a": 0, "jp": "利点の一つは何ですか。建物がより涼しく保たれることです。", "ex": "第1文の keep buildings cooler が根拠です。"}, {"s": "長文読解", "text": "Roof gardens keep buildings cooler and provide homes for insects and birds. Students can grow vegetables. Planning is needed because soil and water are heavy.", "textjp": "屋上庭園は建物をより涼しく保ち、昆虫や鳥のすみかを提供します。生徒は野菜を育てられます。土と水が重いため計画が必要です。", "p": "Why is planning needed?", "c": ["Soil and water are heavy.", "Roofs are cold.", "Birds cannot fly.", "Students dislike food."], "a": 0, "jp": "なぜ計画が必要ですか。土と水が重いからです。", "ex": "最終文の because 以下が理由です。"}, {"s": "Eメール", "p": "友人への返信を40〜50語で書き、具体的な質問を2つ含めてください。", "min": 40, "max": 50, "sample": "Thank you for your email. I am happy to hear your news. When did you start? Who enjoys it with you? I would like to know more about it. I hope you have a wonderful time.", "samplejp": "メールをありがとう。あなたの知らせを聞いてうれしいです。いつ始めましたか。誰と一緒に楽しんでいますか。もっと詳しく知りたいです。すてきな時間を過ごしてください。", "ex": "相手の内容に反応し、疑問文を2つ入れ、結びの文を加えた構成です。"}, {"s": "英作文", "p": "ニュースについて賛成か反対かを、理由2つとともに50〜60語で書いてください。", "min": 50, "max": 60, "sample": "I agree with this idea. First, it can help students learn useful things. Second, it can improve their community and daily life. Students can also share ideas with other people and become more confident through the experience.", "samplejp": "私はこの考えに賛成です。第一に、生徒が役立つことを学ぶ助けになります。第二に、地域社会や日常生活をよりよくできます。生徒は他の人と考えを共有し、経験を通してより自信を持つこともできます。", "ex": "冒頭で意見を示し、First と Second で理由を2つ明確にしています。"}], [{"s": "語句・会話", "p": "You had better ( ) early.", "c": ["make a reservation", "to reserve", "making a reservation", "reserved"], "a": 0, "jp": "早めに予約したほうがよいです。", "ex": "had better の後は動詞の原形です。"}, {"s": "語句・会話", "p": "A: Could you help me? B: ( )", "c": ["Sure. What should I do?", "No, I saw it.", "It was blue.", "Yesterday."], "a": 0, "jp": "A：手伝ってもらえますか。B：もちろん。何をすればよいですか。", "ex": "依頼を受け入れ、内容を確認する自然な応答です。"}, {"s": "語句・会話", "p": "A: How often do you practice? B: ( )", "c": ["Three times a week.", "At seven ago.", "For Monday.", "Very long."], "a": 0, "jp": "A：どのくらいの頻度で練習しますか。B：週に3回です。", "ex": "How often には回数や頻度で答えます。"}, {"s": "語句・会話", "p": "A: I am sorry I am late. B: ( )", "c": ["That is all right.", "You are welcome.", "Here you are.", "Congratulations."], "a": 0, "jp": "A：遅れてすみません。B：大丈夫ですよ。", "ex": "謝罪を受け入れる表現 That is all right. が適切です。"}, {"s": "語句・会話", "p": "A: Have you decided what to order? B: ( )", "c": ["I will have the pasta.", "Last Sunday.", "The waiter did.", "This table."], "a": 0, "jp": "A：何を注文するか決めましたか。B：パスタにします。", "ex": "注文を伝える I will have ... が場面に合います。"}, {"s": "語句・会話", "p": "A: Why don't we take the train? B: ( )", "c": ["Good idea. It will be faster.", "I drove it.", "It was closed.", "A bicycle."], "a": 0, "jp": "A：電車で行きませんか。B：いい考えです。その方が速いでしょう。", "ex": "Why don't we ...? は提案。賛成する応答が自然です。"}, {"s": "語句・会話", "p": "The library will ( ) next month.", "c": ["open", "carry", "borrow", "invite"], "a": 0, "jp": "その図書館は来月開館します。", "ex": "施設が『開館する』は open。will の後は動詞の原形です。"}, {"s": "語句・会話", "p": "She has lived here ( ) five years.", "c": ["for", "since", "during", "until"], "a": 0, "jp": "彼女はここに5年間住んでいます。", "ex": "期間の長さには for、開始時点には since を使います。"}, {"s": "語句・会話", "p": "Please ( ) this form.", "c": ["fill out", "turn off", "give up", "look after"], "a": 0, "jp": "この用紙に記入してください。", "ex": "fill out a form で『用紙に記入する』です。"}, {"s": "語句・会話", "p": "If it ( ) sunny, we will hike.", "c": ["is", "was", "will be", "has been"], "a": 0, "jp": "晴れたら、私たちはハイキングに行きます。", "ex": "未来の条件でも if 節では現在形を使います。"}, {"s": "語句・会話", "p": "This book is ( ) than that one.", "c": ["more interesting", "interesting", "most interesting", "interest"], "a": 0, "jp": "この本はあの本よりおもしろいです。", "ex": "than があるので比較級 more interesting が適切です。"}, {"s": "語句・会話", "p": "Keep your ticket ( ) you leave.", "c": ["until", "among", "during", "without"], "a": 0, "jp": "退出するまで切符を持っていてください。", "ex": "until は動作が続く終点『〜まで』を表します。"}, {"s": "語句・会話", "p": "Aya was ( ) enough to return the wallet.", "c": ["honest", "empty", "ancient", "noisy"], "a": 0, "jp": "アヤは財布を返すほど正直でした。", "ex": "財布を返す行動に合う形容詞は honest『正直な』です。"}, {"s": "語句・会話", "p": "The store will ( ) customers by email.", "c": ["notify", "divide", "repair", "borrow"], "a": 0, "jp": "その店はメールで顧客に知らせます。", "ex": "notify 人で『人に知らせる』です。"}, {"s": "語句・会話", "p": "We arrived early ( ) get good seats.", "c": ["in order to", "because of", "even though", "as soon as"], "a": 0, "jp": "よい席を取るために早く着きました。", "ex": "目的は in order to + 動詞の原形で表します。"}, {"s": "語句・会話", "p": "The bridge ( ) in 1998.", "c": ["was built", "builds", "is build", "has building"], "a": 0, "jp": "その橋は1998年に建設されました。", "ex": "橋は建てられる側なので過去の受動態 was built です。"}, {"s": "語句・会話", "p": "The doctor advised me to get enough ( ).", "c": ["rest", "noise", "traffic", "chance"], "a": 0, "jp": "医師は私に十分な休養を取るよう助言しました。", "ex": "get enough rest で『十分に休養を取る』です。"}, {"s": "語句・会話", "p": "Our class will ( ) a charity event.", "c": ["organize", "escape", "melt", "repeat"], "a": 0, "jp": "私たちのクラスは慈善行事を企画します。", "ex": "organize an event は『行事を企画・運営する』です。"}, {"s": "語句・会話", "p": "This bag is made ( ) recycled material.", "c": ["from", "with", "by", "into"], "a": 0, "jp": "このかばんは再生素材から作られています。", "ex": "原料が変化して製品になる場合は be made from を使います。"}, {"s": "語句・会話", "p": "The meeting was ( ) until Monday.", "c": ["postponed", "covered", "measured", "invented"], "a": 0, "jp": "会議は月曜日まで延期されました。", "ex": "postpone は『延期する』。受動態 was postponed です。"}, {"s": "長文読解", "text": "A town started a bicycle-sharing program. Users borrow bicycles with an app and return them to official parking areas. It reduces short car trips.", "textjp": "ある町が自転車共有事業を始めました。利用者はアプリで自転車を借り、指定駐輪場所に返します。この事業は短距離の自動車利用を減らします。", "p": "How do users borrow bicycles?", "c": ["With an app.", "With a ticket.", "By telephone.", "At school."], "a": 0, "jp": "利用者はどのように自転車を借りますか。アプリを使います。", "ex": "本文の with an app が直接の根拠です。"}, {"s": "長文読解", "text": "A town started a bicycle-sharing program. Users borrow bicycles with an app and return them to official parking areas. It reduces short car trips.", "textjp": "ある町が自転車共有事業を始めました。利用者はアプリで自転車を借り、指定駐輪場所に返します。この事業は短距離の自動車利用を減らします。", "p": "Where are bicycles returned?", "c": ["To official parking areas.", "Private homes.", "Only shops.", "Factories."], "a": 0, "jp": "自転車はどこに返されますか。指定駐輪場所です。", "ex": "return them to official parking areas とあります。"}, {"s": "長文読解", "text": "A town started a bicycle-sharing program. Users borrow bicycles with an app and return them to official parking areas. It reduces short car trips.", "textjp": "ある町が自転車共有事業を始めました。利用者はアプリで自転車を借り、指定駐輪場所に返します。この事業は短距離の自動車利用を減らします。", "p": "How do users borrow bicycles?", "c": ["With an app.", "With a ticket.", "By telephone.", "At school."], "a": 0, "jp": "利用者はどのように自転車を借りますか。アプリを使います。", "ex": "本文の with an app が直接の根拠です。"}, {"s": "長文読解", "text": "A town started a bicycle-sharing program. Users borrow bicycles with an app and return them to official parking areas. It reduces short car trips.", "textjp": "ある町が自転車共有事業を始めました。利用者はアプリで自転車を借り、指定駐輪場所に返します。この事業は短距離の自動車利用を減らします。", "p": "Where are bicycles returned?", "c": ["To official parking areas.", "Private homes.", "Only shops.", "Factories."], "a": 0, "jp": "自転車はどこに返されますか。指定駐輪場所です。", "ex": "return them to official parking areas とあります。"}, {"s": "Eメール", "p": "友人への返信を40〜50語で書き、具体的な質問を2つ含めてください。", "min": 40, "max": 50, "sample": "Thank you for your email. I am happy to hear your news. When did you start? Who enjoys it with you? I would like to know more about it. I hope you have a wonderful time.", "samplejp": "メールをありがとう。あなたの知らせを聞いてうれしいです。いつ始めましたか。誰と一緒に楽しんでいますか。もっと詳しく知りたいです。すてきな時間を過ごしてください。", "ex": "相手の内容に反応し、疑問文を2つ入れ、結びの文を加えた構成です。"}, {"s": "英作文", "p": "公園について賛成か反対かを、理由2つとともに50〜60語で書いてください。", "min": 50, "max": 60, "sample": "I agree with this idea. First, it can help students learn useful things. Second, it can improve their community and daily life. Students can also share ideas with other people and become more confident through the experience.", "samplejp": "私はこの考えに賛成です。第一に、生徒が役立つことを学ぶ助けになります。第二に、地域社会や日常生活をよりよくできます。生徒は他の人と考えを共有し、経験を通してより自信を持つこともできます。", "ex": "冒頭で意見を示し、First と Second で理由を2つ明確にしています。"}]];let mode='test',r=0,Q=[],i=0,ans={},seen={},sec=4800,timer;const $=x=>document.querySelector(x),wc=x=>(x||'').trim()?(x||'').trim().split(/\s+/).length:0;function sh(a){for(let n=a.length-1;n;n--){let k=Math.floor(Math.random()*(n+1));[a[n],a[k]]=[a[k],a[n]]}}function load(){Q=JSON.parse(JSON.stringify(BANK[r]));Q.forEach(q=>{if(!q.c)return;let z=q.c.map((t,n)=>({t,ok:n===q.a}));sh(z);q.c=z.map(v=>v.t);q.a=z.findIndex(v=>v.ok)})}function picks(){$('#rounds').innerHTML=[0,1,2,3,4].map(n=>`<button class="sel ${n===r?'on':''}" data-r="${n}">第${n+1}回</button>`).join('');document.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{r=+b.dataset.r;picks()})}picks();document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{mode=b.dataset.m;document.querySelectorAll('[data-m]').forEach(x=>x.classList.toggle('on',x===b))});function render(){let q=Q[i];$('#where').textContent=`第${r+1}回 ${i+1}/26 ${mode==='test'?'テスト':'練習'}`;$('#no').textContent=`QUESTION ${i+1}`;$('#prompt').textContent=q.p;$('#pass').textContent=q.text||'';$('#pass').classList.toggle('hide',!q.text);if(q.c){$('#input').innerHTML=q.c.map((x,n)=>`<button class="choice ${ans[i]===n?'on':''}" data-n="${n}">${String.fromCharCode(65+n)}. ${x}</button>`).join('');document.querySelectorAll('.choice').forEach(b=>b.onclick=()=>{ans[i]=+b.dataset.n;if(mode==='practice')seen[i]=1;render()})}else{$('#input').innerHTML='<textarea placeholder="Write in English..."></textarea><b id="words"></b>'+(mode==='practice'?'<button id="check" class="check">解答例・全訳・解説を確認</button>':'');let t=$('textarea');t.value=ans[i]||'';$('#words').textContent=wc(t.value)+' words';t.oninput=()=>{ans[i]=t.value;$('#words').textContent=wc(t.value)+' words'};if($('#check'))$('#check').onclick=()=>{seen[i]=1;render()}}feedback(q);$('#prev').disabled=i===0;$('#next').textContent=i===25?'提出する':'次へ ›';$('#grid').innerHTML=Q.map((_,n)=>`<button class="jump ${n===i?'cur':ans[n]!==undefined&&ans[n]!==''?'done':''}" data-j="${n}">${n+1}</button>`).join('');document.querySelectorAll('[data-j]').forEach(b=>b.onclick=()=>{i=+b.dataset.j;render()})}function detail(q){return q.c?`<div><b>正答:</b> ${q.c[q.a]}</div><div class="jp"><b>全訳:</b> ${q.jp}</div>${q.textjp?`<div><b>本文全訳:</b> ${q.textjp}</div>`:''}<div><b>解説:</b> ${q.ex}</div>`:`<div><b>解答例:</b> ${q.sample}</div><div class="jp"><b>全訳:</b> ${q.samplejp}</div><div><b>解説:</b> ${q.ex}</div>`}function feedback(q){let f=$('#fb');f.className='hide';if(mode!=='practice'||!seen[i])return;f.className='feedback '+(q.c?(ans[i]===q.a?'ok':'ng'):'sample');f.innerHTML=(q.c?`<b>${ans[i]===q.a?'正解です！':'不正解です'}</b>`:'')+detail(q)}function finish(){clearInterval(timer);$('#exam').classList.add('hide');$('#result').classList.remove('hide');let s=Q.slice(0,24).reduce((a,q,n)=>a+(ans[n]===q.a),0);$('#score').textContent=`第${r+1}回 ${s}/24`;$('#reviews').innerHTML=Q.map((q,n)=>`<div class="feedback ${q.c?(ans[n]===q.a?'ok':'ng'):'sample'}"><b>${n+1}. ${q.s}</b>${detail(q)}</div>`).join('')}$('#go').onclick=()=>{load();$('#start').classList.add('hide');$('#exam').classList.remove('hide');render();timer=setInterval(()=>{sec--;$('#time').textContent=String(sec/60|0).padStart(2,'0')+':'+String(sec%60).padStart(2,'0');if(sec<=0)finish()},1000)};$('#prev').onclick=()=>{if(i){i--;render()}};$('#next').onclick=()=>i<25?(i++,render()):finish();</script></body></html>
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <title>英検準2級 模試</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: system-ui;
+        background: #f1f5f9;
+        color: #0f172a;
+      }
+      button,
+      textarea {
+        font: inherit;
+      }
+      .hide {
+        display: none !important;
+      }
+      .wrap {
+        max-width: 620px;
+        margin: auto;
+      }
+      .start {
+        min-height: 100dvh;
+        background: #08111f;
+        color: white;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+      }
+      .card {
+        background: white;
+        border-radius: 24px;
+        padding: 22px;
+        box-shadow: 0 12px 30px #0002;
+      }
+      .start .card {
+        background: #111c2e;
+      }
+      .green {
+        color: #34d399;
+      }
+      .modes {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .rounds {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 6px;
+        margin: 16px 0;
+      }
+      .sel {
+        border: 2px solid #334155;
+        background: #1e293b;
+        color: white;
+        border-radius: 14px;
+        padding: 11px 3px;
+        font-weight: 800;
+      }
+      .sel.on {
+        border-color: #34d399;
+        background: #064e3b;
+      }
+      .primary {
+        width: 100%;
+        border: 0;
+        border-radius: 16px;
+        padding: 15px;
+        background: #34d399;
+        font-weight: 900;
+      }
+      header {
+        position: sticky;
+        top: 0;
+        background: #08111f;
+        color: white;
+        padding: 12px 16px;
+        z-index: 2;
+      }
+      .row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .main {
+        padding: 16px 16px 115px;
+      }
+      .pass {
+        white-space: pre-line;
+        background: #f8fafc;
+        padding: 14px;
+        border-radius: 15px;
+        line-height: 1.7;
+      }
+      .prompt {
+        white-space: pre-line;
+        font-size: 18px;
+        font-weight: 750;
+        line-height: 1.7;
+      }
+      .choice {
+        display: block;
+        width: 100%;
+        text-align: left;
+        border: 2px solid #e2e8f0;
+        background: white;
+        border-radius: 15px;
+        padding: 14px;
+        margin: 9px 0;
+      }
+      .choice.on {
+        border-color: #10b981;
+        background: #ecfdf5;
+      }
+      .feedback {
+        padding: 14px;
+        border-radius: 15px;
+        margin-top: 12px;
+        line-height: 1.7;
+      }
+      .ok {
+        background: #ecfdf5;
+      }
+      .ng {
+        background: #fff1f2;
+      }
+      .sample {
+        background: #eff6ff;
+      }
+      .jp {
+        border-top: 1px solid #94a3b8;
+        margin-top: 8px;
+        padding-top: 8px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        gap: 6px;
+        margin-top: 14px;
+      }
+      .jump {
+        aspect-ratio: 1;
+        border: 0;
+        border-radius: 8px;
+        background: white;
+      }
+      .jump.cur {
+        background: #08111f;
+        color: white;
+      }
+      .jump.done {
+        background: #a7f3d0;
+      }
+      textarea {
+        width: 100%;
+        height: 190px;
+        border: 2px solid #e2e8f0;
+        border-radius: 15px;
+        padding: 13px;
+      }
+      .check {
+        width: 100%;
+        padding: 12px;
+        border: 0;
+        border-radius: 14px;
+        background: #0f172a;
+        color: white;
+        font-weight: 800;
+        margin-top: 9px;
+      }
+      footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: white;
+        padding: 10px 14px;
+        border-top: 1px solid #ddd;
+      }
+      .nav {
+        max-width: 620px;
+        margin: auto;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 9px;
+      }
+      .nav button {
+        padding: 12px;
+        border-radius: 14px;
+        border: 1px solid #ccc;
+        font-weight: 800;
+      }
+
+      .back-title {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 38px;
+        padding: 8px 11px;
+        color: #d1fae5;
+        font-size: 13px;
+        font-weight: 800;
+        background: rgba(52, 211, 153, 0.12);
+        border: 1px solid rgba(110, 231, 183, 0.45);
+        border-radius: 999px;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        transition:
+          background 0.2s ease,
+          transform 0.2s ease;
+      }
+
+      .back-title:hover {
+        background: rgba(52, 211, 153, 0.22);
+      }
+
+      .back-title:active {
+        transform: scale(0.96);
+      }
+
+      .back-title-icon {
+        display: grid;
+        place-items: center;
+        width: 22px;
+        height: 22px;
+        color: #052e2b;
+        font-size: 14px;
+        line-height: 1;
+        background: #6ee7b7;
+        border-radius: 50%;
+      }
+    </style>
+  </head>
+  <body>
+    <section id="start" class="start">
+      <div class="wrap card">
+        <b class="green">スマホ筆記模試</b>
+        <h1>英検準2級 全5回</h1>
+        <div class="modes">
+          <button class="sel on" data-m="test">
+            テストモード<small style="display: block">最後に採点</small></button
+          ><button class="sel" data-m="practice">
+            練習モード<small style="display: block">1問ごとに解説</small>
+          </button>
+        </div>
+        <div id="rounds" class="rounds"></div>
+        <button id="go" class="primary">開始する</button>
+      </div>
+    </section>
+    <section id="exam" class="hide">
+      <header>
+        <div class="wrap row">
+          <button
+            id="back-title"
+            class="back-title"
+            aria-label="タイトル画面へ戻る"
+          >
+            <span class="back-title-icon" aria-hidden="true">⌂</span>
+            <span>タイトル</span>
+          </button>
+          <b id="where"></b>
+          <b id="time">80:00</b>
+        </div>
+      </header>
+      <main class="wrap main">
+        <div class="card">
+          <b id="no" class="green"></b>
+          <div id="pass" class="pass hide"></div>
+          <div id="prompt" class="prompt"></div>
+          <div id="input"></div>
+          <div id="fb" class="hide"></div>
+        </div>
+        <div id="grid" class="grid"></div>
+      </main>
+      <footer>
+        <div class="nav">
+          <button id="prev">‹ 前へ</button
+          ><button id="next" style="background: #34d399">次へ ›</button>
+        </div>
+      </footer>
+    </section>
+    <section id="result" class="hide">
+      <div class="wrap main">
+        <div class="card">
+          <b class="green">採点結果</b>
+          <h1 id="score"></h1>
+          <div id="reviews"></div>
+          <button class="primary" onclick="location.reload()">回選択へ</button>
+        </div>
+      </div>
+    </section>
+    <script>
+      const BANK = [
+        [
+          {
+            s: "語句・会話",
+            p: "The library will ( ) next month.",
+            c: ["open", "carry", "borrow", "invite"],
+            a: 0,
+            jp: "その図書館は来月開館します。",
+            ex: "施設が『開館する』は open。will の後は動詞の原形です。",
+          },
+          {
+            s: "語句・会話",
+            p: "She has lived here ( ) five years.",
+            c: ["for", "since", "during", "until"],
+            a: 0,
+            jp: "彼女はここに5年間住んでいます。",
+            ex: "期間の長さには for、開始時点には since を使います。",
+          },
+          {
+            s: "語句・会話",
+            p: "Please ( ) this form.",
+            c: ["fill out", "turn off", "give up", "look after"],
+            a: 0,
+            jp: "この用紙に記入してください。",
+            ex: "fill out a form で『用紙に記入する』です。",
+          },
+          {
+            s: "語句・会話",
+            p: "If it ( ) sunny, we will hike.",
+            c: ["is", "was", "will be", "has been"],
+            a: 0,
+            jp: "晴れたら、私たちはハイキングに行きます。",
+            ex: "未来の条件でも if 節では現在形を使います。",
+          },
+          {
+            s: "語句・会話",
+            p: "This book is ( ) than that one.",
+            c: [
+              "more interesting",
+              "interesting",
+              "most interesting",
+              "interest",
+            ],
+            a: 0,
+            jp: "この本はあの本よりおもしろいです。",
+            ex: "than があるので比較級 more interesting が適切です。",
+          },
+          {
+            s: "語句・会話",
+            p: "Keep your ticket ( ) you leave.",
+            c: ["until", "among", "during", "without"],
+            a: 0,
+            jp: "退出するまで切符を持っていてください。",
+            ex: "until は動作が続く終点『〜まで』を表します。",
+          },
+          {
+            s: "語句・会話",
+            p: "Aya was ( ) enough to return the wallet.",
+            c: ["honest", "empty", "ancient", "noisy"],
+            a: 0,
+            jp: "アヤは財布を返すほど正直でした。",
+            ex: "財布を返す行動に合う形容詞は honest『正直な』です。",
+          },
+          {
+            s: "語句・会話",
+            p: "The store will ( ) customers by email.",
+            c: ["notify", "divide", "repair", "borrow"],
+            a: 0,
+            jp: "その店はメールで顧客に知らせます。",
+            ex: "notify 人で『人に知らせる』です。",
+          },
+          {
+            s: "語句・会話",
+            p: "We arrived early ( ) get good seats.",
+            c: ["in order to", "because of", "even though", "as soon as"],
+            a: 0,
+            jp: "よい席を取るために早く着きました。",
+            ex: "目的は in order to + 動詞の原形で表します。",
+          },
+          {
+            s: "語句・会話",
+            p: "The bridge ( ) in 1998.",
+            c: ["was built", "builds", "is build", "has building"],
+            a: 0,
+            jp: "その橋は1998年に建設されました。",
+            ex: "橋は建てられる側なので過去の受動態 was built です。",
+          },
+          {
+            s: "語句・会話",
+            p: "The doctor advised me to get enough ( ).",
+            c: ["rest", "noise", "traffic", "chance"],
+            a: 0,
+            jp: "医師は私に十分な休養を取るよう助言しました。",
+            ex: "get enough rest で『十分に休養を取る』です。",
+          },
+          {
+            s: "語句・会話",
+            p: "Our class will ( ) a charity event.",
+            c: ["organize", "escape", "melt", "repeat"],
+            a: 0,
+            jp: "私たちのクラスは慈善行事を企画します。",
+            ex: "organize an event は『行事を企画・運営する』です。",
+          },
+          {
+            s: "語句・会話",
+            p: "This bag is made ( ) recycled material.",
+            c: ["from", "with", "by", "into"],
+            a: 0,
+            jp: "このかばんは再生素材から作られています。",
+            ex: "原料が変化して製品になる場合は be made from を使います。",
+          },
+          {
+            s: "語句・会話",
+            p: "The meeting was ( ) until Monday.",
+            c: ["postponed", "covered", "measured", "invented"],
+            a: 0,
+            jp: "会議は月曜日まで延期されました。",
+            ex: "postpone は『延期する』。受動態 was postponed です。",
+          },
+          {
+            s: "語句・会話",
+            p: "Mika is interested ( ) studying abroad.",
+            c: ["in", "at", "to", "for"],
+            a: 0,
+            jp: "ミカは留学に興味があります。",
+            ex: "be interested in + 名詞・動名詞の形です。",
+          },
+          {
+            s: "語句・会話",
+            p: "The city plans to ( ) a sports center.",
+            c: ["construct", "translate", "discover", "exchange"],
+            a: 0,
+            jp: "市はスポーツセンターを建設する予定です。",
+            ex: "construct は建物などを『建設する』という意味です。",
+          },
+          {
+            s: "語句・会話",
+            p: "Please ( ) your seat belt.",
+            c: ["fasten", "fold", "boil", "plant"],
+            a: 0,
+            jp: "シートベルトを締めてください。",
+            ex: "fasten a seat belt が定型表現です。",
+          },
+          {
+            s: "語句・会話",
+            p: "Rina finally ( ) her goal.",
+            c: ["achieved", "refused", "borrowed", "hid"],
+            a: 0,
+            jp: "リナはついに目標を達成しました。",
+            ex: "achieve a goal で『目標を達成する』です。",
+          },
+          {
+            s: "語句・会話",
+            p: "We need an ( ) route.",
+            c: ["alternative", "ordinary", "empty", "private"],
+            a: 0,
+            jp: "私たちには代わりの経路が必要です。",
+            ex: "alternative は『代わりの、別の』を表します。",
+          },
+          {
+            s: "語句・会話",
+            p: "By the time we arrived, it ( ).",
+            c: ["had started", "starts", "will start", "has start"],
+            a: 0,
+            jp: "私たちが着いた時までに、それは始まっていました。",
+            ex: "到着より前に始まったので過去完了 had started です。",
+          },
+          {
+            s: "長文読解",
+            text: "A town started a bicycle-sharing program. Users borrow bicycles with an app and return them to official parking areas. The program reduces short car trips, but bicycles sometimes gather at popular locations.",
+            textjp:
+              "ある町が自転車共有事業を始めました。利用者はアプリで自転車を借り、指定駐輪場所に返します。この事業は短距離の自動車利用を減らしますが、人気の場所に自転車が集まりすぎることがあります。",
+            p: "How do users borrow bicycles?",
+            c: [
+              "With an app.",
+              "With a paper ticket.",
+              "By telephone.",
+              "At school.",
+            ],
+            a: 0,
+            jp: "利用者はどのように自転車を借りますか。アプリを使います。",
+            ex: "本文の with an app が根拠です。",
+          },
+          {
+            s: "長文読解",
+            text: "A town started a bicycle-sharing program. Users borrow bicycles with an app and return them to official parking areas. The program reduces short car trips, but bicycles sometimes gather at popular locations.",
+            textjp:
+              "ある町が自転車共有事業を始めました。利用者はアプリで自転車を借り、指定駐輪場所に返します。この事業は短距離の自動車利用を減らしますが、人気の場所に自転車が集まりすぎることがあります。",
+            p: "Where do users return the bicycles?",
+            c: [
+              "To official parking areas.",
+              "To private homes.",
+              "Only to shops.",
+              "To factories.",
+            ],
+            a: 0,
+            jp: "利用者は自転車をどこに返しますか。指定駐輪場所です。",
+            ex: "return them to official parking areas とあります。",
+          },
+          {
+            s: "長文読解",
+            text: "A town started a bicycle-sharing program. Users borrow bicycles with an app and return them to official parking areas. The program reduces short car trips, but bicycles sometimes gather at popular locations.",
+            textjp:
+              "ある町が自転車共有事業を始めました。利用者はアプリで自転車を借り、指定駐輪場所に返します。この事業は短距離の自動車利用を減らしますが、人気の場所に自転車が集まりすぎることがあります。",
+            p: "What does the program reduce?",
+            c: [
+              "Short car trips.",
+              "Train services.",
+              "School hours.",
+              "Walking paths.",
+            ],
+            a: 0,
+            jp: "この事業は何を減らしますか。短距離の自動車利用です。",
+            ex: "reduces short car trips が直接の根拠です。",
+          },
+          {
+            s: "長文読解",
+            text: "A town started a bicycle-sharing program. Users borrow bicycles with an app and return them to official parking areas. The program reduces short car trips, but bicycles sometimes gather at popular locations.",
+            textjp:
+              "ある町が自転車共有事業を始めました。利用者はアプリで自転車を借り、指定駐輪場所に返します。この事業は短距離の自動車利用を減らしますが、人気の場所に自転車が集まりすぎることがあります。",
+            p: "What problem sometimes occurs?",
+            c: [
+              "Bicycles gather at popular locations.",
+              "The app stops working.",
+              "Parking areas disappear.",
+              "Users cannot ride bicycles.",
+            ],
+            a: 0,
+            jp: "時々どのような問題が起きますか。人気の場所に自転車が集まります。",
+            ex: "but 以下に問題点が示されています。",
+          },
+          {
+            s: "Eメール",
+            p: "友人への返信を40〜50語で書き、具体的な質問を2つ含めてください。",
+            min: 40,
+            max: 50,
+            sample:
+              "Thank you for your email. I am happy to hear your news. When did you start? Who enjoys it with you? I would like to know more about it. I hope you have a wonderful time.",
+            samplejp:
+              "メールをありがとう。あなたの知らせを聞いてうれしいです。いつ始めましたか。誰と一緒に楽しんでいますか。もっと詳しく知りたいです。すてきな時間を過ごしてください。",
+            ex: "相手の内容に反応し、疑問文を2つ入れ、結びの文を加えた構成です。",
+          },
+          {
+            s: "英作文",
+            p: "Do you think junior high school students should take part in volunteer activities in their local community? 意見と理由を2つ、50〜60語で書いてください。",
+            min: 50,
+            max: 60,
+            sample:
+              "I think junior high school students should join local volunteer activities. First, they can learn about problems in their community by helping other people. Second, they can develop communication skills by working with people of different ages. These experiences may also encourage them to care more about the place where they live.",
+            samplejp:
+              "私は、中学生は地域のボランティア活動に参加すべきだと思います。第一に、ほかの人を助けることで地域の問題について学べます。第二に、さまざまな年齢の人と活動することで、コミュニケーション能力を伸ばせます。こうした経験は、自分の住む場所をもっと大切にするきっかけにもなるでしょう。",
+            ex: "冒頭で賛成の立場を明示し、地域理解とコミュニケーション能力という異なる2つの理由を、First と Second で整理しています。",
+          },
+        ],
+        [
+          {
+            s: "語句・会話",
+            p: "Aya was ( ) enough to return the wallet.",
+            c: ["honest", "empty", "ancient", "noisy"],
+            a: 0,
+            jp: "アヤは財布を返すほど正直でした。",
+            ex: "財布を返す行動に合う形容詞は honest『正直な』です。",
+          },
+          {
+            s: "語句・会話",
+            p: "The store will ( ) customers by email.",
+            c: ["notify", "divide", "repair", "borrow"],
+            a: 0,
+            jp: "その店はメールで顧客に知らせます。",
+            ex: "notify 人で『人に知らせる』です。",
+          },
+          {
+            s: "語句・会話",
+            p: "We arrived early ( ) get good seats.",
+            c: ["in order to", "because of", "even though", "as soon as"],
+            a: 0,
+            jp: "よい席を取るために早く着きました。",
+            ex: "目的は in order to + 動詞の原形で表します。",
+          },
+          {
+            s: "語句・会話",
+            p: "The bridge ( ) in 1998.",
+            c: ["was built", "builds", "is build", "has building"],
+            a: 0,
+            jp: "その橋は1998年に建設されました。",
+            ex: "橋は建てられる側なので過去の受動態 was built です。",
+          },
+          {
+            s: "語句・会話",
+            p: "The doctor advised me to get enough ( ).",
+            c: ["rest", "noise", "traffic", "chance"],
+            a: 0,
+            jp: "医師は私に十分な休養を取るよう助言しました。",
+            ex: "get enough rest で『十分に休養を取る』です。",
+          },
+          {
+            s: "語句・会話",
+            p: "Our class will ( ) a charity event.",
+            c: ["organize", "escape", "melt", "repeat"],
+            a: 0,
+            jp: "私たちのクラスは慈善行事を企画します。",
+            ex: "organize an event は『行事を企画・運営する』です。",
+          },
+          {
+            s: "語句・会話",
+            p: "This bag is made ( ) recycled material.",
+            c: ["from", "with", "by", "into"],
+            a: 0,
+            jp: "このかばんは再生素材から作られています。",
+            ex: "原料が変化して製品になる場合は be made from を使います。",
+          },
+          {
+            s: "語句・会話",
+            p: "The meeting was ( ) until Monday.",
+            c: ["postponed", "covered", "measured", "invented"],
+            a: 0,
+            jp: "会議は月曜日まで延期されました。",
+            ex: "postpone は『延期する』。受動態 was postponed です。",
+          },
+          {
+            s: "語句・会話",
+            p: "Mika is interested ( ) studying abroad.",
+            c: ["in", "at", "to", "for"],
+            a: 0,
+            jp: "ミカは留学に興味があります。",
+            ex: "be interested in + 名詞・動名詞の形です。",
+          },
+          {
+            s: "語句・会話",
+            p: "The city plans to ( ) a sports center.",
+            c: ["construct", "translate", "discover", "exchange"],
+            a: 0,
+            jp: "市はスポーツセンターを建設する予定です。",
+            ex: "construct は建物などを『建設する』という意味です。",
+          },
+          {
+            s: "語句・会話",
+            p: "Please ( ) your seat belt.",
+            c: ["fasten", "fold", "boil", "plant"],
+            a: 0,
+            jp: "シートベルトを締めてください。",
+            ex: "fasten a seat belt が定型表現です。",
+          },
+          {
+            s: "語句・会話",
+            p: "Rina finally ( ) her goal.",
+            c: ["achieved", "refused", "borrowed", "hid"],
+            a: 0,
+            jp: "リナはついに目標を達成しました。",
+            ex: "achieve a goal で『目標を達成する』です。",
+          },
+          {
+            s: "語句・会話",
+            p: "We need an ( ) route.",
+            c: ["alternative", "ordinary", "empty", "private"],
+            a: 0,
+            jp: "私たちには代わりの経路が必要です。",
+            ex: "alternative は『代わりの、別の』を表します。",
+          },
+          {
+            s: "語句・会話",
+            p: "By the time we arrived, it ( ).",
+            c: ["had started", "starts", "will start", "has start"],
+            a: 0,
+            jp: "私たちが着いた時までに、それは始まっていました。",
+            ex: "到着より前に始まったので過去完了 had started です。",
+          },
+          {
+            s: "語句・会話",
+            p: "Exercise can ( ) your health.",
+            c: ["improve", "invite", "deliver", "prevent"],
+            a: 0,
+            jp: "運動は健康を改善できます。",
+            ex: "improve health で『健康を改善する』です。",
+          },
+          {
+            s: "語句・会話",
+            p: "We must take ( ) for our decisions.",
+            c: ["responsibility", "direction", "medicine", "temperature"],
+            a: 0,
+            jp: "私たちは自分の決定に責任を持たなければなりません。",
+            ex: "take responsibility for で『〜に責任を持つ』です。",
+          },
+          {
+            s: "語句・会話",
+            p: "The scientist made a ( ).",
+            c: ["discovery", "entrance", "argument", "appointment"],
+            a: 0,
+            jp: "その科学者は発見をしました。",
+            ex: "make a discovery で『発見をする』です。",
+          },
+          {
+            s: "語句・会話",
+            p: "The hotel is within walking ( ).",
+            c: ["distance", "height", "weight", "speed"],
+            a: 0,
+            jp: "そのホテルは歩いて行ける距離にあります。",
+            ex: "within walking distance は『徒歩圏内』という定型表現です。",
+          },
+          {
+            s: "語句・会話",
+            p: "You had better ( ) early.",
+            c: [
+              "make a reservation",
+              "to reserve",
+              "making a reservation",
+              "reserved",
+            ],
+            a: 0,
+            jp: "早めに予約したほうがよいです。",
+            ex: "had better の後は動詞の原形です。",
+          },
+          {
+            s: "語句・会話",
+            p: "A: Could you help me? B: ( )",
+            c: [
+              "Sure. What should I do?",
+              "No, I saw it.",
+              "It was blue.",
+              "Yesterday.",
+            ],
+            a: 0,
+            jp: "A：手伝ってもらえますか。B：もちろん。何をすればよいですか。",
+            ex: "依頼を受け入れ、内容を確認する自然な応答です。",
+          },
+          {
+            s: "長文読解",
+            text: "Roof gardens keep buildings cooler and provide homes for insects and birds. Students can grow vegetables and learn how food grows. Careful planning is needed because soil and water are heavy.",
+            textjp:
+              "屋上庭園は建物をより涼しく保ち、昆虫や鳥のすみかを提供します。生徒は野菜を育て、食べ物がどのように育つかを学べます。土と水が重いため、慎重な計画が必要です。",
+            p: "What is one benefit of roof gardens?",
+            c: [
+              "They keep buildings cooler.",
+              "They make buildings taller.",
+              "They remove the need for water.",
+              "They replace all parks.",
+            ],
+            a: 0,
+            jp: "屋上庭園の利点の一つは何ですか。建物をより涼しく保つことです。",
+            ex: "keep buildings cooler が根拠です。",
+          },
+          {
+            s: "長文読解",
+            text: "Roof gardens keep buildings cooler and provide homes for insects and birds. Students can grow vegetables and learn how food grows. Careful planning is needed because soil and water are heavy.",
+            textjp:
+              "屋上庭園は建物をより涼しく保ち、昆虫や鳥のすみかを提供します。生徒は野菜を育て、食べ物がどのように育つかを学べます。土と水が重いため、慎重な計画が必要です。",
+            p: "What do roof gardens provide for animals?",
+            c: [
+              "Homes for insects and birds.",
+              "Food for large animals.",
+              "Warm rooms for pets.",
+              "Places for fish.",
+            ],
+            a: 0,
+            jp: "屋上庭園は動物に何を提供しますか。昆虫や鳥のすみかです。",
+            ex: "provide homes for insects and birds とあります。",
+          },
+          {
+            s: "長文読解",
+            text: "Roof gardens keep buildings cooler and provide homes for insects and birds. Students can grow vegetables and learn how food grows. Careful planning is needed because soil and water are heavy.",
+            textjp:
+              "屋上庭園は建物をより涼しく保ち、昆虫や鳥のすみかを提供します。生徒は野菜を育て、食べ物がどのように育つかを学べます。土と水が重いため、慎重な計画が必要です。",
+            p: "What can students learn?",
+            c: [
+              "How food grows.",
+              "How houses are built.",
+              "How weather is forecast.",
+              "How machines work.",
+            ],
+            a: 0,
+            jp: "生徒は何を学べますか。食べ物がどのように育つかです。",
+            ex: "learn how food grows が根拠です。",
+          },
+          {
+            s: "長文読解",
+            text: "Roof gardens keep buildings cooler and provide homes for insects and birds. Students can grow vegetables and learn how food grows. Careful planning is needed because soil and water are heavy.",
+            textjp:
+              "屋上庭園は建物をより涼しく保ち、昆虫や鳥のすみかを提供します。生徒は野菜を育て、食べ物がどのように育つかを学べます。土と水が重いため、慎重な計画が必要です。",
+            p: "Why is careful planning needed?",
+            c: [
+              "Soil and water are heavy.",
+              "Roofs are always cold.",
+              "Birds cannot fly high.",
+              "Students dislike vegetables.",
+            ],
+            a: 0,
+            jp: "なぜ慎重な計画が必要ですか。土と水が重いからです。",
+            ex: "because 以下が理由を示しています。",
+          },
+          {
+            s: "Eメール",
+            p: "友人への返信を40〜50語で書き、具体的な質問を2つ含めてください。",
+            min: 40,
+            max: 50,
+            sample:
+              "Thank you for your email. I am happy to hear your news. When did you start? Who enjoys it with you? I would like to know more about it. I hope you have a wonderful time.",
+            samplejp:
+              "メールをありがとう。あなたの知らせを聞いてうれしいです。いつ始めましたか。誰と一緒に楽しんでいますか。もっと詳しく知りたいです。すてきな時間を過ごしてください。",
+            ex: "相手の内容に反応し、疑問文を2つ入れ、結びの文を加えた構成です。",
+          },
+          {
+            s: "英作文",
+            p: "Do you think schools should have more classes outdoors? 意見と理由を2つ、50〜60語で書いてください。",
+            min: 50,
+            max: 60,
+            sample:
+              "I think schools should offer more classes outdoors. First, students can understand science better by observing plants, animals, and weather directly. Second, learning outside can make lessons more active and memorable. However, teachers should prepare another plan for rainy days so that students can continue learning safely and comfortably outside.",
+            samplejp:
+              "私は、学校は屋外で行う授業をもっと増やすべきだと思います。第一に、植物、動物、天気を直接観察することで、理科をよりよく理解できます。第二に、屋外学習は授業をより活動的で記憶に残るものにできます。ただし、雨の日にも安全で快適に学び続けられるよう、教師は別の計画を用意すべきです。",
+            ex: "自然を直接観察できる点と、授業が記憶に残りやすい点を理由にしています。最後に雨天時の対策を加え、意見を具体化しています。",
+          },
+        ],
+        [
+          {
+            s: "語句・会話",
+            p: "This bag is made ( ) recycled material.",
+            c: ["from", "with", "by", "into"],
+            a: 0,
+            jp: "このかばんは再生素材から作られています。",
+            ex: "原料が変化して製品になる場合は be made from を使います。",
+          },
+          {
+            s: "語句・会話",
+            p: "The meeting was ( ) until Monday.",
+            c: ["postponed", "covered", "measured", "invented"],
+            a: 0,
+            jp: "会議は月曜日まで延期されました。",
+            ex: "postpone は『延期する』。受動態 was postponed です。",
+          },
+          {
+            s: "語句・会話",
+            p: "Mika is interested ( ) studying abroad.",
+            c: ["in", "at", "to", "for"],
+            a: 0,
+            jp: "ミカは留学に興味があります。",
+            ex: "be interested in + 名詞・動名詞の形です。",
+          },
+          {
+            s: "語句・会話",
+            p: "The city plans to ( ) a sports center.",
+            c: ["construct", "translate", "discover", "exchange"],
+            a: 0,
+            jp: "市はスポーツセンターを建設する予定です。",
+            ex: "construct は建物などを『建設する』という意味です。",
+          },
+          {
+            s: "語句・会話",
+            p: "Please ( ) your seat belt.",
+            c: ["fasten", "fold", "boil", "plant"],
+            a: 0,
+            jp: "シートベルトを締めてください。",
+            ex: "fasten a seat belt が定型表現です。",
+          },
+          {
+            s: "語句・会話",
+            p: "Rina finally ( ) her goal.",
+            c: ["achieved", "refused", "borrowed", "hid"],
+            a: 0,
+            jp: "リナはついに目標を達成しました。",
+            ex: "achieve a goal で『目標を達成する』です。",
+          },
+          {
+            s: "語句・会話",
+            p: "We need an ( ) route.",
+            c: ["alternative", "ordinary", "empty", "private"],
+            a: 0,
+            jp: "私たちには代わりの経路が必要です。",
+            ex: "alternative は『代わりの、別の』を表します。",
+          },
+          {
+            s: "語句・会話",
+            p: "By the time we arrived, it ( ).",
+            c: ["had started", "starts", "will start", "has start"],
+            a: 0,
+            jp: "私たちが着いた時までに、それは始まっていました。",
+            ex: "到着より前に始まったので過去完了 had started です。",
+          },
+          {
+            s: "語句・会話",
+            p: "Exercise can ( ) your health.",
+            c: ["improve", "invite", "deliver", "prevent"],
+            a: 0,
+            jp: "運動は健康を改善できます。",
+            ex: "improve health で『健康を改善する』です。",
+          },
+          {
+            s: "語句・会話",
+            p: "We must take ( ) for our decisions.",
+            c: ["responsibility", "direction", "medicine", "temperature"],
+            a: 0,
+            jp: "私たちは自分の決定に責任を持たなければなりません。",
+            ex: "take responsibility for で『〜に責任を持つ』です。",
+          },
+          {
+            s: "語句・会話",
+            p: "The scientist made a ( ).",
+            c: ["discovery", "entrance", "argument", "appointment"],
+            a: 0,
+            jp: "その科学者は発見をしました。",
+            ex: "make a discovery で『発見をする』です。",
+          },
+          {
+            s: "語句・会話",
+            p: "The hotel is within walking ( ).",
+            c: ["distance", "height", "weight", "speed"],
+            a: 0,
+            jp: "そのホテルは歩いて行ける距離にあります。",
+            ex: "within walking distance は『徒歩圏内』という定型表現です。",
+          },
+          {
+            s: "語句・会話",
+            p: "You had better ( ) early.",
+            c: [
+              "make a reservation",
+              "to reserve",
+              "making a reservation",
+              "reserved",
+            ],
+            a: 0,
+            jp: "早めに予約したほうがよいです。",
+            ex: "had better の後は動詞の原形です。",
+          },
+          {
+            s: "語句・会話",
+            p: "A: Could you help me? B: ( )",
+            c: [
+              "Sure. What should I do?",
+              "No, I saw it.",
+              "It was blue.",
+              "Yesterday.",
+            ],
+            a: 0,
+            jp: "A：手伝ってもらえますか。B：もちろん。何をすればよいですか。",
+            ex: "依頼を受け入れ、内容を確認する自然な応答です。",
+          },
+          {
+            s: "語句・会話",
+            p: "A: How often do you practice? B: ( )",
+            c: [
+              "Three times a week.",
+              "At seven ago.",
+              "For Monday.",
+              "Very long.",
+            ],
+            a: 0,
+            jp: "A：どのくらいの頻度で練習しますか。B：週に3回です。",
+            ex: "How often には回数や頻度で答えます。",
+          },
+          {
+            s: "語句・会話",
+            p: "A: I am sorry I am late. B: ( )",
+            c: [
+              "That is all right.",
+              "You are welcome.",
+              "Here you are.",
+              "Congratulations.",
+            ],
+            a: 0,
+            jp: "A：遅れてすみません。B：大丈夫ですよ。",
+            ex: "謝罪を受け入れる表現 That is all right. が適切です。",
+          },
+          {
+            s: "語句・会話",
+            p: "A: Have you decided what to order? B: ( )",
+            c: [
+              "I will have the pasta.",
+              "Last Sunday.",
+              "The waiter did.",
+              "This table.",
+            ],
+            a: 0,
+            jp: "A：何を注文するか決めましたか。B：パスタにします。",
+            ex: "注文を伝える I will have ... が場面に合います。",
+          },
+          {
+            s: "語句・会話",
+            p: "A: Why don't we take the train? B: ( )",
+            c: [
+              "Good idea. It will be faster.",
+              "I drove it.",
+              "It was closed.",
+              "A bicycle.",
+            ],
+            a: 0,
+            jp: "A：電車で行きませんか。B：いい考えです。その方が速いでしょう。",
+            ex: "Why don't we ...? は提案。賛成する応答が自然です。",
+          },
+          {
+            s: "語句・会話",
+            p: "The library will ( ) next month.",
+            c: ["open", "carry", "borrow", "invite"],
+            a: 0,
+            jp: "その図書館は来月開館します。",
+            ex: "施設が『開館する』は open。will の後は動詞の原形です。",
+          },
+          {
+            s: "語句・会話",
+            p: "She has lived here ( ) five years.",
+            c: ["for", "since", "during", "until"],
+            a: 0,
+            jp: "彼女はここに5年間住んでいます。",
+            ex: "期間の長さには for、開始時点には since を使います。",
+          },
+          {
+            s: "長文読解",
+            text: "Students at Green High measured food left after lunch and asked classmates why food was wasted. The school then offered smaller portions, and the amount of waste decreased.",
+            textjp:
+              "グリーン高校の生徒たちは昼食後に残った食べ物を量り、なぜ食べ物が捨てられるのかを級友に尋ねました。その後、学校は少なめの量を提供し、廃棄量は減りました。",
+            p: "What did the students measure?",
+            c: [
+              "Food left after lunch.",
+              "The size of classrooms.",
+              "Travel time to school.",
+              "The price of uniforms.",
+            ],
+            a: 0,
+            jp: "生徒たちは何を量りましたか。昼食後に残った食べ物です。",
+            ex: "measured food left after lunch が根拠です。",
+          },
+          {
+            s: "長文読解",
+            text: "Students at Green High measured food left after lunch and asked classmates why food was wasted. The school then offered smaller portions, and the amount of waste decreased.",
+            textjp:
+              "グリーン高校の生徒たちは昼食後に残った食べ物を量り、なぜ食べ物が捨てられるのかを級友に尋ねました。その後、学校は少なめの量を提供し、廃棄量は減りました。",
+            p: "Who did the students question?",
+            c: [
+              "Their classmates.",
+              "Their parents.",
+              "Local farmers.",
+              "Restaurant owners.",
+            ],
+            a: 0,
+            jp: "生徒たちは誰に質問しましたか。級友です。",
+            ex: "asked classmates とあります。",
+          },
+          {
+            s: "長文読解",
+            text: "Students at Green High measured food left after lunch and asked classmates why food was wasted. The school then offered smaller portions, and the amount of waste decreased.",
+            textjp:
+              "グリーン高校の生徒たちは昼食後に残った食べ物を量り、なぜ食べ物が捨てられるのかを級友に尋ねました。その後、学校は少なめの量を提供し、廃棄量は減りました。",
+            p: "What change did the school make?",
+            c: [
+              "It offered smaller portions.",
+              "It closed the cafeteria.",
+              "It served only soup.",
+              "It shortened lunchtime.",
+            ],
+            a: 0,
+            jp: "学校はどのような変更をしましたか。少なめの量を提供しました。",
+            ex: "offered smaller portions が根拠です。",
+          },
+          {
+            s: "長文読解",
+            text: "Students at Green High measured food left after lunch and asked classmates why food was wasted. The school then offered smaller portions, and the amount of waste decreased.",
+            textjp:
+              "グリーン高校の生徒たちは昼食後に残った食べ物を量り、なぜ食べ物が捨てられるのかを級友に尋ねました。その後、学校は少なめの量を提供し、廃棄量は減りました。",
+            p: "What was the result of the change?",
+            c: [
+              "Food waste decreased.",
+              "Lunch became more expensive.",
+              "More food was thrown away.",
+              "Students stopped eating lunch.",
+            ],
+            a: 0,
+            jp: "変更の結果は何でしたか。食品廃棄が減りました。",
+            ex: "the amount of waste decreased とあります。",
+          },
+          {
+            s: "Eメール",
+            p: "友人への返信を40〜50語で書き、具体的な質問を2つ含めてください。",
+            min: 40,
+            max: 50,
+            sample:
+              "Thank you for your email. I am happy to hear your news. When did you start? Who enjoys it with you? I would like to know more about it. I hope you have a wonderful time.",
+            samplejp:
+              "メールをありがとう。あなたの知らせを聞いてうれしいです。いつ始めましたか。誰と一緒に楽しんでいますか。もっと詳しく知りたいです。すてきな時間を過ごしてください。",
+            ex: "相手の内容に反応し、疑問文を2つ入れ、結びの文を加えた構成です。",
+          },
+          {
+            s: "英作文",
+            p: "Do you think students should read online news every day? 意見と理由を2つ、50〜60語で書いてください。",
+            min: 50,
+            max: 60,
+            sample:
+              "I think students should read online news every day. First, it helps them understand important events in Japan and other countries. Second, comparing reports from several websites can teach them to check information carefully. They should also limit their reading time because too much screen time may reduce time for sleep and exercise.",
+            samplejp:
+              "私は、生徒は毎日オンラインニュースを読むべきだと思います。第一に、日本やほかの国の重要な出来事を理解する助けになります。第二に、複数のウェブサイトの記事を比べることで、情報を注意深く確認する姿勢を学べます。ただし、画面を見る時間が長すぎると睡眠や運動の時間が減るため、読む時間を制限すべきです。",
+            ex: "ニュースを読む目的を「社会の理解」と「情報を比較・確認する力」に分けています。最後にスクリーン時間への注意も示しています。",
+          },
+        ],
+        [
+          {
+            s: "語句・会話",
+            p: "We need an ( ) route.",
+            c: ["alternative", "ordinary", "empty", "private"],
+            a: 0,
+            jp: "私たちには代わりの経路が必要です。",
+            ex: "alternative は『代わりの、別の』を表します。",
+          },
+          {
+            s: "語句・会話",
+            p: "By the time we arrived, it ( ).",
+            c: ["had started", "starts", "will start", "has start"],
+            a: 0,
+            jp: "私たちが着いた時までに、それは始まっていました。",
+            ex: "到着より前に始まったので過去完了 had started です。",
+          },
+          {
+            s: "語句・会話",
+            p: "Exercise can ( ) your health.",
+            c: ["improve", "invite", "deliver", "prevent"],
+            a: 0,
+            jp: "運動は健康を改善できます。",
+            ex: "improve health で『健康を改善する』です。",
+          },
+          {
+            s: "語句・会話",
+            p: "We must take ( ) for our decisions.",
+            c: ["responsibility", "direction", "medicine", "temperature"],
+            a: 0,
+            jp: "私たちは自分の決定に責任を持たなければなりません。",
+            ex: "take responsibility for で『〜に責任を持つ』です。",
+          },
+          {
+            s: "語句・会話",
+            p: "The scientist made a ( ).",
+            c: ["discovery", "entrance", "argument", "appointment"],
+            a: 0,
+            jp: "その科学者は発見をしました。",
+            ex: "make a discovery で『発見をする』です。",
+          },
+          {
+            s: "語句・会話",
+            p: "The hotel is within walking ( ).",
+            c: ["distance", "height", "weight", "speed"],
+            a: 0,
+            jp: "そのホテルは歩いて行ける距離にあります。",
+            ex: "within walking distance は『徒歩圏内』という定型表現です。",
+          },
+          {
+            s: "語句・会話",
+            p: "You had better ( ) early.",
+            c: [
+              "make a reservation",
+              "to reserve",
+              "making a reservation",
+              "reserved",
+            ],
+            a: 0,
+            jp: "早めに予約したほうがよいです。",
+            ex: "had better の後は動詞の原形です。",
+          },
+          {
+            s: "語句・会話",
+            p: "A: Could you help me? B: ( )",
+            c: [
+              "Sure. What should I do?",
+              "No, I saw it.",
+              "It was blue.",
+              "Yesterday.",
+            ],
+            a: 0,
+            jp: "A：手伝ってもらえますか。B：もちろん。何をすればよいですか。",
+            ex: "依頼を受け入れ、内容を確認する自然な応答です。",
+          },
+          {
+            s: "語句・会話",
+            p: "A: How often do you practice? B: ( )",
+            c: [
+              "Three times a week.",
+              "At seven ago.",
+              "For Monday.",
+              "Very long.",
+            ],
+            a: 0,
+            jp: "A：どのくらいの頻度で練習しますか。B：週に3回です。",
+            ex: "How often には回数や頻度で答えます。",
+          },
+          {
+            s: "語句・会話",
+            p: "A: I am sorry I am late. B: ( )",
+            c: [
+              "That is all right.",
+              "You are welcome.",
+              "Here you are.",
+              "Congratulations.",
+            ],
+            a: 0,
+            jp: "A：遅れてすみません。B：大丈夫ですよ。",
+            ex: "謝罪を受け入れる表現 That is all right. が適切です。",
+          },
+          {
+            s: "語句・会話",
+            p: "A: Have you decided what to order? B: ( )",
+            c: [
+              "I will have the pasta.",
+              "Last Sunday.",
+              "The waiter did.",
+              "This table.",
+            ],
+            a: 0,
+            jp: "A：何を注文するか決めましたか。B：パスタにします。",
+            ex: "注文を伝える I will have ... が場面に合います。",
+          },
+          {
+            s: "語句・会話",
+            p: "A: Why don't we take the train? B: ( )",
+            c: [
+              "Good idea. It will be faster.",
+              "I drove it.",
+              "It was closed.",
+              "A bicycle.",
+            ],
+            a: 0,
+            jp: "A：電車で行きませんか。B：いい考えです。その方が速いでしょう。",
+            ex: "Why don't we ...? は提案。賛成する応答が自然です。",
+          },
+          {
+            s: "語句・会話",
+            p: "The library will ( ) next month.",
+            c: ["open", "carry", "borrow", "invite"],
+            a: 0,
+            jp: "その図書館は来月開館します。",
+            ex: "施設が『開館する』は open。will の後は動詞の原形です。",
+          },
+          {
+            s: "語句・会話",
+            p: "She has lived here ( ) five years.",
+            c: ["for", "since", "during", "until"],
+            a: 0,
+            jp: "彼女はここに5年間住んでいます。",
+            ex: "期間の長さには for、開始時点には since を使います。",
+          },
+          {
+            s: "語句・会話",
+            p: "Please ( ) this form.",
+            c: ["fill out", "turn off", "give up", "look after"],
+            a: 0,
+            jp: "この用紙に記入してください。",
+            ex: "fill out a form で『用紙に記入する』です。",
+          },
+          {
+            s: "語句・会話",
+            p: "If it ( ) sunny, we will hike.",
+            c: ["is", "was", "will be", "has been"],
+            a: 0,
+            jp: "晴れたら、私たちはハイキングに行きます。",
+            ex: "未来の条件でも if 節では現在形を使います。",
+          },
+          {
+            s: "語句・会話",
+            p: "This book is ( ) than that one.",
+            c: [
+              "more interesting",
+              "interesting",
+              "most interesting",
+              "interest",
+            ],
+            a: 0,
+            jp: "この本はあの本よりおもしろいです。",
+            ex: "than があるので比較級 more interesting が適切です。",
+          },
+          {
+            s: "語句・会話",
+            p: "Keep your ticket ( ) you leave.",
+            c: ["until", "among", "during", "without"],
+            a: 0,
+            jp: "退出するまで切符を持っていてください。",
+            ex: "until は動作が続く終点『〜まで』を表します。",
+          },
+          {
+            s: "語句・会話",
+            p: "Aya was ( ) enough to return the wallet.",
+            c: ["honest", "empty", "ancient", "noisy"],
+            a: 0,
+            jp: "アヤは財布を返すほど正直でした。",
+            ex: "財布を返す行動に合う形容詞は honest『正直な』です。",
+          },
+          {
+            s: "語句・会話",
+            p: "The store will ( ) customers by email.",
+            c: ["notify", "divide", "repair", "borrow"],
+            a: 0,
+            jp: "その店はメールで顧客に知らせます。",
+            ex: "notify 人で『人に知らせる』です。",
+          },
+          {
+            s: "長文読解",
+            text: "A city library began lending tablets to older people. Volunteers show users how to read digital books and make video calls. The service is popular because it helps people stay connected with family and friends.",
+            textjp:
+              "市立図書館は高齢者へのタブレット貸し出しを始めました。ボランティアが電子書籍の読み方やビデオ通話の方法を利用者に教えます。このサービスは、人々が家族や友人とつながり続ける助けになるため人気です。",
+            p: "What does the library lend?",
+            c: ["Tablets.", "Cameras.", "Bicycles.", "Musical instruments."],
+            a: 0,
+            jp: "図書館は何を貸し出しますか。タブレットです。",
+            ex: "began lending tablets が根拠です。",
+          },
+          {
+            s: "長文読解",
+            text: "A city library began lending tablets to older people. Volunteers show users how to read digital books and make video calls. The service is popular because it helps people stay connected with family and friends.",
+            textjp:
+              "市立図書館は高齢者へのタブレット貸し出しを始めました。ボランティアが電子書籍の読み方やビデオ通話の方法を利用者に教えます。このサービスは、人々が家族や友人とつながり続ける助けになるため人気です。",
+            p: "Who teaches the users?",
+            c: ["Volunteers.", "Doctors.", "Shop owners.", "Bus drivers."],
+            a: 0,
+            jp: "誰が利用者に教えますか。ボランティアです。",
+            ex: "Volunteers show users とあります。",
+          },
+          {
+            s: "長文読解",
+            text: "A city library began lending tablets to older people. Volunteers show users how to read digital books and make video calls. The service is popular because it helps people stay connected with family and friends.",
+            textjp:
+              "市立図書館は高齢者へのタブレット貸し出しを始めました。ボランティアが電子書籍の読み方やビデオ通話の方法を利用者に教えます。このサービスは、人々が家族や友人とつながり続ける助けになるため人気です。",
+            p: "What do users learn to do?",
+            c: [
+              "Read digital books and make video calls.",
+              "Repair computers.",
+              "Write newspaper articles.",
+              "Build library shelves.",
+            ],
+            a: 0,
+            jp: "利用者は何を学びますか。電子書籍を読み、ビデオ通話をすることです。",
+            ex: "how to read digital books and make video calls が根拠です。",
+          },
+          {
+            s: "長文読解",
+            text: "A city library began lending tablets to older people. Volunteers show users how to read digital books and make video calls. The service is popular because it helps people stay connected with family and friends.",
+            textjp:
+              "市立図書館は高齢者へのタブレット貸し出しを始めました。ボランティアが電子書籍の読み方やビデオ通話の方法を利用者に教えます。このサービスは、人々が家族や友人とつながり続ける助けになるため人気です。",
+            p: "Why is the service popular?",
+            c: [
+              "It helps people stay connected.",
+              "It gives everyone free food.",
+              "It makes tablets smaller.",
+              "It closes the library early.",
+            ],
+            a: 0,
+            jp: "なぜこのサービスは人気ですか。人々がつながり続ける助けになるからです。",
+            ex: "because 以下が理由です。",
+          },
+          {
+            s: "Eメール",
+            p: "友人への返信を40〜50語で書き、具体的な質問を2つ含めてください。",
+            min: 40,
+            max: 50,
+            sample:
+              "Thank you for your email. I am happy to hear your news. When did you start? Who enjoys it with you? I would like to know more about it. I hope you have a wonderful time.",
+            samplejp:
+              "メールをありがとう。あなたの知らせを聞いてうれしいです。いつ始めましたか。誰と一緒に楽しんでいますか。もっと詳しく知りたいです。すてきな時間を過ごしてください。",
+            ex: "相手の内容に反応し、疑問文を2つ入れ、結びの文を加えた構成です。",
+          },
+          {
+            s: "英作文",
+            p: "Do you think towns should build more public parks? 意見と理由を2つ、50〜60語で書いてください。",
+            min: 50,
+            max: 60,
+            sample:
+              "I think towns should build more public parks. First, parks give children safe places to play and adults convenient places to exercise. Second, trees and grass can make crowded areas more pleasant in hot weather. Towns should ask local residents what facilities they need before deciding where and how to build new parks.",
+            samplejp:
+              "私は、町は公共の公園をもっと作るべきだと思います。第一に、公園は子どもに安全な遊び場を、大人に便利な運動場所を提供します。第二に、木や芝生は暑い時期の混雑した地域をより快適にできます。新しい公園の場所や作り方を決める前に、町は住民に必要な設備を尋ねるべきです。",
+            ex: "利用者への利点と環境面の利点を別々の理由として述べています。住民への聞き取りという具体的な提案も加えています。",
+          },
+        ],
+        [
+          {
+            s: "語句・会話",
+            p: "You had better ( ) early.",
+            c: [
+              "make a reservation",
+              "to reserve",
+              "making a reservation",
+              "reserved",
+            ],
+            a: 0,
+            jp: "早めに予約したほうがよいです。",
+            ex: "had better の後は動詞の原形です。",
+          },
+          {
+            s: "語句・会話",
+            p: "A: Could you help me? B: ( )",
+            c: [
+              "Sure. What should I do?",
+              "No, I saw it.",
+              "It was blue.",
+              "Yesterday.",
+            ],
+            a: 0,
+            jp: "A：手伝ってもらえますか。B：もちろん。何をすればよいですか。",
+            ex: "依頼を受け入れ、内容を確認する自然な応答です。",
+          },
+          {
+            s: "語句・会話",
+            p: "A: How often do you practice? B: ( )",
+            c: [
+              "Three times a week.",
+              "At seven ago.",
+              "For Monday.",
+              "Very long.",
+            ],
+            a: 0,
+            jp: "A：どのくらいの頻度で練習しますか。B：週に3回です。",
+            ex: "How often には回数や頻度で答えます。",
+          },
+          {
+            s: "語句・会話",
+            p: "A: I am sorry I am late. B: ( )",
+            c: [
+              "That is all right.",
+              "You are welcome.",
+              "Here you are.",
+              "Congratulations.",
+            ],
+            a: 0,
+            jp: "A：遅れてすみません。B：大丈夫ですよ。",
+            ex: "謝罪を受け入れる表現 That is all right. が適切です。",
+          },
+          {
+            s: "語句・会話",
+            p: "A: Have you decided what to order? B: ( )",
+            c: [
+              "I will have the pasta.",
+              "Last Sunday.",
+              "The waiter did.",
+              "This table.",
+            ],
+            a: 0,
+            jp: "A：何を注文するか決めましたか。B：パスタにします。",
+            ex: "注文を伝える I will have ... が場面に合います。",
+          },
+          {
+            s: "語句・会話",
+            p: "A: Why don't we take the train? B: ( )",
+            c: [
+              "Good idea. It will be faster.",
+              "I drove it.",
+              "It was closed.",
+              "A bicycle.",
+            ],
+            a: 0,
+            jp: "A：電車で行きませんか。B：いい考えです。その方が速いでしょう。",
+            ex: "Why don't we ...? は提案。賛成する応答が自然です。",
+          },
+          {
+            s: "語句・会話",
+            p: "The library will ( ) next month.",
+            c: ["open", "carry", "borrow", "invite"],
+            a: 0,
+            jp: "その図書館は来月開館します。",
+            ex: "施設が『開館する』は open。will の後は動詞の原形です。",
+          },
+          {
+            s: "語句・会話",
+            p: "She has lived here ( ) five years.",
+            c: ["for", "since", "during", "until"],
+            a: 0,
+            jp: "彼女はここに5年間住んでいます。",
+            ex: "期間の長さには for、開始時点には since を使います。",
+          },
+          {
+            s: "語句・会話",
+            p: "Please ( ) this form.",
+            c: ["fill out", "turn off", "give up", "look after"],
+            a: 0,
+            jp: "この用紙に記入してください。",
+            ex: "fill out a form で『用紙に記入する』です。",
+          },
+          {
+            s: "語句・会話",
+            p: "If it ( ) sunny, we will hike.",
+            c: ["is", "was", "will be", "has been"],
+            a: 0,
+            jp: "晴れたら、私たちはハイキングに行きます。",
+            ex: "未来の条件でも if 節では現在形を使います。",
+          },
+          {
+            s: "語句・会話",
+            p: "This book is ( ) than that one.",
+            c: [
+              "more interesting",
+              "interesting",
+              "most interesting",
+              "interest",
+            ],
+            a: 0,
+            jp: "この本はあの本よりおもしろいです。",
+            ex: "than があるので比較級 more interesting が適切です。",
+          },
+          {
+            s: "語句・会話",
+            p: "Keep your ticket ( ) you leave.",
+            c: ["until", "among", "during", "without"],
+            a: 0,
+            jp: "退出するまで切符を持っていてください。",
+            ex: "until は動作が続く終点『〜まで』を表します。",
+          },
+          {
+            s: "語句・会話",
+            p: "Aya was ( ) enough to return the wallet.",
+            c: ["honest", "empty", "ancient", "noisy"],
+            a: 0,
+            jp: "アヤは財布を返すほど正直でした。",
+            ex: "財布を返す行動に合う形容詞は honest『正直な』です。",
+          },
+          {
+            s: "語句・会話",
+            p: "The store will ( ) customers by email.",
+            c: ["notify", "divide", "repair", "borrow"],
+            a: 0,
+            jp: "その店はメールで顧客に知らせます。",
+            ex: "notify 人で『人に知らせる』です。",
+          },
+          {
+            s: "語句・会話",
+            p: "We arrived early ( ) get good seats.",
+            c: ["in order to", "because of", "even though", "as soon as"],
+            a: 0,
+            jp: "よい席を取るために早く着きました。",
+            ex: "目的は in order to + 動詞の原形で表します。",
+          },
+          {
+            s: "語句・会話",
+            p: "The bridge ( ) in 1998.",
+            c: ["was built", "builds", "is build", "has building"],
+            a: 0,
+            jp: "その橋は1998年に建設されました。",
+            ex: "橋は建てられる側なので過去の受動態 was built です。",
+          },
+          {
+            s: "語句・会話",
+            p: "The doctor advised me to get enough ( ).",
+            c: ["rest", "noise", "traffic", "chance"],
+            a: 0,
+            jp: "医師は私に十分な休養を取るよう助言しました。",
+            ex: "get enough rest で『十分に休養を取る』です。",
+          },
+          {
+            s: "語句・会話",
+            p: "Our class will ( ) a charity event.",
+            c: ["organize", "escape", "melt", "repeat"],
+            a: 0,
+            jp: "私たちのクラスは慈善行事を企画します。",
+            ex: "organize an event は『行事を企画・運営する』です。",
+          },
+          {
+            s: "語句・会話",
+            p: "This bag is made ( ) recycled material.",
+            c: ["from", "with", "by", "into"],
+            a: 0,
+            jp: "このかばんは再生素材から作られています。",
+            ex: "原料が変化して製品になる場合は be made from を使います。",
+          },
+          {
+            s: "語句・会話",
+            p: "The meeting was ( ) until Monday.",
+            c: ["postponed", "covered", "measured", "invented"],
+            a: 0,
+            jp: "会議は月曜日まで延期されました。",
+            ex: "postpone は『延期する』。受動態 was postponed です。",
+          },
+          {
+            s: "長文読解",
+            text: "A school created a quiet room where students can study during lunch. The room has desks, reference books, and plants. Students must not use phones there, so they can concentrate better.",
+            textjp:
+              "ある学校は、生徒が昼休みに勉強できる静かな部屋を作りました。その部屋には机、参考書、植物があります。そこで生徒は携帯電話を使ってはいけないため、より集中できます。",
+            p: "When can students use the quiet room?",
+            c: [
+              "During lunch.",
+              "Before sunrise.",
+              "Only on weekends.",
+              "After midnight.",
+            ],
+            a: 0,
+            jp: "生徒はいつ静かな部屋を使えますか。昼休みです。",
+            ex: "during lunch が根拠です。",
+          },
+          {
+            s: "長文読解",
+            text: "A school created a quiet room where students can study during lunch. The room has desks, reference books, and plants. Students must not use phones there, so they can concentrate better.",
+            textjp:
+              "ある学校は、生徒が昼休みに勉強できる静かな部屋を作りました。その部屋には机、参考書、植物があります。そこで生徒は携帯電話を使ってはいけないため、より集中できます。",
+            p: "What is in the room?",
+            c: [
+              "Desks, reference books, and plants.",
+              "Sports equipment.",
+              "Musical instruments.",
+              "Cooking tools.",
+            ],
+            a: 0,
+            jp: "部屋には何がありますか。机、参考書、植物です。",
+            ex: "has desks, reference books, and plants とあります。",
+          },
+          {
+            s: "長文読解",
+            text: "A school created a quiet room where students can study during lunch. The room has desks, reference books, and plants. Students must not use phones there, so they can concentrate better.",
+            textjp:
+              "ある学校は、生徒が昼休みに勉強できる静かな部屋を作りました。その部屋には机、参考書、植物があります。そこで生徒は携帯電話を使ってはいけないため、より集中できます。",
+            p: "What are students not allowed to use?",
+            c: ["Phones.", "Reference books.", "Desks.", "Plants."],
+            a: 0,
+            jp: "生徒は何を使ってはいけませんか。携帯電話です。",
+            ex: "must not use phones が根拠です。",
+          },
+          {
+            s: "長文読解",
+            text: "A school created a quiet room where students can study during lunch. The room has desks, reference books, and plants. Students must not use phones there, so they can concentrate better.",
+            textjp:
+              "ある学校は、生徒が昼休みに勉強できる静かな部屋を作りました。その部屋には机、参考書、植物があります。そこで生徒は携帯電話を使ってはいけないため、より集中できます。",
+            p: "Why can students concentrate better?",
+            c: [
+              "Phones are not allowed.",
+              "The room is outside.",
+              "Lunch is longer.",
+              "Teachers do all the work.",
+            ],
+            a: 0,
+            jp: "なぜ生徒はより集中できますか。携帯電話が禁止されているからです。",
+            ex: "so が結果を示し、その前の禁止事項が理由です。",
+          },
+          {
+            s: "Eメール",
+            p: "友人への返信を40〜50語で書き、具体的な質問を2つ含めてください。",
+            min: 40,
+            max: 50,
+            sample:
+              "Thank you for your email. I am happy to hear your news. When did you start? Who enjoys it with you? I would like to know more about it. I hope you have a wonderful time.",
+            samplejp:
+              "メールをありがとう。あなたの知らせを聞いてうれしいです。いつ始めましたか。誰と一緒に楽しんでいますか。もっと詳しく知りたいです。すてきな時間を過ごしてください。",
+            ex: "相手の内容に反応し、疑問文を2つ入れ、結びの文を加えた構成です。",
+          },
+          {
+            s: "英作文",
+            p: "Do you think students should use smartphones as learning tools at school? 意見と理由を2つ、50〜60語で書いてください。",
+            min: 50,
+            max: 60,
+            sample:
+              "I think students should be allowed to use smartphones for learning at school. First, they can quickly check unfamiliar words and find useful information. Second, educational apps can help them review lessons at their own pace. Schools need clear rules, however, so students do not play games or send messages during class.",
+            samplejp:
+              "私は、生徒が学校で学習のためにスマートフォンを使うことを認めるべきだと思います。第一に、知らない単語をすぐに調べ、役立つ情報を見つけられます。第二に、学習アプリを使えば自分のペースで授業を復習できます。ただし、授業中にゲームやメッセージ送信をしないよう、学校には明確な規則が必要です。",
+            ex: "素早い情報検索と自分のペースでの復習を理由にしています。賛成だけで終わらず、授業中の利用規則の必要性も示しています。",
+          },
+        ],
+      ];
+
+      let mode = "test",
+        r = 0,
+        Q = [],
+        i = 0,
+        ans = {},
+        seen = {},
+        sec = 4800,
+        timer;
+      const $ = (x) => document.querySelector(x),
+        wc = (x) =>
+          (x || "").trim() ? (x || "").trim().split(/\s+/).length : 0;
+      function sh(a) {
+        for (let n = a.length - 1; n; n--) {
+          let k = Math.floor(Math.random() * (n + 1));
+          [a[n], a[k]] = [a[k], a[n]];
+        }
+      }
+      function load() {
+        Q = JSON.parse(JSON.stringify(BANK[r]));
+        Q.forEach((q) => {
+          if (!q.c) return;
+          let z = q.c.map((t, n) => ({ t, ok: n === q.a }));
+          sh(z);
+          q.c = z.map((v) => v.t);
+          q.a = z.findIndex((v) => v.ok);
+        });
+      }
+      function picks() {
+        $("#rounds").innerHTML = [0, 1, 2, 3, 4]
+          .map(
+            (n) =>
+              `<button class="sel ${n === r ? "on" : ""}" data-r="${n}">第${n + 1}回</button>`,
+          )
+          .join("");
+        document.querySelectorAll("[data-r]").forEach(
+          (b) =>
+            (b.onclick = () => {
+              r = +b.dataset.r;
+              picks();
+            }),
+        );
+      }
+      picks();
+      document.querySelectorAll("[data-m]").forEach(
+        (b) =>
+          (b.onclick = () => {
+            mode = b.dataset.m;
+            document
+              .querySelectorAll("[data-m]")
+              .forEach((x) => x.classList.toggle("on", x === b));
+          }),
+      );
+      function render() {
+        let q = Q[i];
+        $("#where").textContent =
+          `第${r + 1}回 ${i + 1}/26 ${mode === "test" ? "テスト" : "練習"}`;
+        $("#no").textContent = `QUESTION ${i + 1}`;
+        $("#prompt").textContent = q.p;
+        $("#pass").textContent = q.text || "";
+        $("#pass").classList.toggle("hide", !q.text);
+        if (q.c) {
+          $("#input").innerHTML = q.c
+            .map(
+              (x, n) =>
+                `<button class="choice ${ans[i] === n ? "on" : ""}" data-n="${n}">${String.fromCharCode(65 + n)}. ${x}</button>`,
+            )
+            .join("");
+          document.querySelectorAll(".choice").forEach(
+            (b) =>
+              (b.onclick = () => {
+                ans[i] = +b.dataset.n;
+                if (mode === "practice") seen[i] = 1;
+                render();
+              }),
+          );
+        } else {
+          $("#input").innerHTML =
+            '<textarea placeholder="Write in English..."></textarea><b id="words"></b>' +
+            (mode === "practice"
+              ? '<button id="check" class="check">解答例・全訳・解説を確認</button>'
+              : "");
+          let t = $("textarea");
+          t.value = ans[i] || "";
+          $("#words").textContent = wc(t.value) + " words";
+          t.oninput = () => {
+            ans[i] = t.value;
+            $("#words").textContent = wc(t.value) + " words";
+          };
+          if ($("#check"))
+            $("#check").onclick = () => {
+              seen[i] = 1;
+              render();
+            };
+        }
+        feedback(q);
+        $("#prev").disabled = i === 0;
+        $("#next").textContent = i === 25 ? "提出する" : "次へ ›";
+        $("#grid").innerHTML = Q.map(
+          (_, n) =>
+            `<button class="jump ${n === i ? "cur" : ans[n] !== undefined && ans[n] !== "" ? "done" : ""}" data-j="${n}">${n + 1}</button>`,
+        ).join("");
+        document.querySelectorAll("[data-j]").forEach(
+          (b) =>
+            (b.onclick = () => {
+              i = +b.dataset.j;
+              render();
+            }),
+        );
+      }
+      function detail(q) {
+        return q.c
+          ? `<div><b>正答:</b> ${q.c[q.a]}</div><div class="jp"><b>全訳:</b> ${q.jp}</div>${q.textjp ? `<div><b>本文全訳:</b> ${q.textjp}</div>` : ""}<div><b>解説:</b> ${q.ex}</div>`
+          : `<div><b>解答例:</b> ${q.sample}</div><div class="jp"><b>全訳:</b> ${q.samplejp}</div><div><b>解説:</b> ${q.ex}</div>`;
+      }
+      function feedback(q) {
+        let f = $("#fb");
+        f.className = "hide";
+        if (mode !== "practice" || !seen[i]) return;
+        f.className =
+          "feedback " + (q.c ? (ans[i] === q.a ? "ok" : "ng") : "sample");
+        f.innerHTML =
+          (q.c
+            ? `<b>${ans[i] === q.a ? "正解です！" : "不正解です"}</b>`
+            : "") + detail(q);
+      }
+      function finish() {
+        clearInterval(timer);
+        $("#exam").classList.add("hide");
+        $("#result").classList.remove("hide");
+        let s = Q.slice(0, 24).reduce((a, q, n) => a + (ans[n] === q.a), 0);
+        $("#score").textContent = `第${r + 1}回 ${s}/24`;
+        $("#reviews").innerHTML = Q.map(
+          (q, n) =>
+            `<div class="feedback ${q.c ? (ans[n] === q.a ? "ok" : "ng") : "sample"}"><b>${n + 1}. ${q.s}</b>${detail(q)}</div>`,
+        ).join("");
+      }
+      function returnToTitle() {
+        const hasAnswers = Object.keys(ans).length > 0;
+        const message = hasAnswers
+          ? "タイトル画面に戻ります。現在の解答は消去されます。よろしいですか？"
+          : "タイトル画面に戻りますか？";
+
+        if (!window.confirm(message)) return;
+
+        if (timer) {
+          clearInterval(timer);
+          timer = null;
+        }
+
+        $("#exam").classList.add("hide");
+        $("#result").classList.add("hide");
+        $("#start").classList.remove("hide");
+
+        sec = 4800;
+        i = 0;
+        ans = {};
+        seen = {};
+        Q = [];
+        $("#time").textContent = "80:00";
+        window.scrollTo(0, 0);
+      }
+
+      $("#back-title").onclick = returnToTitle;
+
+      $("#go").onclick = () => {
+        load();
+        $("#start").classList.add("hide");
+        $("#exam").classList.remove("hide");
+        render();
+        if (mode === "practice") {
+          $("#time").textContent = "時間制限なし";
+        } else {
+          timer = setInterval(() => {
+            sec--;
+            $("#time").textContent =
+              String((sec / 60) | 0).padStart(2, "0") +
+              ":" +
+              String(sec % 60).padStart(2, "0");
+            if (sec <= 0) finish();
+          }, 1000);
+        }
+      };
+      $("#prev").onclick = () => {
+        if (i) {
+          i--;
+          render();
+        }
+      };
+      $("#next").onclick = () => (i < 25 ? (i++, render()) : finish());
+    </script>
+  </body>
+</html>
