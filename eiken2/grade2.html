@@ -1,0 +1,3174 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>英検2級 模試</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:system-ui;
+  background:#f1f5f9;
+  color:#0f172a;
+}
+.wrap{
+  max-width:620px;
+  margin:auto;
+}
+.start{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  padding:20px;
+  background:#08111f;
+  color:white;
+}
+.card{
+  background:white;
+  border-radius:24px;
+  padding:22px;
+  box-shadow:0 12px 30px #0002;
+}
+.start .card{
+  background:#111c2e;
+}
+.green{
+  color:#34d399;
+}
+.primary{
+  width:100%;
+  border:0;
+  border-radius:16px;
+  padding:15px;
+  background:#34d399;
+  font-weight:900;
+  cursor:pointer;
+}
+.hide{
+  display:none!important;
+}
+header{
+  position:sticky;
+  top:0;
+  background:#08111f;
+  color:white;
+  padding:12px 16px;
+}
+.row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.main{
+  padding:16px;
+  padding-bottom:120px;
+}
+.choice{
+  display:block;
+  width:100%;
+  padding:14px;
+  margin:8px 0;
+}
+footer{
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  background:white;
+  padding:10px;
+  border-top:1px solid #ddd;
+}
+.nav{
+  max-width:620px;
+  margin:auto;
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:10px;
+}
+.nav button{
+  padding:12px;
+  border-radius:12px;
+}
+.feedback{
+  margin-top:12px;
+  padding:12px;
+  border-radius:12px;
+  background:#eff6ff;
+}
+.choice.active{
+  background:#dcfce7;
+  border:2px solid #22c55e;
+}
+#jump{
+  display:grid;
+  grid-template-columns:repeat(6,1fr);
+  gap:6px;
+  margin-top:15px;
+}
+
+.jumpBtn{
+  padding:8px;
+  border:none;
+  border-radius:8px;
+  background:#e2e8f0;
+  cursor:pointer;
+}
+
+.jumpBtn.current{
+  background:#0f172a;
+  color:white;
+}
+
+.jumpBtn.done{
+  background:#86efac;
+}
+.rounds{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+  margin:15px 0;
+}
+
+.roundBtn{
+  border:none;
+  border-radius:10px;
+  padding:10px;
+  background:#e2e8f0;
+  cursor:pointer;
+  font-weight:bold;
+}
+
+.roundBtn.active{
+  background:#34d399;
+}
+</style>
+</head>
+
+<body>
+
+<section id="start" class="start">
+  <div class="wrap card">
+    <b class="green">スマホ筆記模試</b>
+
+    <h1>英検2級 全5回</h1>
+
+    <p>
+      受験する回を選んでください。
+    </p>
+
+    <div id="rounds" class="rounds">
+      <button class="roundBtn active" data-round="0">第1回</button>
+      <button class="roundBtn" data-round="1">第2回</button>
+      <button class="roundBtn" data-round="2">第3回</button>
+      <button class="roundBtn" data-round="3">第4回</button>
+      <button class="roundBtn" data-round="4">第5回</button>
+<button
+class="roundBtn"
+id="randomMode">
+総合ランダム
+</button>
+
+
+
+    </div>
+
+    <button id="go" class="primary">
+      開始する
+    </button>
+<br><br>
+
+<button
+  class="primary"
+  onclick="location.href='index.html'"
+  style="
+    background:#e5e7eb;
+    color:#000;
+  "
+>
+  級選択へ戻る
+</button>
+  </div>
+</section>
+
+<section id="exam" class="hide">
+
+<header>
+<div class="wrap row">
+  <b id="where">第1回 1/41</b>
+  
+</div>
+</header>
+
+<main class="wrap main">
+
+<div class="card">
+
+<b id="no"></b>
+
+<div id="pass"></div>
+
+<div id="prompt"></div>
+
+<div id="input"></div>
+<div id="jump"></div>
+<div id="fb"></div>
+
+</div>
+
+</main>
+
+<footer>
+<div class="nav">
+<button id="home">タイトル</button>
+<button id="prev">‹ 前へ</button>
+<button id="next">次へ ›</button>
+</div>
+</footer>
+
+</section>
+
+<section id="result" class="hide">
+
+<div class="wrap main">
+
+<div class="card">
+
+<b class="green">採点結果</b>
+
+<h1 id="score"></h1>
+
+<div id="reviews"></div>
+
+<button class="primary"
+onclick="location.reload()">
+最初へ戻る
+</button>
+
+</div>
+
+</div>
+
+</section>
+
+<script>
+
+      const BANK = [
+        [
+         {
+s:"語句・会話",
+p:"The company plans to ( ) its business overseas.",
+c:["expand","solve","hide","borrow"],
+a:0,
+jp:"その会社は海外に事業を拡大する計画です。",
+ex:"expand＝拡大する。"
+},
+{
+s:"語句・会話",
+p:"The museum attracts many ( ) from abroad.",
+c:["visitors","neighbors","inventors","captains"],
+a:0,
+jp:"その博物館は海外から多くの訪問者を引きつけます。",
+ex:"visitor＝訪問者。"
+},
+{
+s:"語句・会話",
+p:"Parents should ( ) their children to read more books.",
+c:["encourage","prevent","refuse","replace"],
+a:0,
+jp:"親は子どもにもっと本を読むよう勧めるべきです。",
+ex:"encourage 人 to ～。"
+},
+{
+s:"語句・会話",
+p:"The storm caused serious ( ) to the town.",
+c:["damage","success","culture","advice"],
+a:0,
+jp:"その嵐は町に深刻な被害を与えました。",
+ex:"damage＝被害。"
+},
+{
+s:"語句・会話",
+p:"This factory produces a large ( ) of cars every year.",
+c:["number","distance","chance","schedule"],
+a:0,
+jp:"この工場は毎年大量の車を生産しています。",
+ex:"a large number of ～。"
+},
+{
+s:"語句・会話",
+p:"She was ( ) to hear that she had passed the exam.",
+c:["delighted","ordinary","valuable","regional"],
+a:0,
+jp:"彼女は試験に合格したと聞いて喜びました。",
+ex:"delighted＝大喜びした。"
+},
+{
+s:"語句・会話",
+p:"The government is trying to reduce air ( ).",
+c:["pollution","emotion","solution","tradition"],
+a:0,
+jp:"政府は大気汚染を減らそうとしています。",
+ex:"pollution＝汚染。"
+},
+{
+s:"語句・会話",
+p:"We should make an effort to ( ) energy.",
+c:["save","damage","collect","measure"],
+a:0,
+jp:"私たちはエネルギーを節約する努力をすべきです。",
+ex:"save energy。"
+},
+{
+s:"語句・会話",
+p:"His speech had a strong ( ) on the audience.",
+c:["effect","memory","adventure","schedule"],
+a:0,
+jp:"彼のスピーチは聴衆に強い影響を与えました。",
+ex:"have an effect on。"
+},
+{
+s:"語句・会話",
+p:"The scientist conducted an important ( ).",
+c:["experiment","passenger","advertisement","entrance"],
+a:0,
+jp:"その科学者は重要な実験を行いました。",
+ex:"experiment＝実験。"
+},
+{
+s:"語句・会話",
+p:"The train was delayed ( ) heavy snow.",
+c:["because of","instead of","according to","such as"],
+a:0,
+jp:"列車は大雪のため遅れました。",
+ex:"because of＋名詞。"
+},
+{
+s:"語句・会話",
+p:"Many animals are in danger of ( ) out.",
+c:["dying","breaking","looking","pointing"],
+a:0,
+jp:"多くの動物が絶滅の危機にあります。",
+ex:"die out＝絶滅する。"
+},
+{
+s:"語句・会話",
+p:"The manager asked us to submit the report ( ) Friday.",
+c:["by","among","during","across"],
+a:0,
+jp:"部長は金曜日までに報告書を提出するよう求めました。",
+ex:"by＝～までに。"
+},
+{
+s:"語句・会話",
+p:"The new bridge will improve transportation in the ( ).",
+c:["area","value","voice","subject"],
+a:0,
+jp:"新しい橋はその地域の交通を改善するでしょう。",
+ex:"area＝地域。"
+},
+{
+s:"語句・会話",
+p:"I was impressed ( ) her presentation.",
+c:["by","to","for","with"],
+a:0,
+jp:"私は彼女の発表に感銘を受けました。",
+ex:"be impressed by。"
+},
+{
+s:"語句・会話",
+p:"The company decided to ( ) a new product next year.",
+c:["launch","behave","remove","appoint"],
+a:0,
+jp:"その会社は来年新製品を発売することを決めました。",
+ex:"launch＝発売する。"
+},
+{
+s:"語句・会話",
+p:"You should take notes while listening to the ( ).",
+c:["lecture","flight","entrance","contest"],
+a:0,
+jp:"講義を聞きながらメモを取るべきです。",
+ex:"lecture＝講義。"
+},
+{
+s:"語句・会話",
+p:"The use of renewable energy is becoming more ( ).",
+c:["common","patient","formal","silent"],
+a:0,
+jp:"再生可能エネルギーの利用はより一般的になっています。",
+ex:"common＝一般的な。"
+},
+{
+s:"語句・会話",
+p:"The research shows a close ( ) between sleep and health.",
+c:["relationship","collection","advertisement","conversation"],
+a:0,
+jp:"その研究は睡眠と健康の密接な関係を示しています。",
+ex:"relationship＝関係。"
+},
+{
+s:"語句・会話",
+p:"Students are expected to ( ) the school rules.",
+c:["follow","repair","borrow","invent"],
+a:0,
+jp:"生徒は校則に従うことが求められています。",
+ex:"follow rules＝規則に従う。"
+},
+{
+s:"会話文",
+p:"A: I heard you're applying for a study-abroad program.\nB: Yes, but I'm nervous about the interview.\nA: ( )",
+c:[
+"Why don't you practice with your friends first?",
+"You should cancel the program immediately.",
+"I have never traveled abroad before.",
+"The interview was held yesterday."
+],
+a:0,
+jp:"まず友達と練習してみたらどうですか。",
+ex:"不安に対して助言をしている。"
+},
+
+{
+s:"会話文",
+p:"A: Did you enjoy the science museum?\nB: Yes, especially the space exhibit.\nA: ( )",
+c:[
+"I've heard it's very popular.",
+"I forgot my homework.",
+"It closes every Monday.",
+"The weather was perfect."
+],
+a:0,
+jp:"とても人気があると聞いています。",
+ex:"展示の話題に自然につながる応答。"
+},
+
+{
+s:"会話文",
+p:"A: Would you like to join us for lunch?\nB: I'd love to, but I have a meeting at noon.\nA: ( )",
+c:[
+"Maybe next time, then.",
+"You should skip the meeting.",
+"What did you eat yesterday?",
+"The restaurant is very expensive."
+],
+a:0,
+jp:"それならまた今度ですね。",
+ex:"断りに対する自然な返答。"
+},
+
+{
+s:"会話文",
+p:"A: Your presentation was very clear.\nB: Thank you. I practiced many times.\nA: ( )",
+c:[
+"That effort really paid off.",
+"I have never given a presentation.",
+"You should practice less.",
+"The topic was cancelled."
+],
+a:0,
+jp:"その努力が実を結びましたね。",
+ex:"成果を評価する表現。"
+},
+
+{
+s:"会話文",
+p:"A: Excuse me, is this seat taken?\nB: No, please have a seat.\nA: ( )",
+c:[
+"Thank you very much.",
+"I'll stand over there.",
+"It belongs to my friend.",
+"I missed the train."
+],
+a:0,
+jp:"どうもありがとうございます。",
+ex:"席を譲ってもらったことへのお礼。"
+},
+{
+s:"長文読解",
+text:"Many cities are introducing electric buses to reduce air pollution. Unlike traditional buses, electric buses do not produce exhaust gas while running. Although they are more expensive to purchase, they can reduce fuel costs over time and help improve the environment.",
+textjp:"多くの都市が大気汚染を減らすため電気バスを導入しています。",
+p:"Why are cities introducing electric buses?",
+c:[
+"To reduce air pollution.",
+"To increase traffic.",
+"To shorten school hours.",
+"To attract tourists."
+],
+a:0,
+jp:"大気汚染を減らすためです。",
+ex:"本文冒頭に明記されている。"
+},
+
+{
+s:"長文読解",
+text:"Many cities are introducing electric buses to reduce air pollution. Unlike traditional buses, electric buses do not produce exhaust gas while running. Although they are more expensive to purchase, they can reduce fuel costs over time and help improve the environment.",
+textjp:"多くの都市が大気汚染を減らすため電気バスを導入しています。",
+p:"What is a feature of electric buses?",
+c:[
+"They do not produce exhaust gas.",
+"They use more fuel.",
+"They travel more slowly.",
+"They require no maintenance."
+],
+a:0,
+jp:"排気ガスを出しません。",
+ex:"2文目が根拠。"
+},
+
+{
+s:"長文読解",
+text:"Many cities are introducing electric buses to reduce air pollution. Unlike traditional buses, electric buses do not produce exhaust gas while running. Although they are more expensive to purchase, they can reduce fuel costs over time and help improve the environment.",
+textjp:"多くの都市が大気汚染を減らすため電気バスを導入しています。",
+p:"What disadvantage is mentioned?",
+c:[
+"They are expensive to buy.",
+"They are difficult to drive.",
+"They make loud noise.",
+"They need special roads."
+],
+a:0,
+jp:"購入費用が高いことです。",
+ex:"Although以下が根拠。"
+},
+
+{
+s:"長文読解",
+text:"Many cities are introducing electric buses to reduce air pollution. Unlike traditional buses, electric buses do not produce exhaust gas while running. Although they are more expensive to purchase, they can reduce fuel costs over time and help improve the environment.",
+textjp:"多くの都市が大気汚染を減らすため電気バスを導入しています。",
+p:"What can electric buses reduce over time?",
+c:[
+"Fuel costs.",
+"Population.",
+"Tourism.",
+"Weather changes."
+],
+a:0,
+jp:"燃料費です。",
+ex:"3文目が根拠。"
+},
+
+{
+s:"長文読解",
+text:"More schools are using online learning systems. Students can review lessons at home and communicate with teachers through the Internet. However, some educators point out that students need good self-management skills to study effectively outside the classroom.",
+textjp:"より多くの学校がオンライン学習システムを利用しています。",
+p:"What can students do through online learning systems?",
+c:[
+"Review lessons at home.",
+"Drive to school.",
+"Reduce homework.",
+"Change teachers."
+],
+a:0,
+jp:"自宅で授業を復習できます。",
+ex:"1文目が根拠。"
+},
+
+{
+s:"長文読解",
+text:"More schools are using online learning systems. Students can review lessons at home and communicate with teachers through the Internet. However, some educators point out that students need good self-management skills to study effectively outside the classroom.",
+textjp:"より多くの学校がオンライン学習システムを利用しています。",
+p:"How can students communicate with teachers?",
+c:[
+"Through the Internet.",
+"Through newspapers.",
+"By television only.",
+"By mail only."
+],
+a:0,
+jp:"インターネットを通じてです。",
+ex:"2文目が根拠。"
+},
+
+{
+s:"長文読解",
+text:"More schools are using online learning systems. Students can review lessons at home and communicate with teachers through the Internet. However, some educators point out that students need good self-management skills to study effectively outside the classroom.",
+textjp:"より多くの学校がオンライン学習システムを利用しています。",
+p:"What skill do students need?",
+c:[
+"Self-management skills.",
+"Professional driving skills.",
+"Cooking skills.",
+"Sports skills."
+],
+a:0,
+jp:"自己管理能力です。",
+ex:"最後の文が根拠。"
+},
+
+{
+s:"長文読解",
+text:"More schools are using online learning systems. Students can review lessons at home and communicate with teachers through the Internet. However, some educators point out that students need good self-management skills to study effectively outside the classroom.",
+textjp:"より多くの学校がオンライン学習システムを利用しています。",
+p:"What concern do some educators have?",
+c:[
+"Students may struggle without self-management.",
+"Teachers use too much technology.",
+"Schools are too large.",
+"Students study too much."
+],
+a:0,
+jp:"自己管理ができないと学習が難しいことです。",
+ex:"However以下が根拠。"
+},
+
+{
+s:"長文読解",
+text:"A local library recently started a program that allows people to borrow tools such as drills and ladders. The goal is to reduce waste by encouraging people to share items that are not used every day.",
+textjp:"地域の図書館は工具貸出サービスを始めました。",
+p:"What can people borrow?",
+c:[
+"Tools such as drills and ladders.",
+"Cars and buses.",
+"School buildings.",
+"Computers only."
+],
+a:0,
+jp:"ドリルやはしごなどの工具です。",
+ex:"1文目が根拠。"
+},
+
+{
+s:"長文読解",
+text:"A local library recently started a program that allows people to borrow tools such as drills and ladders. The goal is to reduce waste by encouraging people to share items that are not used every day.",
+textjp:"地域の図書館は工具貸出サービスを始めました。",
+p:"What is the purpose of the program?",
+c:[
+"To reduce waste.",
+"To increase prices.",
+"To sell equipment.",
+"To build houses."
+],
+a:0,
+jp:"ごみを減らすためです。",
+ex:"最後の文が根拠。"
+},
+{
+s:"Eメール読解",
+text:`Dear Participants,
+
+Thank you for registering for the Environmental Workshop on October 15. The event will begin at 9:00 a.m. at City Hall. Please bring a notebook and a reusable water bottle.
+
+Sincerely,
+Workshop Staff`,
+textjp:"環境ワークショップ参加者への案内メールです。",
+p:"What should participants bring?",
+c:[
+"A notebook and a reusable water bottle.",
+"A laptop and a camera.",
+"A lunch box and a map.",
+"A sports uniform."
+],
+a:0,
+jp:"ノートと再利用可能な水筒です。",
+ex:"Please bring以下が根拠。"
+},
+
+{
+s:"Eメール読解",
+text:`Dear Participants,
+
+Thank you for registering for the Environmental Workshop on October 15. The event will begin at 9:00 a.m. at City Hall. Please bring a notebook and a reusable water bottle.
+
+Sincerely,
+Workshop Staff`,
+textjp:"環境ワークショップ参加者への案内メールです。",
+p:"Where will the workshop be held?",
+c:[
+"At City Hall.",
+"At a library.",
+"At a school.",
+"At a museum."
+],
+a:0,
+jp:"市役所です。",
+ex:"at City Hall が根拠。"
+},
+
+{
+s:"Eメール読解",
+text:`Hi Emma,
+
+I'm planning to study abroad in Canada next spring. I'm excited, but I'm also a little worried because it will be my first time living overseas. Do you have any advice for preparing before I leave?
+
+Best,
+Mika`,
+textjp:"ミカからエマへのメールです。",
+p:"Why is Mika worried?",
+c:[
+"It will be the first time living overseas.",
+"She lost her passport.",
+"She cannot speak English.",
+"She missed her flight."
+],
+a:0,
+jp:"海外で暮らすのが初めてだからです。",
+ex:"because以下が根拠。"
+},
+
+{
+s:"Eメール読解",
+text:`Hi Emma,
+
+I'm planning to study abroad in Canada next spring. I'm excited, but I'm also a little worried because it will be my first time living overseas. Do you have any advice for preparing before I leave?
+
+Best,
+Mika`,
+textjp:"ミカからエマへのメールです。",
+p:"Why did Mika write this email?",
+c:[
+"To ask for advice.",
+"To cancel a trip.",
+"To invite Emma to Canada.",
+"To reserve a hotel."
+],
+a:0,
+jp:"助言を求めるためです。",
+ex:"Do you have any advice? が根拠。"
+},
+
+{
+s:"Eメール読解",
+text:`Hello Volunteers,
+
+Thank you for helping with last weekend's beach cleanup. Together, we collected more than 200 kilograms of trash. Our next cleanup event will be held on November 5. We hope to see you again.
+
+Volunteer Center`,
+textjp:"ボランティアセンターからのメールです。",
+p:"What was accomplished during the cleanup event?",
+c:[
+"More than 200 kilograms of trash were collected.",
+"A new park was built.",
+"A road was repaired.",
+"A charity concert was held."
+],
+a:0,
+jp:"200kg以上のごみを回収しました。",
+ex:"2文目が根拠。"
+},
+{
+s:"英作文",
+p:"Do you think students should use electronic dictionaries at school? Give TWO reasons for your answer. (80-100 words)",
+min:80,
+max:100,
+sample:"I think students should use electronic dictionaries at school. First, electronic dictionaries help students find words quickly and efficiently. This allows them to spend more time studying. Second, many electronic dictionaries provide example sentences and pronunciation guides, which help students improve their English skills. For these reasons, I think electronic dictionaries are useful tools for students.",
+samplejp:"私は生徒は学校で電子辞書を使うべきだと思います。第一に、電子辞書は素早く単語を調べられるため学習時間を有効に使えます。第二に、例文や発音機能があり英語力向上に役立ちます。以上の理由から電子辞書は有用だと思います。",
+ex:"意見→理由1→理由2→結論の2級英作文形式。"
+}
+        ],
+[
+{
+s:"語句・会話",
+p:"Many companies have started to ( ) artificial intelligence into their services.",
+c:["introduce","ignore","escape","repair"],
+a:0,
+jp:"多くの企業がサービスにAIを導入し始めています。",
+ex:"introduce A into B＝AをBに導入する。"
+},
+{
+s:"語句・会話",
+p:"The city is taking steps to ( ) traffic accidents.",
+c:["prevent","collect","discover","gather"],
+a:0,
+jp:"その市は交通事故を防ぐ対策を取っています。",
+ex:"prevent＝防ぐ。"
+},
+{
+s:"語句・会話",
+p:"The doctor recommended that she ( ) more exercise.",
+c:["get","gets","got","getting"],
+a:0,
+jp:"医師は彼女にもっと運動をするよう勧めました。",
+ex:"recommend that節では原形を用いることがある。"
+},
+{
+s:"語句・会話",
+p:"The new railway has improved access to ( ) areas.",
+c:["remote","honest","typical","formal"],
+a:0,
+jp:"新しい鉄道は遠隔地へのアクセスを改善しました。",
+ex:"remote＝遠く離れた。"
+},
+{
+s:"語句・会話",
+p:"The company's profits have ( ) significantly this year.",
+c:["increased","invented","borrowed","arranged"],
+a:0,
+jp:"その会社の利益は今年大きく増加しました。",
+ex:"increase＝増加する。"
+},
+{
+s:"語句・会話",
+p:"It is important to ( ) personal information online.",
+c:["protect","publish","compare","replace"],
+a:0,
+jp:"オンライン上で個人情報を守ることは重要です。",
+ex:"protect information。"
+},
+{
+s:"語句・会話",
+p:"The professor gave a detailed ( ) of the experiment.",
+c:["explanation","decision","performance","population"],
+a:0,
+jp:"教授は実験について詳しい説明をしました。",
+ex:"explanation＝説明。"
+},
+{
+s:"語句・会話",
+p:"The government plans to invest in renewable ( ).",
+c:["energy","tradition","distance","adventure"],
+a:0,
+jp:"政府は再生可能エネルギーに投資する計画です。",
+ex:"renewable energy。"
+},
+{
+s:"語句・会話",
+p:"He was unable to attend the meeting due to an ( ) emergency.",
+c:["unexpected","average","familiar","valuable"],
+a:0,
+jp:"彼は予期しない緊急事態のため会議に出席できませんでした。",
+ex:"unexpected＝予期しない。"
+},
+{
+s:"語句・会話",
+p:"The charity collected money to support local ( ).",
+c:["communities","arguments","factories","captains"],
+a:0,
+jp:"その慈善団体は地域社会を支援するため寄付金を集めました。",
+ex:"community＝地域社会。"
+},
+{
+s:"語句・会話",
+p:"The company is looking for ways to ( ) costs.",
+c:["reduce","celebrate","borrow","explore"],
+a:0,
+jp:"その会社はコスト削減方法を探しています。",
+ex:"reduce costs。"
+},
+{
+s:"語句・会話",
+p:"Students should learn how to ( ) problems effectively.",
+c:["solve","contain","greet","retire"],
+a:0,
+jp:"生徒は効果的に問題を解決する方法を学ぶべきです。",
+ex:"solve problems。"
+},
+{
+s:"語句・会話",
+p:"The app provides users with useful ( ).",
+c:["information","pressure","direction","exercise"],
+a:0,
+jp:"そのアプリは利用者に有益な情報を提供します。",
+ex:"provide information。"
+},
+{
+s:"語句・会話",
+p:"The event attracted a large ( ) of visitors.",
+c:["number","height","opinion","memory"],
+a:0,
+jp:"そのイベントは多くの来場者を集めました。",
+ex:"a large number of。"
+},
+{
+s:"語句・会話",
+p:"The building was seriously ( ) during the earthquake.",
+c:["damaged","borrowed","translated","advertised"],
+a:0,
+jp:"その建物は地震で大きな被害を受けました。",
+ex:"damage＝損害を与える。"
+},
+{
+s:"語句・会話",
+p:"The school encourages students to take part in ( ) activities.",
+c:["volunteer","central","silent","rare"],
+a:0,
+jp:"学校は生徒にボランティア活動への参加を奨励しています。",
+ex:"volunteer activities。"
+},
+{
+s:"語句・会話",
+p:"The project was completed ( ) schedule.",
+c:["ahead of","similar to","instead of","because of"],
+a:0,
+jp:"その計画は予定より早く完了しました。",
+ex:"ahead of schedule。"
+},
+{
+s:"語句・会話",
+p:"Online shopping has become increasingly ( ).",
+c:["popular","regional","careless","private"],
+a:0,
+jp:"オンラインショッピングはますます人気になっています。",
+ex:"popular＝人気のある。"
+},
+{
+s:"語句・会話",
+p:"The team worked together to achieve their ( ).",
+c:["goal","discount","passenger","entrance"],
+a:0,
+jp:"チームは目標達成のため協力しました。",
+ex:"achieve a goal。"
+},
+{
+s:"語句・会話",
+p:"People should be aware of the ( ) of fake news.",
+c:["danger","praise","wealth","adventure"],
+a:0,
+jp:"人々はフェイクニュースの危険性を認識すべきです。",
+ex:"be aware of the danger。"
+},
+{
+s:"会話文",
+p:"A: The train was delayed again this morning.\nB: Really? What happened?\nA: ( )",
+c:[
+"There was a problem with the signal system.",
+"I take the train every day.",
+"The station is near my house.",
+"It arrived yesterday."
+],
+a:0,
+jp:"信号システムに問題がありました。",
+ex:"遅延の理由を説明する自然な流れ。"
+},
+
+{
+s:"会話文",
+p:"A: I'm thinking about taking an online course.\nB: That's interesting. What do you want to study?\nA: ( )",
+c:[
+"Computer programming.",
+"About three hours.",
+"At the library.",
+"Last semester."
+],
+a:0,
+jp:"コンピュータープログラミングです。",
+ex:"『何を勉強したいのか』への返答。"
+},
+
+{
+s:"会話文",
+p:"A: Did you finish the report for tomorrow's meeting?\nB: Almost. I just need to check a few details.\nA: ( )",
+c:[
+"I'm sure you'll finish it on time.",
+"The meeting was canceled yesterday.",
+"I don't like writing reports.",
+"It took five minutes."
+],
+a:0,
+jp:"きっと締切に間に合いますよ。",
+ex:"相手を励ます自然な応答。"
+},
+
+{
+s:"会話文",
+p:"A: Have you ever visited Kyoto in autumn?\nB: Yes, I went there last year.\nA: ( )",
+c:[
+"I've heard the leaves are beautiful.",
+"I usually stay at home.",
+"The train leaves at six.",
+"It was my birthday."
+],
+a:0,
+jp:"紅葉が美しいと聞いています。",
+ex:"京都の秋について話題を広げる発言。"
+},
+
+{
+s:"会話文",
+p:"A: I'm worried about giving a presentation in English.\nB: Don't worry. You've practiced a lot.\nA: ( )",
+c:[
+"Thanks. That makes me feel better.",
+"I forgot how to drive.",
+"The presentation was last month.",
+"I prefer coffee."
+],
+a:0,
+jp:"ありがとう。少し安心しました。",
+ex:"励ましへの自然な返答。"
+},
+
+
+{
+s:"長文読解",
+text:"Many companies now allow employees to work from home several days a week. Supporters say this saves commuting time and helps workers balance their jobs and personal lives. However, some managers worry that communication among team members may become less effective.",
+textjp:"多くの企業が週に数日、自宅勤務を認めています。",
+p:"What is one advantage of working from home?",
+c:[
+"It saves commuting time.",
+"It increases traffic.",
+"It reduces salaries.",
+"It shortens vacations."
+],
+a:0,
+jp:"通勤時間を節約できることです。",
+ex:"2文目が根拠。"
+},
+
+{
+s:"長文読解",
+text:"Many companies now allow employees to work from home several days a week. Supporters say this saves commuting time and helps workers balance their jobs and personal lives. However, some managers worry that communication among team members may become less effective.",
+textjp:"多くの企業が週に数日、自宅勤務を認めています。",
+p:"What concern do some managers have?",
+c:[
+"Communication may become less effective.",
+"Employees work too hard.",
+"Offices are too large.",
+"Computers are too expensive."
+],
+a:0,
+jp:"コミュニケーションが非効率になることです。",
+ex:"最後の文が根拠。"
+},
+
+{
+s:"長文読解",
+text:"In some areas, local governments use smartphone apps to provide disaster information. These apps can send warnings about earthquakes, floods, and severe weather. Officials hope that faster communication will help people stay safe during emergencies.",
+textjp:"一部地域では自治体が防災アプリを利用しています。",
+p:"What information do the apps provide?",
+c:[
+"Disaster information.",
+"Movie reviews.",
+"Sports schedules.",
+"Travel discounts."
+],
+a:0,
+jp:"災害情報です。",
+ex:"本文冒頭が根拠。"
+},
+
+{
+s:"長文読解",
+text:"In some areas, local governments use smartphone apps to provide disaster information. These apps can send warnings about earthquakes, floods, and severe weather. Officials hope that faster communication will help people stay safe during emergencies.",
+textjp:"一部地域では自治体が防災アプリを利用しています。",
+p:"Why do officials support these apps?",
+c:[
+"They help people stay safe.",
+"They increase tourism.",
+"They reduce electricity use.",
+"They improve sports events."
+],
+a:0,
+jp:"人々の安全確保に役立つからです。",
+ex:"最後の文が根拠。"
+},
+
+{
+s:"長文読解",
+text:"Researchers have found that regular exercise can improve both physical and mental health. People who exercise regularly often sleep better and report lower stress levels. Even short periods of activity can make a difference if they are done consistently.",
+textjp:"研究によると定期的な運動は心身の健康に良い影響を与えます。",
+p:"What benefit of exercise is mentioned?",
+c:[
+"Better sleep.",
+"Higher food prices.",
+"Longer working hours.",
+"More traffic."
+],
+a:0,
+jp:"睡眠の改善です。",
+ex:"2文目が根拠。"
+},
+
+{
+s:"長文読解",
+text:"Researchers have found that regular exercise can improve both physical and mental health. People who exercise regularly often sleep better and report lower stress levels. Even short periods of activity can make a difference if they are done consistently.",
+textjp:"研究によると定期的な運動は心身の健康に良い影響を与えます。",
+p:"What is important according to the passage?",
+c:[
+"Being consistent.",
+"Exercising only once a month.",
+"Joining a professional team.",
+"Buying expensive equipment."
+],
+a:0,
+jp:"継続して行うことです。",
+ex:"最後の文が根拠。"
+},
+
+{
+s:"長文読解",
+text:"Some universities have started offering courses about artificial intelligence. Students learn how AI systems process information and how they are used in fields such as medicine and transportation. Experts believe that understanding AI will become increasingly important in the future.",
+textjp:"一部の大学ではAIについて学ぶ授業を開講しています。",
+p:"What do students learn about?",
+c:[
+"How AI processes information.",
+"How to build hospitals.",
+"How to fly airplanes.",
+"How to design clothing."
+],
+a:0,
+jp:"AIがどのように情報を処理するかです。",
+ex:"2文目が根拠。"
+},
+
+{
+s:"長文読解",
+text:"Some universities have started offering courses about artificial intelligence. Students learn how AI systems process information and how they are used in fields such as medicine and transportation. Experts believe that understanding AI will become increasingly important in the future.",
+textjp:"一部の大学ではAIについて学ぶ授業を開講しています。",
+p:"Why do experts think AI education is important?",
+c:[
+"It will become increasingly important in the future.",
+"It makes classes shorter.",
+"It eliminates all jobs.",
+"It improves weather forecasts."
+],
+a:0,
+jp:"将来ますます重要になるからです。",
+ex:"最後の文が根拠。"
+},
+
+{
+s:"長文読解",
+text:"A bicycle-sharing service was recently introduced in a small city. Residents can rent bicycles using a mobile app and return them at different stations. The city hopes the program will encourage people to use cars less often and reduce traffic congestion.",
+textjp:"ある小都市でシェアサイクルサービスが始まりました。",
+p:"How can residents rent bicycles?",
+c:[
+"Using a mobile app.",
+"By calling a taxi company.",
+"At the airport.",
+"With a train ticket."
+],
+a:0,
+jp:"スマートフォンアプリを利用します。",
+ex:"2文目が根拠。"
+},
+
+{
+s:"長文読解",
+text:"A bicycle-sharing service was recently introduced in a small city. Residents can rent bicycles using a mobile app and return them at different stations. The city hopes the program will encourage people to use cars less often and reduce traffic congestion.",
+textjp:"ある小都市でシェアサイクルサービスが始まりました。",
+p:"What is the goal of the program?",
+c:[
+"To reduce traffic congestion.",
+"To increase fuel use.",
+"To close train stations.",
+"To attract foreign companies."
+],
+a:0,
+jp:"交通渋滞を減らすことです。",
+ex:"最後の文が根拠。"
+},
+
+
+{
+s:"Eメール読解",
+text:`Dear Students,
+
+The school library will begin a new reading challenge next month. Participants who read five books and submit reviews will receive a certificate. Registration ends on May 20.
+
+Library Staff`,
+textjp:"図書館から生徒への案内メールです。",
+p:"What will participants receive if they complete the challenge?",
+c:[
+"A certificate.",
+"A tablet computer.",
+"A gift card.",
+"A free lunch."
+],
+a:0,
+jp:"賞状です。",
+ex:"2文目に書かれている。"
+},
+
+{
+s:"Eメール読解",
+text:`Dear Students,
+
+The school library will begin a new reading challenge next month. Participants who read five books and submit reviews will receive a certificate. Registration ends on May 20.
+
+Library Staff`,
+textjp:"図書館から生徒への案内メールです。",
+p:"When does registration end?",
+c:[
+"May 20.",
+"May 5.",
+"June 20.",
+"Next month."
+],
+a:0,
+jp:"5月20日です。",
+ex:"最後の文が根拠。"
+},
+
+{
+s:"Eメール読解",
+text:`Hi Tom,
+
+Our science club is planning a visit to a research center next Saturday. We will learn about renewable energy and meet several researchers. If you'd like to join us, please reply by Wednesday.
+
+Ken`,
+textjp:"ケンからトムへのメールです。",
+p:"What will the students learn about?",
+c:[
+"Renewable energy.",
+"Ancient history.",
+"Foreign languages.",
+"Cooking methods."
+],
+a:0,
+jp:"再生可能エネルギーです。",
+ex:"2文目が根拠。"
+},
+
+{
+s:"Eメール読解",
+text:`Hi Tom,
+
+Our science club is planning a visit to a research center next Saturday. We will learn about renewable energy and meet several researchers. If you'd like to join us, please reply by Wednesday.
+
+Ken`,
+textjp:"ケンからトムへのメールです。",
+p:"Why did Ken send this email?",
+c:[
+"To invite Tom to join the visit.",
+"To cancel the event.",
+"To ask for homework help.",
+"To borrow a book."
+],
+a:0,
+jp:"見学への参加を誘うためです。",
+ex:"最後の文から分かる。"
+},
+
+{
+s:"Eメール読解",
+text:`Hello Volunteers,
+
+Thank you for participating in our tree-planting event last weekend. More than 300 trees were planted in the park. Our next activity will focus on cleaning rivers in the area.
+
+Green Earth Organization`,
+textjp:"環境保護団体からのメールです。",
+p:"What was achieved at the event?",
+c:[
+"More than 300 trees were planted.",
+"A new building was completed.",
+"Several rivers were cleaned.",
+"A road was repaired."
+],
+a:0,
+jp:"300本以上の木が植えられました。",
+ex:"2文目が根拠。"
+},
+          {
+s:"英作文",
+p:"Do you think high school students should learn about artificial intelligence (AI) at school? Give TWO reasons for your answer. (80-100 words)",
+min:80,
+max:100,
+sample:"I think high school students should learn about artificial intelligence at school. First, AI is already used in many areas such as healthcare, business, and transportation. Students need to understand how it works in order to prepare for the future. Second, learning about AI can help students develop critical thinking skills. They can learn both the benefits and risks of new technology. For these reasons, I believe AI education should be included in high school programs.",
+samplejp:"私は高校生は学校で人工知能について学ぶべきだと思います。第一に、AIはすでに医療、ビジネス、交通など多くの分野で利用されており、生徒は将来に備えてその仕組みを理解する必要があるからです。第二に、AI学習は批判的思考力を育てるのに役立ちます。新しい技術の利点とリスクの両方を学べるからです。以上の理由から、AI教育は高校の教育課程に含まれるべきだと考えます。",
+ex:"2級ライティングの典型形式。意見→理由1→理由2→結論の流れで構成。AIという現代的なテーマについて論理的に説明する練習になる。"
+},
+        ],
+        [
+          {
+s:"語句・会話",
+p:"Many young people use social media to ( ) information quickly.",
+c:["share","repair","borrow","contain"],
+a:0,
+jp:"多くの若者は情報を素早く共有するためにSNSを利用しています。",
+ex:"share information＝情報を共有する。"
+},
+{
+s:"語句・会話",
+p:"The zoo is working to ( ) endangered animals.",
+c:["protect","replace","ignore","deliver"],
+a:0,
+jp:"その動物園は絶滅危惧種を保護するために取り組んでいます。",
+ex:"protect endangered animals。"
+},
+{
+s:"語句・会話",
+p:"Scientists hope to ( ) more information about Mars.",
+c:["obtain","damage","persuade","retire"],
+a:0,
+jp:"科学者たちは火星についてさらに多くの情報を得たいと考えています。",
+ex:"obtain＝得る。"
+},
+{
+s:"語句・会話",
+p:"Cashless payments have become more ( ) in recent years.",
+c:["common","silent","temporary","formal"],
+a:0,
+jp:"近年キャッシュレス決済はより一般的になっています。",
+ex:"common＝一般的な。"
+},
+{
+s:"語句・会話",
+p:"The school organized an international ( ) program.",
+c:["exchange","damage","distance","invention"],
+a:0,
+jp:"学校は国際交流プログラムを実施しました。",
+ex:"exchange program＝交流プログラム。"
+},
+{
+s:"語句・会話",
+p:"The company plans to ( ) its products in Asia.",
+c:["market","prevent","gather","retire"],
+a:0,
+jp:"その会社はアジアで製品を販売展開する計画です。",
+ex:"market＝売り込む。"
+},
+{
+s:"語句・会話",
+p:"The astronaut spent six months on a space ( ).",
+c:["mission","lecture","contest","entrance"],
+a:0,
+jp:"その宇宙飛行士は6か月間宇宙ミッションに参加しました。",
+ex:"space mission＝宇宙計画。"
+},
+{
+s:"語句・会話",
+p:"The city introduced a system to ( ) traffic problems.",
+c:["address","borrow","invent","arrive"],
+a:0,
+jp:"その市は交通問題に対処するシステムを導入しました。",
+ex:"address a problem＝問題に対処する。"
+},
+{
+s:"語句・会話",
+p:"Many customers prefer online shopping because it is ( ).",
+c:["convenient","ordinary","responsible","nervous"],
+a:0,
+jp:"多くの客は便利なのでオンラインショッピングを好みます。",
+ex:"convenient＝便利な。"
+},
+{
+s:"語句・会話",
+p:"The documentary raised public ( ) of environmental issues.",
+c:["awareness","temperature","strength","tradition"],
+a:0,
+jp:"そのドキュメンタリーは環境問題への意識を高めました。",
+ex:"raise awareness。"
+},
+{
+s:"語句・会話",
+p:"Researchers are trying to ( ) the cause of the disease.",
+c:["identify","borrow","repair","celebrate"],
+a:0,
+jp:"研究者たちは病気の原因を特定しようとしています。",
+ex:"identify＝特定する。"
+},
+{
+s:"語句・会話",
+p:"The event attracted participants from a variety of ( ).",
+c:["backgrounds","captains","schedules","factories"],
+a:0,
+jp:"そのイベントには様々な背景を持つ参加者が集まりました。",
+ex:"backgrounds＝背景・経歴。"
+},
+{
+s:"語句・会話",
+p:"The government announced new measures to ( ) energy consumption.",
+c:["reduce","predict","exchange","remove"],
+a:0,
+jp:"政府はエネルギー消費を減らす新しい対策を発表しました。",
+ex:"reduce consumption。"
+},
+{
+s:"語句・会話",
+p:"The invention was a major ( ) in medical technology.",
+c:["advance","lecture","departure","condition"],
+a:0,
+jp:"その発明は医療技術における大きな進歩でした。",
+ex:"advance＝進歩。"
+},
+{
+s:"語句・会話",
+p:"People are encouraged to ( ) reusable bags when shopping.",
+c:["carry","publish","measure","connect"],
+a:0,
+jp:"買い物の際には再利用可能な袋を持参することが推奨されています。",
+ex:"carry reusable bags。"
+},
+{
+s:"語句・会話",
+p:"The athlete succeeded ( ) breaking the national record.",
+c:["in","to","at","for"],
+a:0,
+jp:"その選手は国内記録を更新することに成功しました。",
+ex:"succeed in ～ing。"
+},
+{
+s:"語句・会話",
+p:"The exhibition will be open to the ( ) next week.",
+c:["public","distance","average","adventure"],
+a:0,
+jp:"その展示会は来週一般公開されます。",
+ex:"the public＝一般大衆。"
+},
+{
+s:"語句・会話",
+p:"Students should learn to evaluate online information ( ).",
+c:["carefully","suddenly","rarely","officially"],
+a:0,
+jp:"生徒はオンライン情報を慎重に評価することを学ぶべきです。",
+ex:"carefully＝慎重に。"
+},
+{
+s:"語句・会話",
+p:"The city hopes tourism will ( ) the local economy.",
+c:["strengthen","ignore","replace","capture"],
+a:0,
+jp:"その市は観光が地域経済を強化することを期待しています。",
+ex:"strengthen the economy。"
+},
+{
+s:"語句・会話",
+p:"The company received positive ( ) from customers.",
+c:["feedback","entrance","species","permission"],
+a:0,
+jp:"その会社は顧客から好意的な意見を受けました。",
+ex:"feedback＝意見・反応。"
+},
+{
+s:"会話文",
+p:"A: Have you ever talked with students from other countries online?\nB: Yes, I joined an international exchange event last month.\nA: ( )",
+c:[
+"That sounds like a valuable experience.",
+"I have never used the Internet.",
+"The event was canceled yesterday.",
+"You should stay home instead."
+],
+a:0,
+jp:"それは貴重な経験だったようですね。",
+ex:"国際交流の経験に対する自然な反応。"
+},
+
+{
+s:"会話文",
+p:"A: Did you hear about the new space mission?\nB: Yes, the rocket will be launched next week.\nA: ( )",
+c:[
+"I hope everything goes well.",
+"The mission ended last year.",
+"I don't like science classes.",
+"The ticket was expensive."
+],
+a:0,
+jp:"すべてうまくいくといいですね。",
+ex:"宇宙開発の話題への自然な応答。"
+},
+
+{
+s:"会話文",
+p:"A: I usually pay with my smartphone these days.\nB: Really? Why do you prefer that?\nA: ( )",
+c:[
+"It's faster than using cash.",
+"I lost my phone yesterday.",
+"I prefer walking to school.",
+"It closes at six."
+],
+a:0,
+jp:"現金を使うより速いからです。",
+ex:"キャッシュレス決済を利用する理由を述べている。"
+},
+
+{
+s:"会話文",
+p:"A: I saw your post on social media yesterday.\nB: Oh, really? What did you think of it?\nA: ( )",
+c:[
+"It was interesting and informative.",
+"The train was late again.",
+"I bought a new bicycle.",
+"My homework is difficult."
+],
+a:0,
+jp:"面白くて参考になりました。",
+ex:"SNS投稿への感想として自然。"
+},
+
+{
+s:"会話文",
+p:"A: Our school is collecting donations for an animal shelter.\nB: That's a great idea.\nA: ( )",
+c:[
+"Many animals need support.",
+"I have already finished lunch.",
+"The shelter was built yesterday.",
+"Animals cannot run fast."
+],
+a:0,
+jp:"多くの動物たちが支援を必要としています。",
+ex:"募金活動の理由を説明している。"
+},
+          {
+s:"長文読解",
+text:"Several countries are planning missions to the Moon. Scientists hope these missions will help them learn more about the history of the solar system. Some experts also believe that a future lunar base could support missions to Mars.",
+textjp:"複数の国が月探査計画を進めています。",
+p:"Why do scientists want to explore the Moon?",
+c:[
+"To learn more about the history of the solar system.",
+"To build amusement parks.",
+"To reduce air pollution.",
+"To improve train services."
+],
+a:0,
+jp:"太陽系の歴史についてより多くを学ぶためです。",
+ex:"2文目が根拠。"
+},
+
+{
+s:"長文読解",
+text:"Several countries are planning missions to the Moon. Scientists hope these missions will help them learn more about the history of the solar system. Some experts also believe that a future lunar base could support missions to Mars.",
+textjp:"複数の国が月探査計画を進めています。",
+p:"What may a future lunar base help support?",
+c:[
+"Missions to Mars.",
+"New airports.",
+"Ocean research.",
+"Sports competitions."
+],
+a:0,
+jp:"火星探査です。",
+ex:"最後の文が根拠。"
+},
+
+{
+s:"長文読解",
+text:"Many people use social networking services to stay connected with friends and family. However, experts warn that users should check information carefully before sharing it because false information can spread quickly online.",
+textjp:"多くの人がSNSを利用しています。",
+p:"Why should users check information before sharing it?",
+c:[
+"False information can spread quickly.",
+"It improves Internet speed.",
+"It reduces electricity use.",
+"It makes messages shorter."
+],
+a:0,
+jp:"誤った情報が素早く広まる可能性があるからです。",
+ex:"最後の文が根拠。"
+},
+
+{
+s:"長文読解",
+text:"Many people use social networking services to stay connected with friends and family. However, experts warn that users should check information carefully before sharing it because false information can spread quickly online.",
+textjp:"多くの人がSNSを利用しています。",
+p:"Why do many people use social networking services?",
+c:[
+"To stay connected with friends and family.",
+"To improve weather forecasts.",
+"To find jobs abroad.",
+"To reduce transportation costs."
+],
+a:0,
+jp:"友人や家族とつながり続けるためです。",
+ex:"1文目が根拠。"
+},
+
+{
+s:"長文読解",
+text:"Wildlife organizations are working to protect sea turtles. One major problem is plastic waste in the ocean because turtles may mistake it for food. Volunteers often participate in beach cleanup activities to reduce this threat.",
+textjp:"野生動物保護団体はウミガメの保護に取り組んでいます。",
+p:"What is one major threat to sea turtles?",
+c:[
+"Plastic waste in the ocean.",
+"Cold weather.",
+"Mountain climbing.",
+"Air traffic."
+],
+a:0,
+jp:"海洋プラスチックごみです。",
+ex:"2文目が根拠。"
+},
+
+{
+s:"長文読解",
+text:"Wildlife organizations are working to protect sea turtles. One major problem is plastic waste in the ocean because turtles may mistake it for food. Volunteers often participate in beach cleanup activities to reduce this threat.",
+textjp:"野生動物保護団体はウミガメの保護に取り組んでいます。",
+p:"Why do volunteers clean beaches?",
+c:[
+"To reduce threats to sea turtles.",
+"To attract tourists.",
+"To build hotels.",
+"To increase fishing."
+],
+a:0,
+jp:"ウミガメへの脅威を減らすためです。",
+ex:"最後の文が根拠。"
+},
+
+{
+s:"長文読解",
+text:"Cashless payment systems are becoming more common around the world. They allow customers to pay quickly without carrying cash. On the other hand, experts point out that users should pay attention to security and protect their personal information.",
+textjp:"キャッシュレス決済は世界中で広がっています。",
+p:"What is one advantage of cashless payment systems?",
+c:[
+"They allow quick payments.",
+"They eliminate taxes.",
+"They guarantee lower prices.",
+"They improve public transportation."
+],
+a:0,
+jp:"素早く支払いができることです。",
+ex:"2文目が根拠。"
+},
+
+{
+s:"長文読解",
+text:"Cashless payment systems are becoming more common around the world. They allow customers to pay quickly without carrying cash. On the other hand, experts point out that users should pay attention to security and protect their personal information.",
+textjp:"キャッシュレス決済は世界中で広がっています。",
+p:"What should users pay attention to?",
+c:[
+"Security.",
+"Weather conditions.",
+"Train schedules.",
+"Food quality."
+],
+a:0,
+jp:"セキュリティです。",
+ex:"最後の文が根拠。"
+},
+
+{
+s:"長文読解",
+text:"An international student exchange program recently brought together high school students from different countries. Participants shared information about their cultures and daily lives. Many students said the experience helped them understand different perspectives.",
+textjp:"国際交流プログラムに高校生が参加しました。",
+p:"What did participants share?",
+c:[
+"Information about their cultures and daily lives.",
+"Money and gifts.",
+"Sports equipment.",
+"Transportation schedules."
+],
+a:0,
+jp:"文化や日常生活に関する情報です。",
+ex:"2文目が根拠。"
+},
+
+{
+s:"長文読解",
+text:"An international student exchange program recently brought together high school students from different countries. Participants shared information about their cultures and daily lives. Many students said the experience helped them understand different perspectives.",
+textjp:"国際交流プログラムに高校生が参加しました。",
+p:"What did many students gain from the experience?",
+c:[
+"An understanding of different perspectives.",
+"A driver's license.",
+"A scholarship.",
+"A new school building."
+],
+a:0,
+jp:"異なる視点への理解です。",
+ex:"最後の文が根拠。"
+},
+         {
+s:"Eメール読解",
+text:`Dear Exchange Students,
+
+Welcome to Hakodate International High School. On your first day, please meet at the school library at 8:30 a.m. You will receive your schedule and take part in a campus tour.
+
+Student Office`,
+textjp:"留学生向けの案内メールです。",
+p:"Where should the exchange students meet?",
+c:[
+"At the school library.",
+"At the gym.",
+"At the station.",
+"At the cafeteria."
+],
+a:0,
+jp:"学校図書館です。",
+ex:"2文目の meet at the school library が根拠。"
+},
+
+{
+s:"Eメール読解",
+text:`Dear Exchange Students,
+
+Welcome to Hakodate International High School. On your first day, please meet at the school library at 8:30 a.m. You will receive your schedule and take part in a campus tour.
+
+Student Office`,
+textjp:"留学生向けの案内メールです。",
+p:"What will students do after receiving their schedules?",
+c:[
+"Take part in a campus tour.",
+"Return home.",
+"Visit a hospital.",
+"Take an exam."
+],
+a:0,
+jp:"キャンパス見学に参加します。",
+ex:"最後の文が根拠。"
+},
+
+{
+s:"Eメール読解",
+text:`Hello Visitors,
+
+Thank you for your interest in our Space Exploration Exhibition. The exhibition will be open from July 10 to July 30. Visitors can see models of rockets and learn about future missions to Mars.
+
+Science Museum`,
+textjp:"科学博物館からのお知らせです。",
+p:"What can visitors learn about?",
+c:[
+"Future missions to Mars.",
+"Ancient castles.",
+"Cooking techniques.",
+"Sports competitions."
+],
+a:0,
+jp:"将来の火星探査についてです。",
+ex:"最後の文が根拠。"
+},
+
+{
+s:"Eメール読解",
+text:`Dear Volunteers,
+
+Thank you for helping at the animal shelter last weekend. Thanks to your support, twenty dogs and cats found new homes. We hope you will join our next event in September.
+
+Animal Care Center`,
+textjp:"動物保護施設からのメールです。",
+p:"What happened because of the volunteers' support?",
+c:[
+"Twenty animals found new homes.",
+"A new shelter was built.",
+"More animals arrived.",
+"The event was canceled."
+],
+a:0,
+jp:"20匹の犬や猫に新しい飼い主が見つかりました。",
+ex:"2文目が根拠。"
+},
+
+{
+s:"Eメール読解",
+text:`Hi Ken,
+
+I recently started using a cashless payment app. It makes shopping much faster, and I no longer need to carry many coins. However, I'm careful to use strong passwords to keep my account secure.
+
+Yuta`,
+textjp:"ユウタからケンへのメールです。",
+p:"Why is Yuta careful about passwords?",
+c:[
+"To keep the account secure.",
+"To save money.",
+"To travel abroad.",
+"To earn points."
+],
+a:0,
+jp:"アカウントを安全に保つためです。",
+ex:"最後の文が根拠。"
+},
+          {
+s:"英作文",
+p:"Do you think high school students should spend less time using social media? Give TWO reasons for your answer. (80-100 words)",
+min:80,
+max:100,
+sample:"I think high school students should spend less time using social media. First, using social media for long periods can reduce the time available for studying and sleeping. As a result, students may have difficulty concentrating in class. Second, spending too much time online can increase stress because students may compare themselves with others. Social media can be useful, but students should use it carefully and maintain a balance between online activities and real life.",
+samplejp:"私は高校生はSNSを利用する時間を減らすべきだと思います。第一に、SNSを長時間利用すると勉強や睡眠の時間が減ってしまうからです。その結果、授業中に集中するのが難しくなることがあります。第二に、他人と自分を比較してしまい、ストレスが増える場合があります。SNSは便利ですが、現実生活とのバランスを保ちながら利用するべきです。",
+ex:"2級ライティング形式。自分の立場を最初に示し、『First』『Second』で2つの理由を説明して結論でまとめる構成。SNSの利便性を認めつつ、時間管理や精神面への影響について論理的に述べている。"
+},
+        ],
+        [
+          {
+s:"語句・会話",
+p:"Local residents participated in a disaster ( ) last weekend.",
+c:["drill","boundary","lecture","species"],
+a:0,
+jp:"地域住民は先週末、防災訓練に参加しました。",
+ex:"disaster drill＝防災訓練。"
+},
+{
+s:"語句・会話",
+p:"The government is facing challenges related to an aging ( ).",
+c:["population","schedule","tradition","advertisement"],
+a:0,
+jp:"政府は高齢化社会に関する課題に直面しています。",
+ex:"aging population＝高齢化人口。"
+},
+{
+s:"語句・会話",
+p:"The city is trying to ( ) more tourists from overseas.",
+c:["attract","solve","retire","repair"],
+a:0,
+jp:"その市は海外からより多くの観光客を呼び込もうとしています。",
+ex:"attract tourists。"
+},
+{
+s:"語句・会話",
+p:"Many restaurants are taking steps to reduce food ( ).",
+c:["waste","reward","traffic","distance"],
+a:0,
+jp:"多くのレストランは食品ロス削減に取り組んでいます。",
+ex:"food waste＝食品ロス。"
+},
+{
+s:"語句・会話",
+p:"Regular training can improve athletic ( ).",
+c:["performance","permission","pressure","population"],
+a:0,
+jp:"定期的なトレーニングは競技能力を向上させます。",
+ex:"athletic performance。"
+},
+{
+s:"語句・会話",
+p:"Wind power is an important source of renewable ( ).",
+c:["energy","tourism","research","culture"],
+a:0,
+jp:"風力発電は重要な再生可能エネルギー源です。",
+ex:"renewable energy。"
+},
+{
+s:"語句・会話",
+p:"The warning system helps people ( ) quickly during emergencies.",
+c:["respond","publish","exchange","borrow"],
+a:0,
+jp:"その警報システムは緊急時に迅速な対応を助けます。",
+ex:"respond＝対応する。"
+},
+{
+s:"語句・会話",
+p:"The hotel offers special services for elderly ( ).",
+c:["guests","captains","inventors","volunteers"],
+a:0,
+jp:"そのホテルは高齢の宿泊客向けの特別サービスを提供しています。",
+ex:"guest＝宿泊客。"
+},
+{
+s:"語句・会話",
+p:"Local businesses benefit from increased ( ).",
+c:["tourism","strength","distance","weather"],
+a:0,
+jp:"地元企業は観光客の増加によって恩恵を受けます。",
+ex:"tourism＝観光。"
+},
+{
+s:"語句・会話",
+p:"Supermarkets often donate unsold food to local ( ).",
+c:["charities","passengers","inventors","athletes"],
+a:0,
+jp:"スーパーは売れ残った食品を地域の慈善団体へ寄付することがあります。",
+ex:"charity＝慈善団体。"
+},
+{
+s:"語句・会話",
+p:"The coach emphasized the importance of proper ( ).",
+c:["nutrition","direction","transportation","discussion"],
+a:0,
+jp:"コーチは適切な栄養の重要性を強調しました。",
+ex:"nutrition＝栄養。"
+},
+{
+s:"語句・会話",
+p:"Solar panels can ( ) electricity from sunlight.",
+c:["generate","interrupt","compare","deliver"],
+a:0,
+jp:"太陽光パネルは日光から電気を生み出せます。",
+ex:"generate electricity。"
+},
+{
+s:"語句・会話",
+p:"Residents were advised to ( ) supplies before the storm.",
+c:["store","translate","compete","avoid"],
+a:0,
+jp:"住民は嵐の前に物資を備蓄するよう勧められました。",
+ex:"store supplies。"
+},
+{
+s:"語句・会話",
+p:"Healthcare costs are expected to ( ) in the future.",
+c:["increase","retire","attach","freeze"],
+a:0,
+jp:"医療費は将来増加すると予想されています。",
+ex:"increase＝増加する。"
+},
+{
+s:"語句・会話",
+p:"The guide explained the historical ( ) of the castle.",
+c:["significance","conversation","permission","temperature"],
+a:0,
+jp:"ガイドはその城の歴史的意義を説明しました。",
+ex:"significance＝重要性・意義。"
+},
+{
+s:"語句・会話",
+p:"The campaign encourages people to ( ) leftovers instead of throwing them away.",
+c:["reuse","measure","discover","appoint"],
+a:0,
+jp:"その運動は食べ残しを捨てずに活用するよう呼びかけています。",
+ex:"reuse＝再利用する。"
+},
+{
+s:"語句・会話",
+p:"Professional athletes need to ( ) from injuries quickly.",
+c:["recover","borrow","compete","pretend"],
+a:0,
+jp:"プロの選手はけがから素早く回復する必要があります。",
+ex:"recover from＝回復する。"
+},
+{
+s:"語句・会話",
+p:"The project received financial ( ) from the local government.",
+c:["support","distance","response","arrival"],
+a:0,
+jp:"その計画は自治体から資金援助を受けました。",
+ex:"financial support＝資金援助。"
+},
+{
+s:"語句・会話",
+p:"Experts predict that renewable energy will play a major ( ) in the future.",
+c:["role","schedule","species","lecture"],
+a:0,
+jp:"専門家は再生可能エネルギーが将来大きな役割を果たすと予測しています。",
+ex:"play a role。"
+},
+{
+s:"語句・会話",
+p:"The town developed an emergency ( ) for natural disasters.",
+c:["plan","advantage","entrance","customer"],
+a:0,
+jp:"その町は自然災害に備えた緊急計画を策定しました。",
+ex:"emergency plan＝緊急計画。"
+},
+{
+s:"会話文",
+p:"A: Did you participate in the disaster drill yesterday?\nB: Yes, it was very informative.\nA: ( )",
+c:[
+"It's important to be prepared for emergencies.",
+"The weather was warm yesterday.",
+"I don't have any homework.",
+"The drill starts next year."
+],
+a:0,
+jp:"緊急事態に備えることは大切ですね。",
+ex:"防災訓練の話題を受けた自然な応答。"
+},
+
+{
+s:"会話文",
+p:"A: My grandfather recently started using a smartphone.\nB: Really? How is he doing?\nA: ( )",
+c:[
+"He's learning very quickly.",
+"The phone is made in Japan.",
+"He bought it last century.",
+"I prefer using a notebook."
+],
+a:0,
+jp:"とても早く使い方を覚えています。",
+ex:"高齢者のスマホ利用についての自然な返答。"
+},
+
+{
+s:"会話文",
+p:"A: Have you visited the new tourist center yet?\nB: Not yet. Is it worth visiting?\nA: ( )",
+c:[
+"Yes, it has a lot of useful information.",
+"I usually stay home on weekends.",
+"The train was delayed today.",
+"It's closed every year."
+],
+a:0,
+jp:"はい、有益な情報がたくさんあります。",
+ex:"観光案内所についての評価を述べている。"
+},
+
+{
+s:"会話文",
+p:"A: Our school cafeteria started a campaign against food waste.\nB: That's a good idea.\nA: ( )",
+c:[
+"Students are wasting less food now.",
+"The food is more expensive.",
+"We only eat once a day.",
+"The campaign ended before it started."
+],
+a:0,
+jp:"今では生徒たちが食べ残しを減らしています。",
+ex:"フードロス削減の成果を説明している。"
+},
+
+{
+s:"会話文",
+p:"A: You've been improving a lot in your sport lately.\nB: Thanks. I've been training every day.\nA: ( )",
+c:[
+"Your hard work is paying off.",
+"I stopped exercising years ago.",
+"Sports are too difficult.",
+"The game was canceled tomorrow."
+],
+a:0,
+jp:"努力の成果が出ていますね。",
+ex:"スポーツの上達を評価する表現。"
+},
+
+
+         {
+s:"長文読解",
+text:"Many cities are introducing disaster alert systems that send warnings directly to smartphones. When earthquakes, floods, or other emergencies occur, residents can receive information within seconds. Officials hope these systems will help people evacuate more quickly and safely.",
+textjp:"多くの都市がスマートフォン向け防災警報システムを導入しています。",
+p:"Why are disaster alert systems being introduced?",
+c:[
+"To help people evacuate quickly and safely.",
+"To increase tourism.",
+"To reduce school hours.",
+"To improve sports events."
+],
+a:0,
+jp:"人々が迅速かつ安全に避難できるようにするためです。",
+ex:"最後の文が根拠。"
+},
+
+{
+s:"長文読解",
+text:"Many cities are introducing disaster alert systems that send warnings directly to smartphones. When earthquakes, floods, or other emergencies occur, residents can receive information within seconds. Officials hope these systems will help people evacuate more quickly and safely.",
+textjp:"多くの都市がスマートフォン向け防災警報システムを導入しています。",
+p:"How do residents receive warnings?",
+c:[
+"On their smartphones.",
+"Through newspapers only.",
+"By regular mail.",
+"From television programs only."
+],
+a:0,
+jp:"スマートフォンで受け取ります。",
+ex:"1文目が根拠。"
+},
+
+{
+s:"長文読解",
+text:"As populations age, some communities provide free transportation services for older residents. These services help seniors visit hospitals, supermarkets, and community centers. Local governments believe such support can improve quality of life and reduce isolation.",
+textjp:"高齢化が進む中、一部地域では高齢者向け無料交通サービスを提供しています。",
+p:"Who are the services designed for?",
+c:[
+"Older residents.",
+"Tourists.",
+"Students.",
+"Athletes."
+],
+a:0,
+jp:"高齢者です。",
+ex:"1文目が根拠。"
+},
+
+{
+s:"長文読解",
+text:"As populations age, some communities provide free transportation services for older residents. These services help seniors visit hospitals, supermarkets, and community centers. Local governments believe such support can improve quality of life and reduce isolation.",
+textjp:"高齢化が進む中、一部地域では高齢者向け無料交通サービスを提供しています。",
+p:"What is one benefit of the service?",
+c:[
+"It reduces isolation.",
+"It increases traffic jams.",
+"It lowers school attendance.",
+"It shortens hospital hours."
+],
+a:0,
+jp:"孤立を減らすことです。",
+ex:"最後の文が根拠。"
+},
+
+{
+s:"長文読解",
+text:"A coastal town has developed eco-tours that allow visitors to explore local wildlife while learning about environmental protection. The program has attracted many tourists and created new jobs for local residents.",
+textjp:"海辺の町では環境保護を学べるエコツアーを実施しています。",
+p:"What can visitors learn about?",
+c:[
+"Environmental protection.",
+"Rocket science.",
+"Ancient languages.",
+"Computer programming."
+],
+a:0,
+jp:"環境保護です。",
+ex:"1文目が根拠。"
+},
+
+{
+s:"長文読解",
+text:"A coastal town has developed eco-tours that allow visitors to explore local wildlife while learning about environmental protection. The program has attracted many tourists and created new jobs for local residents.",
+textjp:"海辺の町では環境保護を学べるエコツアーを実施しています。",
+p:"What effect has the program had?",
+c:[
+"It created new jobs.",
+"It reduced tourism.",
+"It closed local businesses.",
+"It increased pollution."
+],
+a:0,
+jp:"新しい雇用を生み出しました。",
+ex:"最後の文が根拠。"
+},
+
+{
+s:"長文読解",
+text:"Several supermarkets have begun selling food that is close to its expiration date at lower prices. This helps reduce food waste and allows customers to save money. Some stores also donate unsold products to local charities.",
+textjp:"スーパーでは期限が近い食品を割引販売しています。",
+p:"Why are supermarkets lowering the prices of some food?",
+c:[
+"To reduce food waste.",
+"To attract foreign workers.",
+"To shorten business hours.",
+"To increase packaging."
+],
+a:0,
+jp:"食品ロスを減らすためです。",
+ex:"2文目が根拠。"
+},
+
+{
+s:"長文読解",
+text:"Several supermarkets have begun selling food that is close to its expiration date at lower prices. This helps reduce food waste and allows customers to save money. Some stores also donate unsold products to local charities.",
+textjp:"スーパーでは期限が近い食品を割引販売しています。",
+p:"What do some stores do with unsold products?",
+c:[
+"They donate them to charities.",
+"They throw them away immediately.",
+"They ship them overseas.",
+"They keep them permanently."
+],
+a:0,
+jp:"慈善団体へ寄付します。",
+ex:"最後の文が根拠。"
+},
+
+{
+s:"長文読解",
+text:"A growing number of households are installing solar panels on their roofs. Although the initial cost can be high, solar energy can reduce electricity bills over time. It also produces less pollution than many traditional energy sources.",
+textjp:"太陽光パネルを設置する家庭が増えています。",
+p:"What is one advantage of solar energy?",
+c:[
+"It can reduce electricity bills.",
+"It increases fuel consumption.",
+"It requires no sunlight.",
+"It shortens building life."
+],
+a:0,
+jp:"電気料金を下げられることです。",
+ex:"2文目が根拠。"
+},
+
+{
+s:"長文読解",
+text:"A growing number of households are installing solar panels on their roofs. Although the initial cost can be high, solar energy can reduce electricity bills over time. It also produces less pollution than many traditional energy sources.",
+textjp:"太陽光パネルを設置する家庭が増えています。",
+p:"What disadvantage is mentioned?",
+c:[
+"The initial cost can be high.",
+"It produces too much pollution.",
+"It requires daily repairs.",
+"It cannot generate electricity."
+],
+a:0,
+jp:"初期費用が高いことです。",
+ex:"Although節が根拠。"
+},
+
+          {
+s:"Eメール読解",
+text:`Dear Residents,
+
+The city will hold an emergency preparedness workshop on October 12 at the Community Center. Participants will learn how to prepare emergency kits and respond during earthquakes. Please register by October 5.
+
+Disaster Prevention Office`,
+textjp:"防災課から住民への案内メールです。",
+p:"What will participants learn at the workshop?",
+c:[
+"How to prepare emergency kits and respond during earthquakes.",
+"How to repair roads.",
+"How to grow vegetables.",
+"How to use social media."
+],
+a:0,
+jp:"非常持ち出し袋の準備方法や地震時の対応方法です。",
+ex:"2文目が根拠。"
+},
+
+{
+s:"Eメール読解",
+text:`Dear Residents,
+
+The city will hold an emergency preparedness workshop on October 12 at the Community Center. Participants will learn how to prepare emergency kits and respond during earthquakes. Please register by October 5.
+
+Disaster Prevention Office`,
+textjp:"防災課から住民への案内メールです。",
+p:"When is the registration deadline?",
+c:[
+"October 5.",
+"October 10.",
+"October 12.",
+"October 15."
+],
+a:0,
+jp:"10月5日です。",
+ex:"最後の文が根拠。"
+},
+
+{
+s:"Eメール読解",
+text:`Hello Volunteers,
+
+Thank you for helping with our Food-Saving Campaign. Thanks to your efforts, more than 500 meals were donated to local shelters last month. We will meet again next Saturday to discuss future activities.
+
+Food Support Network`,
+textjp:"フードサポート団体からのメールです。",
+p:"What was achieved through the campaign?",
+c:[
+"More than 500 meals were donated.",
+"A new supermarket was opened.",
+"Several restaurants were closed.",
+"Food prices were reduced."
+],
+a:0,
+jp:"500食以上が寄付されました。",
+ex:"2文目が根拠。"
+},
+
+{
+s:"Eメール読解",
+text:`Hi Yuki,
+
+I recently visited a town famous for its historical buildings. The local guides explained the history of the area, and I enjoyed learning about the culture. You should visit someday.
+
+Aki`,
+textjp:"アキからユキへのメールです。",
+p:"What did Aki enjoy?",
+c:[
+"Learning about the local culture.",
+"Buying expensive souvenirs.",
+"Watching sports events.",
+"Traveling by airplane."
+],
+a:0,
+jp:"地域文化について学ぶことです。",
+ex:"2文目が根拠。"
+},
+
+{
+s:"Eメール読解",
+text:`Dear Customers,
+
+Our company has completed the installation of solar panels at our main office. We expect the system to reduce electricity use from traditional energy sources by 40 percent. Thank you for supporting our environmental efforts.
+
+Green Future Energy`,
+textjp:"エネルギー会社からのお知らせです。",
+p:"What is expected from the new solar panel system?",
+c:[
+"A reduction in electricity use from traditional energy sources.",
+"An increase in office space.",
+"The construction of a new factory.",
+"Lower Internet costs."
+],
+a:0,
+jp:"従来のエネルギー使用量の削減です。",
+ex:"2文目が根拠。"
+},
+          {
+s:"英作文",
+p:"Do you think towns should spend more money on disaster prevention? Give TWO reasons for your answer. (80-100 words)",
+min:80,
+max:100,
+sample:"I think towns should spend more money on disaster prevention. First, natural disasters such as earthquakes and floods can cause serious damage to people's lives and property. Better preparation can reduce these risks. Second, investing in disaster prevention may save money in the long term because it can reduce recovery costs after emergencies. It is important for local governments to protect residents and help communities stay safe. For these reasons, I believe disaster prevention should be a priority.",
+samplejp:"私は、自治体は防災対策にもっとお金を使うべきだと思います。第一に、地震や洪水などの自然災害は人々の生命や財産に大きな被害を与える可能性があるからです。事前の備えによって被害を減らすことができます。第二に、防災への投資は災害後の復旧費用を抑えられるため、長期的には費用の節約につながる可能性があります。住民の安全を守ることは重要です。以上の理由から、防災対策は優先されるべきだと考えます。",
+ex:"2級ライティング形式。冒頭で意見を示し、First・Secondで理由を2つ説明し、最後に結論を述べる構成。防災という社会的テーマについて論理的に意見を書く練習になる。"
+},
+        ],
+        [
+         {
+s:"語句・会話",
+p:"Telemedicine allows patients to ( ) doctors without visiting hospitals.",
+c:["consult","collect","replace","damage"],
+a:0,
+jp:"オンライン診療では病院に行かずに医師へ相談できます。",
+ex:"consult a doctor＝医師に相談する。"
+},
+{
+s:"語句・会話",
+p:"Many employees prefer flexible working ( ).",
+c:["arrangements","captains","species","lectures"],
+a:0,
+jp:"多くの従業員は柔軟な働き方を好みます。",
+ex:"working arrangements＝勤務形態。"
+},
+{
+s:"語句・会話",
+p:"International organizations provide ( ) to countries facing crises.",
+c:["assistance","temperature","traffic","permission"],
+a:0,
+jp:"国際機関は危機に直面する国々へ支援を提供します。",
+ex:"assistance＝支援。"
+},
+{
+s:"語句・会話",
+p:"Glass bottles can be collected and ( ).",
+c:["recycled","predicted","avoided","borrowed"],
+a:0,
+jp:"ガラスびんは回収されリサイクルされます。",
+ex:"recycle＝再利用する。"
+},
+{
+s:"語句・会話",
+p:"The city plans to improve public ( ) services.",
+c:["transportation","discussion","medicine","distance"],
+a:0,
+jp:"市は公共交通サービスの改善を計画しています。",
+ex:"public transportation＝公共交通。"
+},
+{
+s:"語句・会話",
+p:"Learning new skills can increase career ( ).",
+c:["opportunities","traditions","villages","arguments"],
+a:0,
+jp:"新しい技能を学ぶことで仕事の機会が増えます。",
+ex:"career opportunities。"
+},
+{
+s:"語句・会話",
+p:"The hospital introduced advanced medical ( ).",
+c:["equipment","backgrounds","responses","destinations"],
+a:0,
+jp:"その病院は高度な医療機器を導入しました。",
+ex:"medical equipment。"
+},
+{
+s:"語句・会話",
+p:"Remote workers often communicate through online ( ).",
+c:["platforms","harbors","celebrations","competitions"],
+a:0,
+jp:"在宅勤務者はオンラインプラットフォームを通じて連絡します。",
+ex:"platform＝基盤・サービス。"
+},
+{
+s:"語句・会話",
+p:"The program aims to strengthen international ( ).",
+c:["cooperation","pollution","transportation","adventure"],
+a:0,
+jp:"その計画は国際協力の強化を目的としています。",
+ex:"international cooperation。"
+},
+{
+s:"語句・会話",
+p:"People are encouraged to separate waste properly for ( ).",
+c:["recycling","tourism","education","exercise"],
+a:0,
+jp:"人々はリサイクルのため正しくごみを分別するよう求められています。",
+ex:"for recycling。"
+},
+{
+s:"語句・会話",
+p:"The railway company announced a new fare ( ).",
+c:["system","background","pressure","ability"],
+a:0,
+jp:"鉄道会社は新しい運賃制度を発表しました。",
+ex:"fare system＝運賃制度。"
+},
+{
+s:"語句・会話",
+p:"Many adults attend classes as part of lifelong ( ).",
+c:["learning","packaging","transporting","funding"],
+a:0,
+jp:"多くの成人が生涯学習の一環として授業に参加します。",
+ex:"lifelong learning。"
+},
+{
+s:"語句・会話",
+p:"Researchers are developing a new treatment for a rare ( ).",
+c:["disease","journey","festival","advantage"],
+a:0,
+jp:"研究者は希少疾患の新しい治療法を開発しています。",
+ex:"disease＝病気。"
+},
+{
+s:"語句・会話",
+p:"Employees should maintain a healthy work-life ( ).",
+c:["balance","route","entrance","disaster"],
+a:0,
+jp:"従業員は健全なワークライフバランスを保つべきです。",
+ex:"work-life balance。"
+},
+{
+s:"語句・会話",
+p:"Several nations agreed to ( ) information during emergencies.",
+c:["share","cancel","recover","ignore"],
+a:0,
+jp:"複数の国が緊急時に情報共有することで合意しました。",
+ex:"share information。"
+},
+{
+s:"語句・会話",
+p:"Plastic waste can have a harmful ( ) on the environment.",
+c:["effect","invitation","journey","lecture"],
+a:0,
+jp:"プラスチックごみは環境に悪影響を与える可能性があります。",
+ex:"have an effect on。"
+},
+{
+s:"語句・会話",
+p:"The subway system is widely used by daily ( ).",
+c:["commuters","inventors","explorers","guardians"],
+a:0,
+jp:"地下鉄は通勤客に広く利用されています。",
+ex:"commuter＝通勤者。"
+},
+{
+s:"語句・会話",
+p:"Online courses make education more ( ).",
+c:["accessible","temporary","severe","formal"],
+a:0,
+jp:"オンライン講座は教育をより利用しやすくします。",
+ex:"accessible＝利用しやすい。"
+},
+{
+s:"語句・会話",
+p:"The new vaccine has been tested for both safety and ( ).",
+c:["effectiveness","tourism","distance","importance"],
+a:0,
+jp:"その新しいワクチンは安全性と有効性の両方が検証されました。",
+ex:"effectiveness＝有効性。"
+},
+{
+s:"語句・会話",
+p:"Citizens are encouraged to use public transport to reduce carbon ( ).",
+c:["emissions","backgrounds","conditions","resources"],
+a:0,
+jp:"市民は二酸化炭素排出量削減のため公共交通を利用するよう勧められています。",
+ex:"carbon emissions＝炭素排出量。"
+},
+{
+s:"会話文",
+p:"A: I had an online medical appointment yesterday.\nB: Really? How was it?\nA: ( )",
+c:[
+"It was convenient because I didn't have to visit the hospital.",
+"I bought a new bicycle afterward.",
+"The doctor lives overseas.",
+"It lasted for three days."
+],
+a:0,
+jp:"病院へ行かなくてよかったので便利でした。",
+ex:"オンライン診療の利点を説明している。"
+},
+
+{
+s:"会話文",
+p:"A: How do you communicate with your coworkers when working from home?\nB: We usually have online meetings.\nA: ( )",
+c:[
+"Technology makes remote work much easier.",
+"I rarely use a computer.",
+"The office moved last year.",
+"We only send letters."
+],
+a:0,
+jp:"テクノロジーのおかげで在宅勤務が楽になりますね。",
+ex:"リモートワークの話題への自然な応答。"
+},
+
+{
+s:"会話文",
+p:"A: Our school is collecting supplies for people affected by floods overseas.\nB: That's a meaningful project.\nA: ( )",
+c:[
+"Many communities still need support.",
+"I have already finished my homework.",
+"The weather is nice today.",
+"We canceled the project last month."
+],
+a:0,
+jp:"まだ多くの地域が支援を必要としています。",
+ex:"国際支援活動の目的を説明している。"
+},
+
+{
+s:"会話文",
+p:"A: I started separating my household waste more carefully.\nB: That's great.\nA: ( )",
+c:[
+"I want to contribute to recycling efforts.",
+"I lost my keys yesterday.",
+"The garbage truck is new.",
+"I never use plastic."
+],
+a:0,
+jp:"リサイクルに貢献したいからです。",
+ex:"ごみ分別の理由として自然。"
+},
+
+{
+s:"会話文",
+p:"A: Why are you taking that evening class?\nB: I want to improve my computer skills.\nA: ( )",
+c:[
+"Learning new things is always valuable.",
+"I stopped studying years ago.",
+"The class ended yesterday.",
+"Computers are very expensive."
+],
+a:0,
+jp:"新しいことを学ぶのはいつも価値がありますね。",
+ex:"生涯学習に関する自然な応答。"
+},
+{
+s:"長文読解",
+text:"Telemedicine services have become more common in recent years. Patients can talk with doctors through video calls and receive medical advice without visiting a hospital. This is especially useful for people who live far from medical facilities.",
+textjp:"近年、オンライン診療サービスが普及しています。",
+p:"What can patients do through telemedicine?",
+c:[
+"Talk with doctors through video calls.",
+"Perform medical operations.",
+"Receive free medicine every day.",
+"Build hospitals."
+],
+a:0,
+jp:"ビデオ通話で医師と相談できます。",
+ex:"2文目が根拠です。"
+},
+
+{
+s:"長文読解",
+text:"Telemedicine services have become more common in recent years. Patients can talk with doctors through video calls and receive medical advice without visiting a hospital. This is especially useful for people who live far from medical facilities.",
+textjp:"近年、オンライン診療サービスが普及しています。",
+p:"Who benefits especially from telemedicine?",
+c:[
+"People living far from hospitals.",
+"Professional athletes.",
+"Tourists.",
+"Factory workers."
+],
+a:0,
+jp:"医療施設から遠くに住む人々です。",
+ex:"最後の文が根拠です。"
+},
+
+{
+s:"長文読解",
+text:"Many companies now allow employees to work remotely several days a week. Workers can save commuting time and often have more flexibility in managing their schedules. However, good communication is necessary to maintain teamwork.",
+textjp:"多くの企業が在宅勤務を導入しています。",
+p:"What is one benefit of remote work?",
+c:[
+"It saves commuting time.",
+"It increases office space.",
+"It reduces teamwork.",
+"It shortens vacations."
+],
+a:0,
+jp:"通勤時間を節約できます。",
+ex:"2文目が根拠です。"
+},
+
+{
+s:"長文読解",
+text:"Many companies now allow employees to work remotely several days a week. Workers can save commuting time and often have more flexibility in managing their schedules. However, good communication is necessary to maintain teamwork.",
+textjp:"多くの企業が在宅勤務を導入しています。",
+p:"What is necessary for successful teamwork?",
+c:[
+"Good communication.",
+"Longer working hours.",
+"More office buildings.",
+"Daily business trips."
+],
+a:0,
+jp:"良好なコミュニケーションです。",
+ex:"最後の文が根拠です。"
+},
+
+{
+s:"長文読解",
+text:"Several countries recently worked together to provide clean drinking water in areas affected by disasters. Engineers installed water purification systems, and volunteers taught local residents how to maintain them.",
+textjp:"複数の国が協力して被災地へ安全な飲料水を提供しました。",
+p:"What was provided to disaster-affected areas?",
+c:[
+"Clean drinking water.",
+"New airports.",
+"Sports facilities.",
+"Tourist attractions."
+],
+a:0,
+jp:"安全な飲料水です。",
+ex:"1文目が根拠です。"
+},
+
+{
+s:"長文読解",
+text:"Several countries recently worked together to provide clean drinking water in areas affected by disasters. Engineers installed water purification systems, and volunteers taught local residents how to maintain them.",
+textjp:"複数の国が協力して被災地へ安全な飲料水を提供しました。",
+p:"What did volunteers teach local residents?",
+c:[
+"How to maintain the systems.",
+"How to build schools.",
+"How to fly airplanes.",
+"How to repair roads."
+],
+a:0,
+jp:"浄水システムの管理方法です。",
+ex:"2文目が根拠です。"
+},
+
+{
+s:"長文読解",
+text:"A city introduced a recycling program that rewards residents for sorting waste correctly. People earn points that can be exchanged for local products. Officials hope the program will encourage more recycling.",
+textjp:"ある都市はリサイクル促進制度を導入しました。",
+p:"How do residents earn points?",
+c:[
+"By sorting waste correctly.",
+"By using cars less often.",
+"By shopping online.",
+"By planting trees."
+],
+a:0,
+jp:"ごみを正しく分別することで得られます。",
+ex:"1文目が根拠です。"
+},
+
+{
+s:"長文読解",
+text:"A city introduced a recycling program that rewards residents for sorting waste correctly. People earn points that can be exchanged for local products. Officials hope the program will encourage more recycling.",
+textjp:"ある都市はリサイクル促進制度を導入しました。",
+p:"What can the points be exchanged for?",
+c:[
+"Local products.",
+"Train tickets.",
+"Computers.",
+"Books."
+],
+a:0,
+jp:"地元の商品です。",
+ex:"2文目が根拠です。"
+},
+
+{
+s:"長文読解",
+text:"Several cities are expanding their public transportation networks to reduce traffic congestion. New subway lines and bus routes make it easier for residents to travel without private cars. Officials also expect these changes to reduce carbon emissions.",
+textjp:"複数の都市が公共交通網を拡大しています。",
+p:"Why are cities expanding public transportation?",
+c:[
+"To reduce traffic congestion.",
+"To increase fuel consumption.",
+"To support air travel.",
+"To enlarge highways."
+],
+a:0,
+jp:"交通渋滞を減らすためです。",
+ex:"1文目が根拠です。"
+},
+
+{
+s:"長文読解",
+text:"Several cities are expanding their public transportation networks to reduce traffic congestion. New subway lines and bus routes make it easier for residents to travel without private cars. Officials also expect these changes to reduce carbon emissions.",
+textjp:"複数の都市が公共交通網を拡大しています。",
+p:"What additional benefit do officials expect?",
+c:[
+"A reduction in carbon emissions.",
+"More private car ownership.",
+"Higher fuel prices.",
+"Longer commuting times."
+],
+a:0,
+jp:"二酸化炭素排出量の削減です。",
+ex:"最後の文が根拠です。"
+},
+
+{
+s:"Eメール読解",
+text:`Dear Patients,
+
+Our clinic has started a new online appointment system. Patients can now make reservations through our website 24 hours a day. We hope this service will make scheduling easier and more convenient.
+
+Central Medical Clinic`,
+textjp:"病院から患者への案内メールです。",
+p:"What can patients do with the new system?",
+c:[
+"Make reservations online.",
+"Receive free medicine.",
+"Meet doctors at home.",
+"View medical records from other hospitals."
+],
+a:0,
+jp:"オンラインで予約できます。",
+ex:"2文目が根拠。"
+},
+
+{
+s:"Eメール読解",
+text:`Dear Patients,
+
+Our clinic has started a new online appointment system. Patients can now make reservations through our website 24 hours a day. We hope this service will make scheduling easier and more convenient.
+
+Central Medical Clinic`,
+textjp:"病院から患者への案内メールです。",
+p:"Why was the system introduced?",
+c:[
+"To make scheduling easier and more convenient.",
+"To reduce the number of doctors.",
+"To close the clinic earlier.",
+"To increase medical costs."
+],
+a:0,
+jp:"予約をより簡単で便利にするためです。",
+ex:"最後の文が根拠。"
+},
+
+{
+s:"Eメール読解",
+text:`Hi Mai,
+
+I've been working from home for six months now. At first, it was difficult to stay organized, but I have created a daily schedule that helps me manage my time. I also have online meetings with my team every morning.
+
+Ken`,
+textjp:"ケンからマイへのメールです。",
+p:"How does Ken manage his time?",
+c:[
+"By following a daily schedule.",
+"By working fewer hours.",
+"By visiting the office every day.",
+"By asking coworkers to do his work."
+],
+a:0,
+jp:"毎日の予定表を作ることで時間管理しています。",
+ex:"2文目が根拠。"
+},
+
+{
+s:"Eメール読解",
+text:`Hello Volunteers,
+
+Thank you for joining our international aid campaign. Thanks to your contributions, we were able to send school supplies to children in three countries. We appreciate your continued support.
+
+Global Support Organization`,
+textjp:"国際支援団体からのメールです。",
+p:"What was sent to children?",
+c:[
+"School supplies.",
+"Computers.",
+"Sports equipment.",
+"Food products."
+],
+a:0,
+jp:"学用品です。",
+ex:"2文目が根拠。"
+},
+
+{
+s:"Eメール読解",
+text:`Dear Community Members,
+
+Our recycling center will hold a workshop next Saturday. Participants will learn how to reduce household waste and reuse common materials. The event is free and open to all residents.
+
+Recycling Center Staff`,
+textjp:"リサイクルセンターからのお知らせです。",
+p:"What will participants learn at the workshop?",
+c:[
+"How to reduce waste and reuse materials.",
+"How to repair computers.",
+"How to start a business.",
+"How to plant trees."
+],
+a:0,
+jp:"ごみを減らし、材料を再利用する方法です。",
+ex:"2文目が根拠。"
+},
+{
+s:"英作文",
+p:"Do you think adults should continue learning throughout their lives? Give TWO reasons for your answer. (80-100 words)",
+min:80,
+max:100,
+sample:"I think adults should continue learning throughout their lives. First, society changes quickly, and people need new knowledge and skills to adapt to changes in technology and the workplace. Second, learning can make life more interesting and enjoyable. For example, people can study languages, history, or other subjects that interest them. Continuing to learn also helps people stay active and confident. For these reasons, I believe lifelong learning is important for adults.",
+samplejp:"私は、大人も生涯を通じて学び続けるべきだと思います。第一に、社会は急速に変化しており、人々は技術や職場環境の変化に対応するため新しい知識や技能を身につける必要があるからです。第二に、学ぶことは人生をより興味深く充実したものにします。例えば、語学や歴史など自分の興味のある分野を学べます。学び続けることは活動的で自信を持つことにもつながります。以上の理由から、生涯学習は重要だと考えます。",
+ex:"2級ライティング形式。意見→理由1→理由2→結論の構成。『変化への適応』と『人生の充実』という2つの異なる観点から論理的に説明している。"
+},
+         
+        ],
+      ];
+
+let Q = [];
+let i = 0;
+let ans = {};
+let ROUND = 0;
+
+let RANDOM_MODE = false;
+const $ = x => document.querySelector(x);
+document
+ .querySelectorAll(".roundBtn")
+ .forEach(btn=>{
+
+   btn.onclick=()=>{
+
+     document
+      .querySelectorAll(".roundBtn")
+      .forEach(b=>{
+        b.classList.remove("active");
+      });
+
+     btn.classList.add("active");
+
+RANDOM_MODE = false;
+
+document
+ .getElementById("randomMode")
+ .classList.remove("active");
+
+ROUND =
+ Number(btn.dataset.round);
+
+   };
+
+ });
+$("#randomMode").onclick = ()=>{
+
+  RANDOM_MODE = true;
+
+  document
+   .querySelectorAll(".roundBtn")
+   .forEach(b=>{
+     b.classList.remove("active");
+   });
+
+  $("#randomMode")
+    .classList.add("active");
+
+};
+function shuffle(arr){
+
+  for(let i = arr.length - 1; i > 0; i--){
+
+    const j =
+      Math.floor(
+        Math.random() * (i + 1)
+      );
+
+    [arr[i], arr[j]] =
+    [arr[j], arr[i]];
+
+  }
+
+}
+
+function load(){
+
+ 
+if(RANDOM_MODE){
+
+  let vocab = [];
+  let reading = [];
+  let email = [];
+  let essay = [];
+
+  BANK.flat().forEach(q=>{
+
+    if(q.s === "長文読解"){
+      reading.push(q);
+    }
+    else if(q.s === "Eメール読解"){
+      email.push(q);
+    }
+    else if(q.s === "英作文"){
+      essay.push(q);
+    }
+    else{
+      vocab.push(q);
+    }
+
+  });
+
+  shuffle(vocab);
+  shuffle(reading);
+  shuffle(email);
+  shuffle(essay);
+
+  Q = [
+
+    ...vocab.slice(0,25),
+
+    ...reading.slice(0,10),
+
+    ...email.slice(0,5),
+
+    essay[0]
+
+  ];
+
+}
+else{
+
+  Q = JSON.parse(
+    JSON.stringify(
+      BANK[ROUND] || []
+    )
+  );
+
+}
+  Q.forEach(q=>{
+
+  if(!q.c) return;
+
+  let items = q.c.map(
+    (text,n)=>({
+      text,
+      ok:n===q.a
+    })
+  );
+
+  shuffle(items);
+
+  q.c = items.map(v=>v.text);
+
+  q.a = items.findIndex(v=>v.ok);
+
+});
+
+}
+
+function render(){
+
+  let q = Q[i];
+
+ $("#where").textContent =
+RANDOM_MODE
+ ? `総合ランダム ${i+1}/${Q.length}`
+ : `第${ROUND+1}回 ${i+1}/${Q.length}`;
+
+$("#no").textContent =
+ `QUESTION ${i+1}`;
+
+  $("#pass").innerHTML = q.text
+    ? `
+        <div class="feedback">
+          ${q.text}
+        </div>
+      `
+    : "";
+
+  $("#prompt").textContent =
+    q.p;
+  let html = "";
+
+
+if(q.c){
+
+  q.c.forEach((choice,n)=>{
+
+    html += `
+      <button
+        class="choice ${ans[i]===n ? 'active' : ''}"
+        onclick="selectAnswer(${n})">
+        ${String.fromCharCode(65+n)}.
+        ${choice}
+      </button>
+    `;
+
+  });
+
+}else{
+
+  html += `
+    <textarea
+ onchange="ans[i]=this.value"
+>${ans[i]||""}</textarea>
+  `;
+
+}
+
+html += `
+<button
+ class="primary"
+ onclick="showExplanation()">
+ 解説を見る
+</button>
+`;
+ 
+
+$("#input").innerHTML = html;
+$("#jump").innerHTML =
+
+Q.map((q,n)=>{
+
+  let cls = "jumpBtn";
+
+  if(n===i){
+    cls += " current";
+  }
+  else if(ans[n]!==undefined){
+    cls += " done";
+  }
+
+  return `
+    <button
+      class="${cls}"
+      onclick="jumpTo(${n})">
+      ${n+1}
+    </button>
+  `;
+
+}).join("");
+$("#fb").innerHTML = "";
+
+}
+
+function selectAnswer(n){
+
+  ans[i] = n;
+
+  render();
+
+}
+
+function jumpTo(n){
+
+  i = n;
+
+  render();
+
+}
+
+function showExplanation(){
+
+  let q = Q[i];
+
+  let correct =
+    ans[i] === q.a;
+
+  $("#fb").innerHTML = `
+    <div class="feedback">
+      <b>
+      ${correct ? "○ 正解" : "× 不正解"}
+      </b>
+
+      <p>
+      正答：
+      ${q.c ? q.c[q.a] : "模範解答を参照"}
+      </p>
+
+      <p>
+      全訳：
+      ${q.jp || q.samplejp || ""}
+      </p>
+
+      <p>
+      解説：
+      ${q.ex}
+      </p>
+
+    </div>
+  `;
+
+  $("#fb").scrollIntoView({
+    behavior:"smooth",
+    block:"start"
+  });
+
+}
+
+function finish(){
+
+ let score = Q.reduce(
+  (a,q,n)=>{
+    if(!q.c) return a;
+    return a + (ans[n] === q.a);
+  },
+  0
+);
+
+
+  // 試験画面を隠す
+  $("#exam").classList.add("hide");
+
+  // 結果画面を表示
+  $("#result").classList.remove("hide");
+
+  // スコア表示
+ $("#score").textContent =
+RANDOM_MODE
+ ? `総合ランダム ${score}/${Q.length}`
+ : `第${ROUND+1}回 ${score}/${Q.length}`;
+
+  // 復習一覧生成
+  $("#reviews").innerHTML =
+
+    Q.map((q,n)=>{
+
+      const correct =
+        ans[n]===q.a;
+
+      return `
+
+      <div class="feedback"
+           style="
+             margin-bottom:15px;
+             background:${
+               correct
+                 ? '#dcfce7'
+                 : '#fee2e2'
+             };
+           ">
+
+        <h3>
+          問${n+1}
+          ${correct ? "○" : "×"}
+        </h3>
+
+        <p>
+          <b>問題</b><br>
+          ${q.p}
+        </p>
+
+        <p>
+          <b>正答</b><br>
+${q.c ? q.c[q.a] : q.sample}
+        </p>
+
+        <p>
+          <b>全訳</b><br>
+          ${q.jp || q.samplejp || ""}
+        </p>
+
+        <p>
+          <b>解説</b><br>
+          ${q.ex}
+        </p>
+
+      </div>
+
+      `;
+
+    }).join("");
+
+}
+$("#go").onclick = ()=>{
+
+  if(!BANK[0].length){
+
+    alert(
+      "まだ問題が登録されていません。"
+    );
+
+    return;
+  }
+
+  load();
+
+  $("#start").classList.add("hide");
+  $("#exam").classList.remove("hide");
+
+  render();
+
+};
+
+$("#prev").onclick = ()=>{
+  if(i>0){
+    i--;
+    render();
+
+    window.scrollTo({
+      top:0,
+      behavior:"smooth"
+    });
+  }
+};
+
+$("#next").onclick = ()=>{
+  if(i < Q.length - 1){
+    i++;
+    render();
+
+    window.scrollTo({
+      top:0,
+      behavior:"smooth"
+    });
+
+  }else{
+    finish();
+  }
+};
+$("#home").onclick = ()=>{
+
+  if(
+    confirm("タイトル画面へ戻りますか？")
+  ){
+    location.reload();
+  }
+
+};
+</script>
+
+</body>
+</html>

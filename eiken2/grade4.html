@@ -1,0 +1,2393 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>英検4級 模試</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:system-ui;
+  background:#f1f5f9;
+  color:#0f172a;
+}
+.wrap{
+  max-width:620px;
+  margin:auto;
+}
+.start{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  padding:20px;
+  background:#08111f;
+  color:white;
+}
+.card{
+  background:white;
+  border-radius:24px;
+  padding:22px;
+  box-shadow:0 12px 30px #0002;
+}
+.start .card{
+  background:#111c2e;
+}
+.green{
+  color:#34d399;
+}
+.primary{
+  width:100%;
+  border:0;
+  border-radius:16px;
+  padding:15px;
+  background:#34d399;
+  font-weight:900;
+  cursor:pointer;
+}
+.hide{
+  display:none!important;
+}
+header{
+  position:sticky;
+  top:0;
+  background:#08111f;
+  color:white;
+  padding:12px 16px;
+}
+.row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.main{
+  padding:16px 16px 120px;
+}
+.choice{
+  display:block;
+  width:100%;
+  padding:14px;
+  margin:8px 0;
+}
+footer{
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  background:white;
+  padding:10px;
+  border-top:1px solid #ddd;
+}
+.nav{
+  max-width:620px;
+  margin:auto;
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:10px;
+}
+.nav button{
+  padding:12px;
+  border-radius:12px;
+}
+.feedback{
+  margin-top:12px;
+  padding:12px;
+  border-radius:12px;
+  background:#eff6ff;
+}
+.choice.active{
+  background:#dcfce7;
+  border:2px solid #22c55e;
+}
+#jump{
+  display:grid;
+  grid-template-columns:repeat(6,1fr);
+  gap:6px;
+  margin-top:15px;
+}
+
+.jumpBtn{
+  padding:8px;
+  border:none;
+  border-radius:8px;
+  background:#e2e8f0;
+  cursor:pointer;
+}
+
+.jumpBtn.current{
+  background:#0f172a;
+  color:white;
+}
+
+.jumpBtn.done{
+  background:#86efac;
+}
+.rounds{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+  margin:15px 0;
+}
+
+.roundBtn{
+  border:none;
+  border-radius:10px;
+  padding:10px;
+  background:#e2e8f0;
+  cursor:pointer;
+  font-weight:bold;
+}
+
+.roundBtn.active{
+  background:#34d399;
+}
+</style>
+</head>
+
+<body>
+
+<section id="start" class="start">
+  <div class="wrap card">
+    <b class="green">スマホ筆記模試</b>
+
+    <h1>英検4級 全5回</h1>
+
+    <p>
+      受験する回を選んでください。
+    </p>
+
+    <div id="rounds" class="rounds">
+      <button class="roundBtn active" data-round="0">第1回</button>
+      <button class="roundBtn" data-round="1">第2回</button>
+      <button class="roundBtn" data-round="2">第3回</button>
+      <button class="roundBtn" data-round="3">第4回</button>
+      <button class="roundBtn" data-round="4">第5回</button>
+      <button class="roundBtn" id="randomBtn">総合ランダム</button>
+    </div>
+
+    <button id="go" class="primary">
+      開始する
+    </button>
+<br><br>
+
+<button
+  class="primary"
+  onclick="location.href='index.html'"
+  style="
+    background:#e5e7eb;
+    color:#000;
+  "
+>
+  級選択へ戻る
+</button>
+  </div>
+</section>
+
+<section id="exam" class="hide">
+
+<header>
+<div class="wrap row">
+  <b id="where">第1回 1/33</b>
+ 
+</div>
+</header>
+
+<main class="wrap main">
+
+<div class="card">
+
+<b id="no"></b>
+
+<div id="pass"></div>
+
+<div id="prompt"></div>
+
+<div id="input"></div>
+<div id="jump"></div>
+<div id="fb"></div>
+
+</div>
+
+</main>
+
+<footer>
+<div class="nav">
+<button id="home">タイトル</button>
+<button id="prev">‹ 前へ</button>
+<button id="next">次へ ›</button>
+</div>
+</footer>
+
+</section>
+
+<section id="result" class="hide">
+
+<div class="wrap main">
+
+<div class="card">
+
+<b class="green">採点結果</b>
+
+<h1 id="score"></h1>
+
+<div id="reviews"></div>
+
+<button class="primary"
+onclick="location.reload()">
+最初へ戻る
+</button>
+
+</div>
+
+</div>
+
+</section>
+
+<script>
+
+const BANK = [
+[
+{
+s:"語句補充",
+p:"I ( ) soccer every day.",
+c:["play","plays","played","playing"],
+a:0,
+jp:"私は毎日サッカーをします。",
+ex:"I が主語なので play。"
+},
+{
+s:"語句補充",
+p:"My sister ( ) breakfast at seven.",
+c:["eat","eats","eating","ate"],
+a:1,
+jp:"私の姉は7時に朝食を食べます。",
+ex:"三単現なので eats。"
+},
+{
+s:"語句補充",
+p:"We ( ) to school by bus.",
+c:["go","goes","going","went"],
+a:0,
+jp:"私たちはバスで学校へ行きます。",
+ex:"主語が We のため go。"
+},
+{
+s:"語句補充",
+p:"Tom ( ) a book yesterday.",
+c:["read","reads","reading","is reading"],
+a:0,
+jp:"トムは昨日本を読みました。",
+ex:"yesterday があるので過去形。"
+},
+{
+s:"語句補充",
+p:"There ( ) a cat in the room.",
+c:["is","are","am","be"],
+a:0,
+jp:"部屋に猫がいます。",
+ex:"cat は単数。"
+},
+{
+s:"語句補充",
+p:"I can ( ) English.",
+c:["speak","speaks","speaking","spoke"],
+a:0,
+jp:"私は英語を話せます。",
+ex:"can の後は原形。"
+},
+{
+s:"語句補充",
+p:"She ( ) TV now.",
+c:["watch","watched","is watching","watches"],
+a:2,
+jp:"彼女は今テレビを見ています。",
+ex:"現在進行形。"
+},
+{
+s:"語句補充",
+p:"My father is ( ) than me.",
+c:["tall","taller","tallest","more tall"],
+a:1,
+jp:"父は私より背が高いです。",
+ex:"比較級。"
+},
+{
+s:"語句補充",
+p:"I have two ( ).",
+c:["dog","dogs","dogs'","doges"],
+a:1,
+jp:"私は犬を2匹飼っています。",
+ex:"複数形。"
+},
+{
+s:"語句補充",
+p:"Let's ( ) tennis.",
+c:["play","plays","played","playing"],
+a:0,
+jp:"テニスをしましょう。",
+ex:"Let's の後は原形。"
+},
+{
+s:"語句補充",
+p:"This book is ( ) interesting.",
+c:["very","many","much","more"],
+a:0,
+jp:"この本はとても面白いです。",
+ex:"very を使う。"
+},
+{
+s:"語句補充",
+p:"I ( ) my homework after dinner.",
+c:["do","does","doing","dids"],
+a:0,
+jp:"夕食後に宿題をします。",
+ex:"主語 I。"
+},
+{
+s:"語句補充",
+p:"They ( ) in Hakodate last year.",
+c:["live","lived","living","lives"],
+a:1,
+jp:"彼らは昨年函館に住んでいました。",
+ex:"過去形。"
+},
+{
+s:"語句補充",
+p:"This is ( ) apple.",
+c:["a","an","the","two"],
+a:1,
+jp:"これはリンゴです。",
+ex:"apple の前は an。"
+},
+{
+s:"語句補充",
+p:"We ( ) not busy today.",
+c:["am","is","are","be"],
+a:2,
+jp:"私たちは今日は忙しくありません。",
+ex:"We + are。"
+},
+
+{
+s:"会話文",
+p:"A: How are you today?\nB: ( )",
+c:[
+"I'm fine, thank you.",
+"At school.",
+"A pencil.",
+"Tomorrow."
+],
+a:0,
+jp:"元気です、ありがとう。",
+ex:"定番表現。"
+},
+{
+s:"会話文",
+p:"A: What time do you get up?\nB: ( )",
+c:[
+"At seven.",
+"In Tokyo.",
+"On a desk.",
+"Very tall."
+],
+a:0,
+jp:"7時です。",
+ex:"時間で答える。"
+},
+{
+s:"会話文",
+p:"A: Thank you very much.\nB: ( )",
+c:[
+"You're welcome.",
+"Good night.",
+"See you yesterday.",
+"I'm ten years old."
+],
+a:0,
+jp:"どういたしまして。",
+ex:"感謝への返答。"
+},
+{
+s:"会話文",
+p:"A: Let's play soccer after school.\nB: ( )",
+c:[
+"Sounds good.",
+"It is a dog.",
+"Three books.",
+"Last Monday."
+],
+a:0,
+jp:"いいね。",
+ex:"提案への賛成。"
+},
+{
+s:"会話文",
+p:"A: Where is your bag?\nB: ( )",
+c:[
+"It's under the desk.",
+"At seven o'clock.",
+"Because I'm tired.",
+"I like tennis."
+],
+a:0,
+jp:"机の下です。",
+ex:"場所で答える。"
+},
+
+{
+s:"語順整序",
+p:"( play / I / soccer / after / school )",
+c:[
+"I play soccer after school.",
+"I soccer play after school.",
+"After school play I soccer.",
+"Soccer I play after school."
+],
+a:0,
+jp:"私は放課後サッカーをします。",
+ex:"正しい語順。"
+},
+{
+s:"語順整序",
+p:"( a / have / dog / I )",
+c:[
+"I have a dog.",
+"Have I a dog.",
+"Dog I have a.",
+"I dog have a."
+],
+a:0,
+jp:"私は犬を飼っています。",
+ex:"I have a dog。"
+},
+{
+s:"語順整序",
+p:"( to / go / school / I )",
+c:[
+"I go to school.",
+"Go I to school.",
+"I school go to.",
+"School I to go."
+],
+a:0,
+jp:"私は学校へ行きます。",
+ex:"go to school。"
+},
+{
+s:"語順整序",
+p:"( is / book / this / my )",
+c:[
+"This is my book.",
+"My is this book.",
+"This my is book.",
+"Book this is my."
+],
+a:0,
+jp:"これは私の本です。",
+ex:"This is ～。"
+},
+{
+s:"語順整序",
+p:"( can / swim / Ken / well )",
+c:[
+"Ken can swim well.",
+"Ken well can swim.",
+"Can Ken well swim.",
+"Swim Ken can well."
+],
+a:0,
+jp:"ケンは上手に泳げます。",
+ex:"can の後は原形。"
+},
+
+{
+s:"長文読解",
+text:"Ken likes animals. Last Sunday, he went to the zoo with his family. He saw elephants, lions, and monkeys. His favorite animal was the elephant.",
+textjp:"ケンは家族と動物園へ行きました。",
+p:"Where did Ken go last Sunday?",
+c:["The zoo.","The library.","The park.","The museum."],
+a:0,
+jp:"動物園です。",
+ex:"went to the zoo。"
+},
+{
+s:"長文読解",
+text:"Ken likes animals. Last Sunday, he went to the zoo with his family. He saw elephants, lions, and monkeys. His favorite animal was the elephant.",
+textjp:"ケンは家族と動物園へ行きました。",
+p:"Who went with Ken?",
+c:["His family.","His teacher.","His friend.","His dog."],
+a:0,
+jp:"家族です。",
+ex:"with his family。"
+},
+{
+s:"長文読解",
+text:"Ken likes animals. Last Sunday, he went to the zoo with his family. He saw elephants, lions, and monkeys. His favorite animal was the elephant.",
+textjp:"ケンは家族と動物園へ行きました。",
+p:"What animals did Ken see?",
+c:[
+"Elephants, lions, and monkeys.",
+"Dogs and cats.",
+"Fish and birds.",
+"Horses and cows."
+],
+a:0,
+jp:"ゾウ、ライオン、サル。",
+ex:"本文より。"
+},
+{
+s:"長文読解",
+text:"Ken likes animals. Last Sunday, he went to the zoo with his family. He saw elephants, lions, and monkeys. His favorite animal was the elephant.",
+textjp:"ケンは家族と動物園へ行きました。",
+p:"What was Ken's favorite animal?",
+c:[
+"The elephant.",
+"The lion.",
+"The monkey.",
+"The bird."
+],
+a:0,
+jp:"ゾウ。",
+ex:"favorite animal。"
+},
+{
+s:"長文読解",
+text:"Yuki has a new bicycle. She rides it to school every day. The school is ten minutes from her house. She likes the bicycle because it is fast and blue.",
+textjp:"ユキは新しい自転車を持っています。",
+p:"What does Yuki have?",
+c:[
+"A new bicycle.",
+"A new car.",
+"A new bus.",
+"A new train."
+],
+a:0,
+jp:"新しい自転車。",
+ex:"本文より。"
+},
+{
+s:"長文読解",
+text:"Yuki has a new bicycle. She rides it to school every day. The school is ten minutes from her house. She likes the bicycle because it is fast and blue.",
+textjp:"ユキは新しい自転車を持っています。",
+p:"How does Yuki go to school?",
+c:[
+"By bicycle.",
+"By bus.",
+"By train.",
+"On foot."
+],
+a:0,
+jp:"自転車です。",
+ex:"rides it to school。"
+},
+{
+s:"長文読解",
+text:"Yuki has a new bicycle. She rides it to school every day. The school is ten minutes from her house. She likes the bicycle because it is fast and blue.",
+textjp:"ユキは新しい自転車を持っています。",
+p:"How far is the school from her house?",
+c:[
+"Ten minutes.",
+"One hour.",
+"Two hours.",
+"Five minutes."
+],
+a:0,
+jp:"10分。",
+ex:"本文より。"
+},
+{
+s:"長文読解",
+text:"Yuki has a new bicycle. She rides it to school every day. The school is ten minutes from her house. She likes the bicycle because it is fast and blue.",
+textjp:"ユキは新しい自転車を持っています。",
+p:"Why does Yuki like her bicycle?",
+c:[
+"Because it is fast and blue.",
+"Because it is old.",
+"Because it is expensive.",
+"Because it is small."
+],
+a:0,
+jp:"速くて青いから。",
+ex:"because 以下。"
+}
+]
+,
+[
+{
+s:"語句補充",
+p:"My brother ( ) tennis every Sunday.",
+c:["plays","play","playing","played"],
+a:0,
+jp:"私の兄は毎週日曜日にテニスをします。",
+ex:"My brother は三人称単数なので plays。"
+},
+{
+s:"語句補充",
+p:"I ( ) to music yesterday.",
+c:["listen","listened","listening","listens"],
+a:1,
+jp:"私は昨日音楽を聴きました。",
+ex:"yesterday があるので過去形 listened。"
+},
+{
+s:"語句補充",
+p:"There are many ( ) in the park.",
+c:["child","children","childs","childrens"],
+a:1,
+jp:"公園にはたくさんの子どもたちがいます。",
+ex:"child の複数形は children。"
+},
+{
+s:"語句補充",
+p:"She can ( ) very fast.",
+c:["run","runs","running","ran"],
+a:0,
+jp:"彼女はとても速く走れます。",
+ex:"can の後は動詞の原形。"
+},
+{
+s:"語句補充",
+p:"We ( ) lunch at school every day.",
+c:["have","has","having","had"],
+a:0,
+jp:"私たちは毎日学校で昼食を食べます。",
+ex:"We が主語なので have。"
+},
+{
+s:"語句補充",
+p:"This is ( ) umbrella.",
+c:["a","an","the","two"],
+a:1,
+jp:"これは傘です。",
+ex:"umbrella の前は an。"
+},
+{
+s:"語句補充",
+p:"Tom is ( ) than Ken.",
+c:["tall","taller","tallest","more tall"],
+a:1,
+jp:"トムはケンより背が高いです。",
+ex:"比較級を使う。"
+},
+{
+s:"語句補充",
+p:"They ( ) TV now.",
+c:["watch","are watching","watched","watches"],
+a:1,
+jp:"彼らは今テレビを見ています。",
+ex:"現在進行形。"
+},
+{
+s:"語句補充",
+p:"My mother ( ) dinner every evening.",
+c:["cook","cooks","cooking","cooked"],
+a:1,
+jp:"母は毎晩夕食を作ります。",
+ex:"三人称単数。"
+},
+{
+s:"語句補充",
+p:"Let's ( ) to the library.",
+c:["go","goes","went","going"],
+a:0,
+jp:"図書館へ行きましょう。",
+ex:"Let's の後は原形。"
+},
+{
+s:"語句補充",
+p:"I have three ( ).",
+c:["book","books","bookes","books'"],
+a:1,
+jp:"私は本を3冊持っています。",
+ex:"複数形 books。"
+},
+{
+s:"語句補充",
+p:"She was busy, ( ) she finished her homework.",
+c:["but","or","because","so"],
+a:3,
+jp:"彼女は忙しかったですが宿題を終えました。",
+ex:"結果を表す so。"
+},
+{
+s:"語句補充",
+p:"The cat is ( ) the table.",
+c:["under","between","through","during"],
+a:0,
+jp:"猫はテーブルの下にいます。",
+ex:"under は『下』。"
+},
+{
+s:"語句補充",
+p:"I want ( ) a new bike.",
+c:["buy","to buy","buying","bought"],
+a:1,
+jp:"私は新しい自転車を買いたいです。",
+ex:"want to + 動詞。"
+},
+{
+s:"語句補充",
+p:"We went to the park ( ) Sunday.",
+c:["in","on","at","for"],
+a:1,
+jp:"私たちは日曜日に公園へ行きました。",
+ex:"曜日の前は on。"
+},
+{
+s:"会話文",
+p:"A: What is your favorite subject?\nB: ( )",
+c:[
+"English.",
+"At school.",
+"In April.",
+"Three books."
+],
+a:0,
+jp:"英語です。",
+ex:"教科名で答える。"
+}
+,
+{
+s:"会話文",
+p:"A: Can you help me?\nB: ( )",
+c:[
+"Sure.",
+"At five.",
+"A dog.",
+"Yesterday."
+],
+a:0,
+jp:"もちろん。",
+ex:"依頼を受ける自然な返答。"
+},
+{
+s:"会話文",
+p:"A: Where do you live?\nB: ( )",
+c:[
+"In Hakodate.",
+"At six.",
+"Very well.",
+"A soccer ball."
+],
+a:0,
+jp:"函館に住んでいます。",
+ex:"場所で答える。"
+},
+{
+s:"会話文",
+p:"A: Happy birthday!\nB: ( )",
+c:[
+"Thank you.",
+"Good night.",
+"See you yesterday.",
+"You're thirteen."
+],
+a:0,
+jp:"ありがとう。",
+ex:"誕生日を祝われた時の返答。"
+},
+{
+s:"会話文",
+p:"A: How was the movie?\nB: ( )",
+c:[
+"It was great.",
+"At home.",
+"Two o'clock.",
+"A ticket."
+],
+a:0,
+jp:"とても良かったです。",
+ex:"感想で答える。"
+},
+{
+s:"語順整序",
+p:"( every / I / morning / study / English )",
+c:[
+"I study English every morning.",
+"I every morning study English.",
+"Study I English every morning.",
+"English every morning I study."
+],
+a:0,
+jp:"私は毎朝英語を勉強します。",
+ex:"正しい語順。"
+},
+{
+s:"語順整序",
+p:"( playing / likes / baseball / Ken )",
+c:[
+"Ken likes playing baseball.",
+"Ken playing likes baseball.",
+"Likes Ken playing baseball.",
+"Baseball Ken likes playing."
+],
+a:0,
+jp:"ケンは野球をするのが好きです。",
+ex:"likes playing の形。"
+},
+{
+s:"語順整序",
+p:"( is / my / this / bike )",
+c:[
+"This is my bike.",
+"My this is bike.",
+"This my bike is.",
+"Bike this is my."
+],
+a:0,
+jp:"これは私の自転車です。",
+ex:"This is ～。"
+},
+{
+s:"語順整序",
+p:"( breakfast / she / after / brushes / her teeth )",
+c:[
+"She brushes her teeth after breakfast.",
+"She after breakfast brushes her teeth.",
+"Brushes she her teeth after breakfast.",
+"After breakfast her teeth she brushes."
+],
+a:0,
+jp:"彼女は朝食後に歯を磨きます。",
+ex:"正しい語順。"
+},
+{
+s:"語順整序",
+p:"( can / swim / very / well / they )",
+c:[
+"They can swim very well.",
+"They very well can swim.",
+"Can they very well swim.",
+"Swim they can very well."
+],
+a:0,
+jp:"彼らはとても上手に泳げます。",
+ex:"can の後は原形。"
+},
+{
+s:"長文読解",
+text:"Naoki likes sports. He plays soccer every Saturday with his friends. After practice, they often eat lunch together at a small restaurant near the park.",
+textjp:"ナオキはスポーツが好きです。毎週土曜日に友達とサッカーをします。",
+p:"What sport does Naoki play?",
+c:["Soccer.","Baseball.","Tennis.","Basketball."],
+a:0,
+jp:"サッカーです。",
+ex:"He plays soccer. が根拠。"
+},
+{
+s:"長文読解",
+text:"Naoki likes sports. He plays soccer every Saturday with his friends. After practice, they often eat lunch together at a small restaurant near the park.",
+textjp:"ナオキはスポーツが好きです。毎週土曜日に友達とサッカーをします。",
+p:"When does he play soccer?",
+c:["Every Saturday.","Every Sunday.","Every Monday.","Every day."],
+a:0,
+jp:"毎週土曜日です。",
+ex:"every Saturday が根拠。"
+},
+{
+s:"長文読解",
+text:"Naoki likes sports. He plays soccer every Saturday with his friends. After practice, they often eat lunch together at a small restaurant near the park.",
+textjp:"ナオキはスポーツが好きです。毎週土曜日に友達とサッカーをします。",
+p:"Who does he play with?",
+c:["His friends.","His teacher.","His brother.","His father."],
+a:0,
+jp:"友達です。",
+ex:"with his friends が根拠。"
+},
+{
+s:"長文読解",
+text:"Naoki likes sports. He plays soccer every Saturday with his friends. After practice, they often eat lunch together at a small restaurant near the park.",
+textjp:"ナオキはスポーツが好きです。毎週土曜日に友達とサッカーをします。",
+p:"Where do they eat lunch?",
+c:[
+"At a restaurant.",
+"At school.",
+"At home.",
+"In a library."
+],
+a:0,
+jp:"レストランです。",
+ex:"本文より。"
+},
+{
+s:"長文読解",
+text:"Emma loves reading books. She goes to the library every week and borrows two books. Her favorite books are about animals and nature.",
+textjp:"エマは読書が大好きです。",
+p:"What does Emma love?",
+c:[
+"Reading books.",
+"Playing soccer.",
+"Cooking.",
+"Swimming."
+],
+a:0,
+jp:"読書です。",
+ex:"1文目が根拠。"
+},
+{
+s:"長文読解",
+text:"Emma loves reading books. She goes to the library every week and borrows two books. Her favorite books are about animals and nature.",
+textjp:"エマは読書が大好きです。",
+p:"How often does she go to the library?",
+c:[
+"Every week.",
+"Every month.",
+"Every day.",
+"Every year."
+],
+a:0,
+jp:"毎週です。",
+ex:"every week が根拠。"
+},
+{
+s:"長文読解",
+text:"Emma loves reading books. She goes to the library every week and borrows two books. Her favorite books are about animals and nature.",
+textjp:"エマは読書が大好きです。",
+p:"How many books does she borrow?",
+c:[
+"Two books.",
+"One book.",
+"Three books.",
+"Four books."
+],
+a:0,
+jp:"2冊です。",
+ex:"borrows two books が根拠。"
+},
+{
+s:"長文読解",
+text:"Emma loves reading books. She goes to the library every week and borrows two books. Her favorite books are about animals and nature.",
+textjp:"エマは読書が大好きです。",
+p:"What are her favorite books about?",
+c:[
+"Animals and nature.",
+"Sports.",
+"Music.",
+"History."
+],
+a:0,
+jp:"動物と自然です。",
+ex:"最後の文が根拠。"
+}
+]
+,
+[
+{
+s:"語句補充",
+p:"I usually ( ) my homework after dinner.",
+c:["do","does","doing","did"],
+a:0,
+jp:"私はたいてい夕食後に宿題をします。",
+ex:"I が主語なので do。"
+},
+{
+s:"語句補充",
+p:"My father ( ) to work by car.",
+c:["go","goes","going","went"],
+a:1,
+jp:"父は車で仕事へ行きます。",
+ex:"三人称単数なので goes。"
+},
+{
+s:"語句補充",
+p:"We ( ) basketball yesterday.",
+c:["play","played","playing","plays"],
+a:1,
+jp:"私たちは昨日バスケットボールをしました。",
+ex:"yesterday があるので過去形。"
+},
+{
+s:"語句補充",
+p:"There ( ) two dogs in the park.",
+c:["is","are","am","was"],
+a:1,
+jp:"公園には犬が2匹います。",
+ex:"dogs は複数なので are。"
+},
+{
+s:"語句補充",
+p:"She can ( ) English very well.",
+c:["speak","speaks","speaking","spoke"],
+a:0,
+jp:"彼女は英語をとても上手に話せます。",
+ex:"can の後は原形。"
+},
+{
+s:"語句補充",
+p:"This is ( ) orange.",
+c:["a","an","the","two"],
+a:1,
+jp:"これはオレンジです。",
+ex:"orange の前は an。"
+},
+{
+s:"語句補充",
+p:"Ken is ( ) than Tom.",
+c:["tall","taller","tallest","very tall"],
+a:1,
+jp:"ケンはトムより背が高いです。",
+ex:"than があるので比較級。"
+},
+{
+s:"語句補充",
+p:"They ( ) TV now.",
+c:["watch","watched","are watching","watches"],
+a:2,
+jp:"彼らは今テレビを見ています。",
+ex:"現在進行形。"
+},
+{
+s:"語句補充",
+p:"I have five ( ).",
+c:["book","books","bookes","books'"],
+a:1,
+jp:"私は本を5冊持っています。",
+ex:"複数形 books。"
+},
+{
+s:"語句補充",
+p:"Let's ( ) baseball.",
+c:["play","plays","played","playing"],
+a:0,
+jp:"野球をしましょう。",
+ex:"Let's の後は原形。"
+},
+{
+s:"語句補充",
+p:"We went to Sapporo ( ) Sunday.",
+c:["in","on","at","for"],
+a:1,
+jp:"私たちは日曜日に札幌へ行きました。",
+ex:"曜日の前は on。"
+},
+{
+s:"語句補充",
+p:"My mother is ( ) dinner now.",
+c:["cook","cooks","cooked","cooking"],
+a:3,
+jp:"母は今夕食を作っています。",
+ex:"be + ing。"
+},
+{
+s:"語句補充",
+p:"I want ( ) a new computer.",
+c:["buy","to buy","buying","bought"],
+a:1,
+jp:"私は新しいコンピューターを買いたいです。",
+ex:"want to ～。"
+},
+{
+s:"語句補充",
+p:"The cat is ( ) the chair.",
+c:["under","through","during","between"],
+a:0,
+jp:"猫はいすの下にいます。",
+ex:"under は下。"
+},
+{
+s:"語句補充",
+p:"They were busy, ( ) they finished the work.",
+c:["but","so","or","because"],
+a:1,
+jp:"彼らは忙しかったですが仕事を終えました。",
+ex:"結果を表す so。"
+},
+{
+s:"会話文",
+p:"A: What sport do you like?\nB: ( )",
+c:[
+"I like soccer.",
+"At school.",
+"A ball.",
+"Last week."
+],
+a:0,
+jp:"私はサッカーが好きです。",
+ex:"好きなスポーツを答える。"
+}
+,
+{
+s:"会話文",
+p:"A: Do you like music?\nB: ( )",
+c:[
+"Yes, I do.",
+"At home.",
+"A guitar.",
+"Last year."
+],
+a:0,
+jp:"はい、好きです。",
+ex:"Do you ～? の返答。"
+},
+{
+s:"会話文",
+p:"A: Can you play the piano?\nB: ( )",
+c:[
+"Yes, I can.",
+"In the music room.",
+"A teacher.",
+"Tomorrow."
+],
+a:0,
+jp:"はい、弾けます。",
+ex:"Can you ～? の返答。"
+},
+{
+s:"会話文",
+p:"A: Where is your school?\nB: ( )",
+c:[
+"Near the station.",
+"At seven.",
+"A notebook.",
+"Very much."
+],
+a:0,
+jp:"駅の近くです。",
+ex:"場所で答える。"
+},
+{
+s:"会話文",
+p:"A: What do you do after school?\nB: ( )",
+c:[
+"I play tennis.",
+"At the park.",
+"Three times.",
+"Yesterday."
+],
+a:0,
+jp:"テニスをします。",
+ex:"行動で答える。"
+},
+{
+s:"語順整序",
+p:"( every / walk / I / day )",
+c:[
+"I walk every day.",
+"I every day walk.",
+"Walk I every day.",
+"Every day walk I."
+],
+a:0,
+jp:"私は毎日歩きます。",
+ex:"正しい語順。"
+},
+{
+s:"語順整序",
+p:"( likes / she / music )",
+c:[
+"She likes music.",
+"Likes she music.",
+"Music she likes.",
+"She music likes."
+],
+a:0,
+jp:"彼女は音楽が好きです。",
+ex:"三単現。"
+},
+{
+s:"語順整序",
+p:"( my / is / this / pencil )",
+c:[
+"This is my pencil.",
+"My this is pencil.",
+"This my is pencil.",
+"Pencil this is my."
+],
+a:0,
+jp:"これは私の鉛筆です。",
+ex:"This is ～。"
+},
+{
+s:"語順整序",
+p:"( lunch / after / play / we / soccer )",
+c:[
+"We play soccer after lunch.",
+"We soccer play after lunch.",
+"After lunch play we soccer.",
+"Soccer we play after lunch."
+],
+a:0,
+jp:"私たちは昼食後にサッカーをします。",
+ex:"正しい語順。"
+},
+{
+s:"語順整序",
+p:"( can / very / sing / well / she )",
+c:[
+"She can sing very well.",
+"She very well can sing.",
+"Can she very well sing.",
+"Sing she can very well."
+],
+a:0,
+jp:"彼女はとても上手に歌えます。",
+ex:"can の後は原形。"
+},
+{
+s:"長文読解",
+text:"Rina has a dog named Max. She takes Max for a walk every morning before school. Max likes running in the park and playing with a ball.",
+textjp:"リナはマックスという名前の犬を飼っています。",
+p:"What is the dog's name?",
+c:["Max.","Ken.","Pochi.","Tom."],
+a:0,
+jp:"マックスです。",
+ex:"1文目が根拠。"
+},
+{
+s:"長文読解",
+text:"Rina has a dog named Max. She takes Max for a walk every morning before school. Max likes running in the park and playing with a ball.",
+textjp:"リナはマックスという名前の犬を飼っています。",
+p:"When does she walk Max?",
+c:[
+"Every morning.",
+"Every evening.",
+"Every Sunday.",
+"At night."
+],
+a:0,
+jp:"毎朝です。",
+ex:"every morning が根拠。"
+},
+{
+s:"長文読解",
+text:"Rina has a dog named Max. She takes Max for a walk every morning before school. Max likes running in the park and playing with a ball.",
+textjp:"リナはマックスという名前の犬を飼っています。",
+p:"Where does Max like running?",
+c:[
+"In the park.",
+"At school.",
+"In a library.",
+"In a store."
+],
+a:0,
+jp:"公園です。",
+ex:"running in the park。"
+},
+{
+s:"長文読解",
+text:"Rina has a dog named Max. She takes Max for a walk every morning before school. Max likes running in the park and playing with a ball.",
+textjp:"リナはマックスという名前の犬を飼っています。",
+p:"What does Max play with?",
+c:[
+"A ball.",
+"A book.",
+"A bike.",
+"A computer."
+],
+a:0,
+jp:"ボールです。",
+ex:"playing with a ball。"
+},
+{
+s:"長文読解",
+text:"Taro visited his grandparents last weekend. He helped them in the garden and picked tomatoes. In the evening, they ate dinner together and watched television.",
+textjp:"タロウは先週末祖父母の家を訪れました。",
+p:"Who did Taro visit?",
+c:[
+"His grandparents.",
+"His friends.",
+"His teacher.",
+"His cousin."
+],
+a:0,
+jp:"祖父母です。",
+ex:"1文目が根拠。"
+},
+{
+s:"長文読解",
+text:"Taro visited his grandparents last weekend. He helped them in the garden and picked tomatoes. In the evening, they ate dinner together and watched television.",
+textjp:"タロウは先週末祖父母の家を訪れました。",
+p:"What did he pick?",
+c:[
+"Tomatoes.",
+"Apples.",
+"Flowers.",
+"Potatoes."
+],
+a:0,
+jp:"トマトです。",
+ex:"picked tomatoes。"
+},
+{
+s:"長文読解",
+text:"Taro visited his grandparents last weekend. He helped them in the garden and picked tomatoes. In the evening, they ate dinner together and watched television.",
+textjp:"タロウは先週末祖父母の家を訪れました。",
+p:"What did they do in the evening?",
+c:[
+"They ate dinner and watched television.",
+"They played soccer.",
+"They went shopping.",
+"They studied English."
+],
+a:0,
+jp:"夕食を食べてテレビを見ました。",
+ex:"最後の文が根拠。"
+}
+]
+,
+[
+{
+s:"語句補充",
+p:"I ( ) breakfast at seven every morning.",
+c:["eat","eats","eating","ate"],
+a:0,
+jp:"私は毎朝7時に朝食を食べます。",
+ex:"I が主語なので eat。"
+},
+{
+s:"語句補充",
+p:"My sister ( ) English after school.",
+c:["study","studies","studying","studied"],
+a:1,
+jp:"姉は放課後に英語を勉強します。",
+ex:"三人称単数なので studies。"
+},
+{
+s:"語句補充",
+p:"We ( ) to the zoo last Sunday.",
+c:["go","went","going","goes"],
+a:1,
+jp:"私たちは先週の日曜日に動物園へ行きました。",
+ex:"過去形 went。"
+},
+{
+s:"語句補充",
+p:"There ( ) a dog under the table.",
+c:["is","are","am","be"],
+a:0,
+jp:"テーブルの下に犬がいます。",
+ex:"dog は単数なので is。"
+},
+{
+s:"語句補充",
+p:"She can ( ) the guitar.",
+c:["play","plays","playing","played"],
+a:0,
+jp:"彼女はギターを弾けます。",
+ex:"can の後は原形。"
+},
+{
+s:"語句補充",
+p:"This is ( ) apple pie.",
+c:["a","an","the","two"],
+a:1,
+jp:"これはアップルパイです。",
+ex:"母音で始まるので an。"
+},
+{
+s:"語句補充",
+p:"Ken is ( ) than his brother.",
+c:["young","younger","youngest","very young"],
+a:1,
+jp:"ケンは兄より若いです。",
+ex:"比較級。"
+},
+{
+s:"語句補充",
+p:"They ( ) soccer now.",
+c:["play","played","are playing","plays"],
+a:2,
+jp:"彼らは今サッカーをしています。",
+ex:"現在進行形。"
+},
+{
+s:"語句補充",
+p:"I have four ( ).",
+c:["pen","pens","penes","pens'"],
+a:1,
+jp:"私はペンを4本持っています。",
+ex:"複数形 pens。"
+},
+{
+s:"語句補充",
+p:"Let's ( ) home together.",
+c:["go","goes","going","went"],
+a:0,
+jp:"一緒に帰りましょう。",
+ex:"Let's の後は原形。"
+},
+{
+s:"語句補充",
+p:"We went shopping ( ) Saturday.",
+c:["on","in","at","for"],
+a:0,
+jp:"私たちは土曜日に買い物へ行きました。",
+ex:"曜日の前は on。"
+},
+{
+s:"語句補充",
+p:"My father is ( ) a newspaper.",
+c:["read","reads","reading","readed"],
+a:2,
+jp:"父は新聞を読んでいます。",
+ex:"be + reading。"
+},
+{
+s:"語句補充",
+p:"I want ( ) a doctor.",
+c:["be","to be","being","was"],
+a:1,
+jp:"私は医者になりたいです。",
+ex:"want to ～。"
+},
+{
+s:"語句補充",
+p:"The cat is ( ) the box.",
+c:["in","through","during","after"],
+a:0,
+jp:"猫は箱の中にいます。",
+ex:"in the box。"
+},
+{
+s:"語句補充",
+p:"It was cold, ( ) we stayed at home.",
+c:["so","or","but","because"],
+a:0,
+jp:"寒かったので私たちは家にいました。",
+ex:"結果を表す so。"
+},
+{
+s:"会話文",
+p:"A: What time is it?\nB: ( )",
+c:[
+"It's nine o'clock.",
+"At school.",
+"On Monday.",
+"In the bag."
+],
+a:0,
+jp:"9時です。",
+ex:"時刻を答える。"
+}
+,
+{
+s:"会話文",
+p:"A: How do you go to school?\nB: ( )",
+c:[
+"By bus.",
+"At seven.",
+"In my room.",
+"Very much."
+],
+a:0,
+jp:"バスで行きます。",
+ex:"交通手段で答える。"
+},
+{
+s:"会話文",
+p:"A: What is your hobby?\nB: ( )",
+c:[
+"Reading books.",
+"In Hakodate.",
+"A soccer ball.",
+"Last Friday."
+],
+a:0,
+jp:"読書です。",
+ex:"趣味を答える。"
+},
+{
+s:"会話文",
+p:"A: Can I use your pen?\nB: ( )",
+c:[
+"Sure.",
+"A pencil.",
+"Tomorrow.",
+"At school."
+],
+a:0,
+jp:"もちろん。",
+ex:"許可を与える返答。"
+},
+{
+s:"会話文",
+p:"A: Where do you play tennis?\nB: ( )",
+c:[
+"At the park.",
+"Every Sunday.",
+"A racket.",
+"Very well."
+],
+a:0,
+jp:"公園です。",
+ex:"場所を答える。"
+},
+{
+s:"語順整序",
+p:"( every / reads / night / she )",
+c:[
+"She reads every night.",
+"Reads she every night.",
+"Every night reads she.",
+"She every night reads."
+],
+a:0,
+jp:"彼女は毎晩読書をします。",
+ex:"正しい語順。"
+},
+{
+s:"語順整序",
+p:"( have / we / lunch / at / noon )",
+c:[
+"We have lunch at noon.",
+"We lunch have at noon.",
+"Have we lunch at noon.",
+"At noon lunch we have."
+],
+a:0,
+jp:"私たちは正午に昼食をとります。",
+ex:"正しい語順。"
+},
+{
+s:"語順整序",
+p:"( this / is / my / bag )",
+c:[
+"This is my bag.",
+"My this is bag.",
+"This my is bag.",
+"Bag this is my."
+],
+a:0,
+jp:"これは私のかばんです。",
+ex:"This is ～。"
+},
+{
+s:"語順整序",
+p:"( can / cook / mother / my )",
+c:[
+"My mother can cook.",
+"Can my mother cook.",
+"My can mother cook.",
+"Cook my mother can."
+],
+a:0,
+jp:"私の母は料理ができます。",
+ex:"can の後は原形。"
+},
+{
+s:"語順整序",
+p:"( after / homework / I / do / dinner / my )",
+c:[
+"I do my homework after dinner.",
+"I my homework do after dinner.",
+"After dinner do I my homework.",
+"My homework I do after dinner."
+],
+a:0,
+jp:"私は夕食後に宿題をします。",
+ex:"正しい語順。"
+},
+{
+s:"長文読解",
+text:"Mika likes cooking. Every Saturday she helps her mother make lunch. Her favorite food is curry and rice. She wants to learn more recipes in the future.",
+textjp:"ミカは料理が好きです。",
+p:"What does Mika like?",
+c:[
+"Cooking.",
+"Swimming.",
+"Soccer.",
+"Music."
+],
+a:0,
+jp:"料理です。",
+ex:"1文目が根拠。"
+},
+{
+s:"長文読解",
+text:"Mika likes cooking. Every Saturday she helps her mother make lunch. Her favorite food is curry and rice. She wants to learn more recipes in the future.",
+textjp:"ミカは料理が好きです。",
+p:"When does she help her mother?",
+c:[
+"Every Saturday.",
+"Every Sunday.",
+"Every day.",
+"Every month."
+],
+a:0,
+jp:"毎週土曜日です。",
+ex:"Every Saturday が根拠。"
+},
+{
+s:"長文読解",
+text:"Mika likes cooking. Every Saturday she helps her mother make lunch. Her favorite food is curry and rice. She wants to learn more recipes in the future.",
+textjp:"ミカは料理が好きです。",
+p:"What is her favorite food?",
+c:[
+"Curry and rice.",
+"Pizza.",
+"Hamburgers.",
+"Noodles."
+],
+a:0,
+jp:"カレーライスです。",
+ex:"本文より。"
+},
+{
+s:"長文読解",
+text:"Mika likes cooking. Every Saturday she helps her mother make lunch. Her favorite food is curry and rice. She wants to learn more recipes in the future.",
+textjp:"ミカは料理が好きです。",
+p:"What does she want to learn?",
+c:[
+"More recipes.",
+"English.",
+"Math.",
+"Tennis."
+],
+a:0,
+jp:"もっと多くのレシピです。",
+ex:"最後の文が根拠。"
+},
+{
+s:"長文読解",
+text:"David is from Australia. He is staying in Japan for one year. He studies Japanese every day and enjoys visiting famous places with his friends.",
+textjp:"デイビッドはオーストラリア出身です。",
+p:"Where is David from?",
+c:[
+"Australia.",
+"Japan.",
+"Canada.",
+"America."
+],
+a:0,
+jp:"オーストラリアです。",
+ex:"1文目が根拠。"
+},
+{
+s:"長文読解",
+text:"David is from Australia. He is staying in Japan for one year. He studies Japanese every day and enjoys visiting famous places with his friends.",
+textjp:"デイビッドはオーストラリア出身です。",
+p:"What does he study every day?",
+c:[
+"Japanese.",
+"Science.",
+"Math.",
+"History."
+],
+a:0,
+jp:"日本語です。",
+ex:"studies Japanese every day。"
+},
+{
+s:"長文読解",
+text:"David is from Australia. He is staying in Japan for one year. He studies Japanese every day and enjoys visiting famous places with his friends.",
+textjp:"デイビッドはオーストラリア出身です。",
+p:"Who does he visit famous places with?",
+c:[
+"His friends.",
+"His family.",
+"His teacher.",
+"His brother."
+],
+a:0,
+jp:"友達です。",
+ex:"with his friends。"
+}
+]
+,
+[
+{
+s:"語句補充",
+p:"I ( ) to school every day.",
+c:["go","goes","going","went"],
+a:0,
+jp:"私は毎日学校へ行きます。",
+ex:"I が主語なので go。"
+},
+{
+s:"語句補充",
+p:"My brother ( ) TV after dinner.",
+c:["watch","watches","watching","watched"],
+a:1,
+jp:"弟は夕食後にテレビを見ます。",
+ex:"三人称単数なので watches。"
+},
+{
+s:"語句補充",
+p:"We ( ) basketball yesterday.",
+c:["play","played","playing","plays"],
+a:1,
+jp:"私たちは昨日バスケットボールをしました。",
+ex:"yesterday があるので過去形。"
+},
+{
+s:"語句補充",
+p:"There ( ) two cats in the room.",
+c:["is","are","am","be"],
+a:1,
+jp:"部屋には猫が2匹います。",
+ex:"cats は複数なので are。"
+},
+{
+s:"語句補充",
+p:"She can ( ) very well.",
+c:["swim","swims","swimming","swam"],
+a:0,
+jp:"彼女はとても上手に泳げます。",
+ex:"can の後は原形。"
+},
+{
+s:"語句補充",
+p:"This is ( ) elephant.",
+c:["a","an","the","two"],
+a:1,
+jp:"これは象です。",
+ex:"elephant の前は an。"
+},
+{
+s:"語句補充",
+p:"Tom is ( ) than Ken.",
+c:["fast","faster","fastest","very fast"],
+a:1,
+jp:"トムはケンより速いです。",
+ex:"比較級。"
+},
+{
+s:"語句補充",
+p:"They ( ) lunch now.",
+c:["eat","ate","are eating","eats"],
+a:2,
+jp:"彼らは今昼食を食べています。",
+ex:"現在進行形。"
+},
+{
+s:"語句補充",
+p:"I have six ( ).",
+c:["book","books","bookes","books'"],
+a:1,
+jp:"私は本を6冊持っています。",
+ex:"複数形 books。"
+},
+{
+s:"語句補充",
+p:"Let's ( ) soccer.",
+c:["play","plays","played","playing"],
+a:0,
+jp:"サッカーをしましょう。",
+ex:"Let's の後は原形。"
+},
+{
+s:"語句補充",
+p:"We go shopping ( ) Sunday.",
+c:["on","in","at","for"],
+a:0,
+jp:"私たちは日曜日に買い物へ行きます。",
+ex:"曜日の前は on。"
+},
+{
+s:"語句補充",
+p:"My mother is ( ) dinner.",
+c:["cook","cooks","cooking","cooked"],
+a:2,
+jp:"母は夕食を作っています。",
+ex:"be + ing。"
+},
+{
+s:"語句補充",
+p:"I want ( ) English.",
+c:["study","to study","studying","studied"],
+a:1,
+jp:"私は英語を勉強したいです。",
+ex:"want to ～。"
+},
+{
+s:"語句補充",
+p:"The dog is ( ) the table.",
+c:["under","through","during","before"],
+a:0,
+jp:"犬はテーブルの下にいます。",
+ex:"under は下。"
+},
+{
+s:"語句補充",
+p:"It was rainy, ( ) we stayed home.",
+c:["so","or","but","because"],
+a:0,
+jp:"雨だったので家にいました。",
+ex:"結果を表す so。"
+},
+{
+s:"会話文",
+p:"A: What day is it today?\nB: ( )",
+c:[
+"It's Monday.",
+"At home.",
+"A pen.",
+"Very good."
+],
+a:0,
+jp:"月曜日です。",
+ex:"曜日を答える。"
+}
+,
+{
+s:"会話文",
+p:"A: Where are you from?\nB: ( )",
+c:[
+"I'm from Japan.",
+"At school.",
+"A soccer player.",
+"Yesterday."
+],
+a:0,
+jp:"私は日本出身です。",
+ex:"出身地を答える。"
+},
+{
+s:"会話文",
+p:"A: How old are you?\nB: ( )",
+c:[
+"I'm thirteen years old.",
+"At home.",
+"Very much.",
+"A student."
+],
+a:0,
+jp:"13歳です。",
+ex:"年齢を答える。"
+},
+{
+s:"会話文",
+p:"A: Do you have any brothers?\nB: ( )",
+c:[
+"Yes, I do.",
+"In Hakodate.",
+"A baseball.",
+"Next week."
+],
+a:0,
+jp:"はい、います。",
+ex:"Do you ～? の返答。"
+},
+{
+s:"会話文",
+p:"A: What do you want for lunch?\nB: ( )",
+c:[
+"A hamburger.",
+"At noon.",
+"In the park.",
+"Very fast."
+],
+a:0,
+jp:"ハンバーガーです。",
+ex:"食べたい物を答える。"
+},
+{
+s:"語順整序",
+p:"( every / plays / day / he / soccer )",
+c:[
+"He plays soccer every day.",
+"He soccer plays every day.",
+"Every day plays he soccer.",
+"Soccer he plays every day."
+],
+a:0,
+jp:"彼は毎日サッカーをします。",
+ex:"正しい語順。"
+},
+{
+s:"語順整序",
+p:"( English / study / we / after / school )",
+c:[
+"We study English after school.",
+"We English study after school.",
+"After school study we English.",
+"English we study after school."
+],
+a:0,
+jp:"私たちは放課後英語を勉強します。",
+ex:"正しい語順。"
+},
+{
+s:"語順整序",
+p:"( this / my / is / bike )",
+c:[
+"This is my bike.",
+"My this is bike.",
+"This my bike is.",
+"Bike this is my."
+],
+a:0,
+jp:"これは私の自転車です。",
+ex:"This is ～。"
+},
+{
+s:"語順整序",
+p:"( can / she / swim / well )",
+c:[
+"She can swim well.",
+"She well can swim.",
+"Can she well swim.",
+"Swim she can well."
+],
+a:0,
+jp:"彼女は上手に泳げます。",
+ex:"can の後は原形。"
+},
+{
+s:"語順整序",
+p:"( breakfast / after / I / brush / my teeth )",
+c:[
+"I brush my teeth after breakfast.",
+"I my teeth brush after breakfast.",
+"After breakfast brush I my teeth.",
+"My teeth I brush after breakfast."
+],
+a:0,
+jp:"私は朝食後に歯を磨きます。",
+ex:"正しい語順。"
+},
+{
+s:"長文読解",
+text:"Saki likes animals very much. She visits the zoo with her family every summer. Her favorite animal is the panda because it is cute and friendly.",
+textjp:"サキは動物が大好きです。",
+p:"What does Saki like?",
+c:[
+"Animals.",
+"Books.",
+"Music.",
+"Sports."
+],
+a:0,
+jp:"動物です。",
+ex:"1文目が根拠。"
+},
+{
+s:"長文読解",
+text:"Saki likes animals very much. She visits the zoo with her family every summer. Her favorite animal is the panda because it is cute and friendly.",
+textjp:"サキは動物が大好きです。",
+p:"Where does she go every summer?",
+c:[
+"The zoo.",
+"The library.",
+"The beach.",
+"The station."
+],
+a:0,
+jp:"動物園です。",
+ex:"visits the zoo。"
+},
+{
+s:"長文読解",
+text:"Saki likes animals very much. She visits the zoo with her family every summer. Her favorite animal is the panda because it is cute and friendly.",
+textjp:"サキは動物が大好きです。",
+p:"Who goes with Saki?",
+c:[
+"Her family.",
+"Her teacher.",
+"Her friends.",
+"Her cousin."
+],
+a:0,
+jp:"家族です。",
+ex:"with her family。"
+},
+{
+s:"長文読解",
+text:"Saki likes animals very much. She visits the zoo with her family every summer. Her favorite animal is the panda because it is cute and friendly.",
+textjp:"サキは動物が大好きです。",
+p:"Why does she like pandas?",
+c:[
+"Because they are cute and friendly.",
+"Because they are fast.",
+"Because they are big.",
+"Because they are smart."
+],
+a:0,
+jp:"かわいくて親しみやすいからです。",
+ex:"本文最後の文。"
+},
+{
+s:"長文読解",
+text:"Mike has a bicycle. He rides it to school every day. After school, he often goes to the park and plays baseball with his friends.",
+textjp:"マイクは自転車を持っています。",
+p:"What does Mike have?",
+c:[
+"A bicycle.",
+"A car.",
+"A train.",
+"A bus."
+],
+a:0,
+jp:"自転車です。",
+ex:"1文目が根拠。"
+},
+{
+s:"長文読解",
+text:"Mike has a bicycle. He rides it to school every day. After school, he often goes to the park and plays baseball with his friends.",
+textjp:"マイクは自転車を持っています。",
+p:"How does he go to school?",
+c:[
+"By bicycle.",
+"By bus.",
+"By train.",
+"On foot."
+],
+a:0,
+jp:"自転車です。",
+ex:"rides it to school。"
+},
+{
+s:"長文読解",
+text:"Mike has a bicycle. He rides it to school every day. After school, he often goes to the park and plays baseball with his friends.",
+textjp:"マイクは自転車を持っています。",
+p:"What does he do after school?",
+c:[
+"He plays baseball.",
+"He studies math.",
+"He watches TV.",
+"He goes shopping."
+],
+a:0,
+jp:"野球をします。",
+ex:"最後の文が根拠。"
+}
+]
+
+
+
+
+
+];
+
+let Q = [];
+let i = 0;
+let ans = {};
+let ROUND = 0;
+let RANDOM_MODE = false;
+
+const $ = x => document.querySelector(x);
+document
+ .querySelectorAll(".roundBtn")
+ .forEach(btn=>{
+
+   btn.onclick=()=>{
+
+     document
+      .querySelectorAll(".roundBtn")
+      .forEach(b=>{
+        b.classList.remove("active");
+      });
+
+     btn.classList.add("active");
+
+     ROUND =
+      Number(btn.dataset.round);
+
+   };
+
+ });
+$("#randomBtn").onclick = () => {
+
+  RANDOM_MODE = true;
+
+  document
+   .querySelectorAll(".roundBtn")
+   .forEach(b=>{
+      b.classList.remove("active");
+   });
+
+  $("#randomBtn").classList.add("active");
+
+};
+function shuffle(arr){
+
+  for(let i = arr.length - 1; i > 0; i--){
+
+    const j =
+      Math.floor(
+        Math.random() * (i + 1)
+      );
+
+    [arr[i], arr[j]] =
+    [arr[j], arr[i]];
+
+  }
+
+}
+
+function load(){
+
+if(RANDOM_MODE){
+
+   let all = [];
+
+   BANK.forEach(set=>{
+      all.push(...set);
+   });
+
+   shuffle(all);
+
+   Q = JSON.parse(
+      JSON.stringify(
+         all.slice(0,33)
+      )
+   );
+
+}else{
+
+   Q = JSON.parse(
+      JSON.stringify(
+         BANK[ROUND] || []
+      )
+   );
+
+}
+}
+function render(){
+
+  let q = Q[i];
+
+  $("#where").textContent =
+RANDOM_MODE
+ ? `総合ランダム ${i+1}/33`
+ : `第${ROUND+1}回 ${i+1}/33`;
+
+  $("#no").textContent =
+    `QUESTION ${i+1}`;
+
+  $("#pass").innerHTML = q.text
+    ? `
+        <div class="feedback">
+          ${q.text}
+        </div>
+      `
+    : "";
+
+  $("#prompt").textContent =
+    q.p;
+  let html = "";
+
+  q.c.forEach((choice,n)=>{
+
+    html += `
+      <button
+       class="choice ${ans[i]===n ? 'active':''}"
+        onclick="selectAnswer(${n})">
+        ${String.fromCharCode(65+n)}.
+        ${choice}
+      </button>
+    `;
+
+  });
+
+  html += `
+<button
+  class="primary"
+  onclick="showExplanation()">
+  解説を見る
+</button>
+`;
+
+$("#input").innerHTML = html;
+$("#jump").innerHTML =
+
+Q.map((q,n)=>{
+
+  let cls = "jumpBtn";
+
+  if(n===i){
+    cls += " current";
+  }
+  else if(ans[n]!==undefined){
+    cls += " done";
+  }
+
+  return `
+    <button
+      class="${cls}"
+      onclick="jumpTo(${n})">
+      ${n+1}
+    </button>
+  `;
+
+}).join("");
+$("#fb").innerHTML = "";
+
+}
+
+function selectAnswer(n){
+
+  ans[i] = n;
+
+  render();
+
+}
+
+function jumpTo(n){
+
+  i = n;
+
+  render();
+
+}
+
+function showExplanation(){
+
+  let q = Q[i];
+
+  let correct =
+    ans[i] === q.a;
+
+  $("#fb").innerHTML = `
+    <div class="feedback">
+      <b>
+      ${correct ? "○ 正解" : "× 不正解"}
+      </b>
+
+      <p>
+      正答：
+      ${q.c[q.a]}
+      </p>
+
+      <p>
+      全訳：
+      ${q.jp}
+      </p>
+
+      <p>
+      解説：
+      ${q.ex}
+      </p>
+
+    </div>
+  `;
+
+  $("#fb").scrollIntoView({
+    behavior:"smooth",
+    block:"start"
+  });
+
+}
+
+function finish(){
+
+  let score = Q.reduce(
+    (a,q,n)=>a+(ans[n]===q.a),
+    0
+  );
+
+  // 試験画面を隠す
+  $("#exam").classList.add("hide");
+
+  // 結果画面を表示
+  $("#result").classList.remove("hide");
+
+  // スコア表示
+  $("#score").textContent =
+RANDOM_MODE
+ ? `総合ランダム ${score}/33`
+ : `第${ROUND+1}回 ${score}/33`;
+
+  // 復習一覧生成
+  $("#reviews").innerHTML =
+
+    Q.map((q,n)=>{
+
+      const correct =
+        ans[n]===q.a;
+
+      return `
+
+      <div class="feedback"
+           style="
+             margin-bottom:15px;
+             background:${
+               correct
+                 ? '#dcfce7'
+                 : '#fee2e2'
+             };
+           ">
+
+        <h3>
+          問${n+1}
+          ${correct ? "○" : "×"}
+        </h3>
+
+        <p>
+          <b>問題</b><br>
+          ${q.p}
+        </p>
+
+        <p>
+          <b>正答</b><br>
+          ${q.c[q.a]}
+        </p>
+
+        <p>
+          <b>全訳</b><br>
+          ${q.jp}
+        </p>
+
+        <p>
+          <b>解説</b><br>
+          ${q.ex}
+        </p>
+
+      </div>
+
+      `;
+
+    }).join("");
+
+}
+$("#go").onclick = ()=>{
+
+  if(!BANK[0].length){
+
+    alert(
+      "まだ問題が登録されていません。"
+    );
+
+    return;
+  }
+
+  load();
+
+  $("#start").classList.add("hide");
+  $("#exam").classList.remove("hide");
+
+  render();
+
+};
+
+$("#prev").onclick = ()=>{
+  if(i>0){
+    i--;
+    render();
+
+    window.scrollTo({
+      top:0,
+      behavior:"smooth"
+    });
+  }
+};
+
+$("#next").onclick = ()=>{
+  if(i < Q.length - 1){
+    i++;
+    render();
+
+    window.scrollTo({
+      top:0,
+      behavior:"smooth"
+    });
+
+  }else{
+    finish();
+  }
+};
+
+$("#home").onclick = ()=>{
+
+  if(
+    confirm("タイトル画面へ戻りますか？")
+  ){
+    location.reload();
+  }
+
+};
+</script>
+
+</body>
+</html>

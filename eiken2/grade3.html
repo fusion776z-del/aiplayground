@@ -1,0 +1,3067 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>英検3級 模試</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:system-ui;
+  background:#f1f5f9;
+  color:#0f172a;
+}
+.wrap{
+  max-width:620px;
+  margin:auto;
+}
+.start{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  padding:20px;
+  background:#08111f;
+  color:white;
+}
+.card{
+  background:white;
+  border-radius:24px;
+  padding:22px;
+  box-shadow:0 12px 30px #0002;
+}
+.start .card{
+  background:#111c2e;
+}
+.green{
+  color:#34d399;
+}
+.primary{
+  width:100%;
+  border:0;
+  border-radius:16px;
+  padding:15px;
+  background:#34d399;
+  font-weight:900;
+  cursor:pointer;
+}
+.hide{
+  display:none!important;
+}
+header{
+  position:sticky;
+  top:0;
+  background:#08111f;
+  color:white;
+  padding:12px 16px;
+}
+.row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.main{
+  padding:16px;
+  padding-bottom:120px;
+}
+.choice{
+  display:block;
+  width:100%;
+  padding:14px;
+  margin:8px 0;
+}
+footer{
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  background:white;
+  padding:10px;
+  border-top:1px solid #ddd;
+}
+.nav{
+  max-width:620px;
+  margin:auto;
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:10px;
+}
+.nav button{
+  padding:12px;
+  border-radius:12px;
+}
+.feedback{
+  margin-top:12px;
+  padding:12px;
+  border-radius:12px;
+  background:#eff6ff;
+}
+.choice.active{
+  background:#dcfce7;
+  border:2px solid #22c55e;
+}
+#jump{
+  display:grid;
+  grid-template-columns:repeat(6,1fr);
+  gap:6px;
+  margin-top:15px;
+}
+
+.jumpBtn{
+  padding:8px;
+  border:none;
+  border-radius:8px;
+  background:#e2e8f0;
+  cursor:pointer;
+}
+
+.jumpBtn.current{
+  background:#0f172a;
+  color:white;
+}
+
+.jumpBtn.done{
+  background:#86efac;
+}
+.rounds{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+  margin:15px 0;
+}
+
+.roundBtn{
+  border:none;
+  border-radius:10px;
+  padding:10px;
+  background:#e2e8f0;
+  cursor:pointer;
+  font-weight:bold;
+}
+
+.roundBtn.active{
+  background:#34d399;
+}
+</style>
+</head>
+
+<body>
+
+<section id="start" class="start">
+  <div class="wrap card">
+    <b class="green">スマホ筆記模試</b>
+
+    <h1>英検3級 全5回</h1>
+
+    <p>
+      受験する回を選んでください。
+    </p>
+
+    <div id="rounds" class="rounds">
+      <button class="roundBtn active" data-round="0">第1回</button>
+      <button class="roundBtn" data-round="1">第2回</button>
+      <button class="roundBtn" data-round="2">第3回</button>
+      <button class="roundBtn" data-round="3">第4回</button>
+      <button class="roundBtn" data-round="4">第5回</button>
+<button
+class="roundBtn"
+id="randomMode">
+総合ランダム
+</button>
+
+
+
+    </div>
+
+    <button id="go" class="primary">
+      開始する
+    </button>
+<br><br>
+
+<button
+  class="primary"
+  onclick="location.href='index.html'"
+  style="
+    background:#e5e7eb;
+    color:#000;
+  "
+>
+  級選択へ戻る
+</button>
+  </div>
+</section>
+
+<section id="exam" class="hide">
+
+<header>
+<div class="wrap row">
+  <b id="where">第1回 1/40</b>
+  
+</div>
+</header>
+
+<main class="wrap main">
+
+<div class="card">
+
+<b id="no"></b>
+
+<div id="pass"></div>
+
+<div id="prompt"></div>
+
+<div id="input"></div>
+<div id="jump"></div>
+<div id="fb"></div>
+
+</div>
+
+</main>
+
+<footer>
+<div class="nav">
+<button id="home">タイトル</button>
+<button id="prev">‹ 前へ</button>
+<button id="next">次へ ›</button>
+</div>
+</footer>
+
+</section>
+
+<section id="result" class="hide">
+
+<div class="wrap main">
+
+<div class="card">
+
+<b class="green">採点結果</b>
+
+<h1 id="score"></h1>
+
+<div id="reviews"></div>
+
+<button class="primary"
+onclick="location.reload()">
+最初へ戻る
+</button>
+
+</div>
+
+</div>
+
+</section>
+
+<script>
+
+const BANK = [
+[
+{
+s:"語句補充",
+p:"I am looking forward ( ) seeing you.",
+c:["to","for","at","with"],
+a:0,
+jp:"あなたに会うのを楽しみにしています。",
+ex:"look forward to ～ing"
+},
+{
+s:"語句補充",
+p:"My father ( ) in this company for ten years.",
+c:["has worked","worked","works","working"],
+a:0,
+jp:"父はこの会社で10年間働いています。",
+ex:"現在完了の継続。"
+},
+{
+s:"語句補充",
+p:"If it rains tomorrow, we ( ) stay home.",
+c:["will","would","are","were"],
+a:0,
+jp:"もし明日雨なら、私たちは家にいます。",
+ex:"if節＋未来。"
+},
+{
+s:"語句補充",
+p:"I have never ( ) to Australia.",
+c:["been","went","go","going"],
+a:0,
+jp:"私は一度もオーストラリアへ行ったことがありません。",
+ex:"現在完了経験。"
+},
+{
+s:"語句補充",
+p:"He speaks English ( ) than I do.",
+c:["better","best","good","well"],
+a:0,
+jp:"彼は私より英語を上手に話します。",
+ex:"比較級。"
+},
+{
+s:"語句補充",
+p:"The movie was so ( ) that everyone enjoyed it.",
+c:["interesting","interest","interested","interests"],
+a:0,
+jp:"その映画はとても面白かったので皆楽しみました。",
+ex:"物が主語なので interesting。"
+},
+{
+s:"語句補充",
+p:"We should ( ) care of the environment.",
+c:["take","give","have","make"],
+a:0,
+jp:"私たちは環境を大切にするべきです。",
+ex:"take care of。"
+},
+{
+s:"語句補充",
+p:"I want my brother ( ) me with my homework.",
+c:["to help","help","helping","helped"],
+a:0,
+jp:"私は弟に宿題を手伝ってほしいです。",
+ex:"want 人 to ～。"
+},
+{
+s:"語句補充",
+p:"This book is ( ) than that one.",
+c:["more useful","useful","most useful","usefully"],
+a:0,
+jp:"この本はあの本より役に立ちます。",
+ex:"比較級。"
+},
+{
+s:"語句補充",
+p:"She was absent from school ( ) she was sick.",
+c:["because","but","or","if"],
+a:0,
+jp:"彼女は病気だったので学校を休みました。",
+ex:"理由を表す because。"
+},
+{
+s:"語句補充",
+p:"I usually spend two hours ( ) English.",
+c:["studying","study","studied","to study"],
+a:0,
+jp:"私は普段2時間英語を勉強します。",
+ex:"spend 時間 ～ing。"
+},
+{
+s:"語句補充",
+p:"My sister is interested ( ) Japanese history.",
+c:["in","at","to","for"],
+a:0,
+jp:"姉は日本の歴史に興味があります。",
+ex:"interested in。"
+},
+{
+s:"語句補充",
+p:"The boy ( ) lost his wallet was crying.",
+c:["who","which","what","where"],
+a:0,
+jp:"財布をなくした少年は泣いていました。",
+ex:"関係代名詞 who。"
+},
+{
+s:"語句補充",
+p:"You should finish your homework before ( ) TV.",
+c:["watching","watch","watched","to watch"],
+a:0,
+jp:"テレビを見る前に宿題を終えるべきです。",
+ex:"before ～ing。"
+},
+{
+s:"語句補充",
+p:"I was surprised ( ) hear the news.",
+c:["to","for","at","with"],
+a:0,
+jp:"私はその知らせを聞いて驚きました。",
+ex:"surprised to ～。"
+},
+{
+s:"会話文",
+p:"A: Why don't we go shopping this afternoon?\nB: ( )",
+c:[
+"That's a good idea.",
+"I went yesterday.",
+"At the station.",
+"A new bag."
+],
+a:0,
+jp:"それはいい考えですね。",
+ex:"提案への賛成。"
+},
+{
+s:"会話文",
+p:"A: How long have you lived here?\nB: ( )",
+c:[
+"For five years.",
+"Five kilometers.",
+"At five o'clock.",
+"Five books."
+],
+a:0,
+jp:"5年間です。",
+ex:"期間を答える。"
+},
+{
+s:"会話文",
+p:"A: What are you going to do this weekend?\nB: ( )",
+c:[
+"I'm going to visit my grandparents.",
+"Very much.",
+"A nice park.",
+"Last Sunday."
+],
+a:0,
+jp:"祖父母を訪ねる予定です。",
+ex:"未来の予定を答える。"
+},
+{
+s:"会話文",
+p:"A: Could you take a picture for us?\nB: ( )",
+c:[
+"Sure.",
+"I like pictures.",
+"Two cameras.",
+"Next week."
+],
+a:0,
+jp:"もちろんです。",
+ex:"依頼への返答。"
+},
+{
+s:"会話文",
+p:"A: I'm sorry I'm late.\nB: ( )",
+c:[
+"That's all right.",
+"See you late.",
+"Very late.",
+"At school."
+],
+a:0,
+jp:"大丈夫ですよ。",
+ex:"謝罪への返答。"
+}
+,
+{
+s:"語順整序",
+p:"( been / I / to / have / never / Canada )",
+c:[
+"I have never been to Canada.",
+"I never have been to Canada.",
+"Have I never been to Canada.",
+"I been have never to Canada."
+],
+a:0,
+jp:"私は一度もカナダへ行ったことがありません。",
+ex:"現在完了 have been to。"
+},
+{
+s:"語順整序",
+p:"( wants / abroad / study / to / she )",
+c:[
+"She wants to study abroad.",
+"She study wants to abroad.",
+"Wants she to study abroad.",
+"She to wants study abroad."
+],
+a:0,
+jp:"彼女は留学したいと思っています。",
+ex:"want to ～。"
+},
+{
+s:"語順整序",
+p:"( me / helped / my friend / with / homework / my )",
+c:[
+"My friend helped me with my homework.",
+"My friend me helped with my homework.",
+"Helped my friend me with my homework.",
+"My homework helped my friend me."
+],
+a:0,
+jp:"友達が宿題を手伝ってくれました。",
+ex:"help 人 with ～。"
+},
+{
+s:"語順整序",
+p:"( interested / science / in / are / many students )",
+c:[
+"Many students are interested in science.",
+"Many students interested are in science.",
+"Are interested many students in science.",
+"In science many students are interested."
+],
+a:0,
+jp:"多くの生徒が科学に興味を持っています。",
+ex:"be interested in。"
+},
+{
+s:"語順整序",
+p:"( if / rains / stay / it / home / will / we )",
+c:[
+"If it rains, we will stay home.",
+"We will if it rains stay home.",
+"If rains it we will stay home.",
+"It rains if we will stay home."
+],
+a:0,
+jp:"もし雨なら私たちは家にいます。",
+ex:"if節＋未来。"
+},
+
+{
+s:"長文読解",
+text:"Tom joined a volunteer program last summer. He cleaned parks and helped older people in his town. He enjoyed meeting many people and learned the importance of helping others.",
+textjp:"トムは昨年の夏、ボランティア活動に参加しました。",
+p:"When did Tom join the volunteer program?",
+c:[
+"Last summer.",
+"Last winter.",
+"Yesterday.",
+"Two years ago."
+],
+a:0,
+jp:"昨年の夏です。",
+ex:"1文目より。"
+},
+{
+s:"長文読解",
+text:"Tom joined a volunteer program last summer. He cleaned parks and helped older people in his town. He enjoyed meeting many people and learned the importance of helping others.",
+textjp:"トムは昨年の夏、ボランティア活動に参加しました。",
+p:"What did Tom do in the program?",
+c:[
+"He cleaned parks.",
+"He sold books.",
+"He taught math.",
+"He played soccer."
+],
+a:0,
+jp:"公園を掃除しました。",
+ex:"2文目より。"
+},
+{
+s:"長文読解",
+text:"Tom joined a volunteer program last summer. He cleaned parks and helped older people in his town. He enjoyed meeting many people and learned the importance of helping others.",
+textjp:"トムは昨年の夏、ボランティア活動に参加しました。",
+p:"Who did he help?",
+c:[
+"Older people.",
+"Teachers.",
+"Doctors.",
+"Tourists."
+],
+a:0,
+jp:"高齢者です。",
+ex:"2文目より。"
+},
+{
+s:"長文読解",
+text:"Tom joined a volunteer program last summer. He cleaned parks and helped older people in his town. He enjoyed meeting many people and learned the importance of helping others.",
+textjp:"トムは昨年の夏、ボランティア活動に参加しました。",
+p:"What did he learn?",
+c:[
+"The importance of helping others.",
+"The history of his town.",
+"How to drive.",
+"How to cook."
+],
+a:0,
+jp:"人を助ける大切さです。",
+ex:"最後の文より。"
+},
+
+{
+s:"長文読解",
+text:"Emily likes reading books about nature. Every month she borrows several books from the library. She wants to become a scientist in the future and study animals around the world.",
+textjp:"エミリーは自然についての本を読むのが好きです。",
+p:"What kind of books does Emily like?",
+c:[
+"Books about nature.",
+"Books about sports.",
+"Comic books.",
+"Cookbooks."
+],
+a:0,
+jp:"自然についての本です。",
+ex:"1文目より。"
+},
+{
+s:"長文読解",
+text:"Emily likes reading books about nature. Every month she borrows several books from the library. She wants to become a scientist in the future and study animals around the world.",
+textjp:"エミリーは自然についての本を読むのが好きです。",
+p:"Where does she borrow books?",
+c:[
+"From the library.",
+"From a bookstore.",
+"From school.",
+"From a friend."
+],
+a:0,
+jp:"図書館です。",
+ex:"2文目より。"
+},
+{
+s:"長文読解",
+text:"Emily likes reading books about nature. Every month she borrows several books from the library. She wants to become a scientist in the future and study animals around the world.",
+textjp:"エミリーは自然についての本を読むのが好きです。",
+p:"What does she want to be?",
+c:[
+"A scientist.",
+"A teacher.",
+"A doctor.",
+"A singer."
+],
+a:0,
+jp:"科学者です。",
+ex:"3文目より。"
+},
+{
+s:"長文読解",
+text:"Emily likes reading books about nature. Every month she borrows several books from the library. She wants to become a scientist in the future and study animals around the world.",
+textjp:"エミリーは自然についての本を読むのが好きです。",
+p:"What does she want to study?",
+c:[
+"Animals around the world.",
+"Foreign languages.",
+"Music.",
+"Computers."
+],
+a:0,
+jp:"世界中の動物です。",
+ex:"3文目より。"
+},
+
+{
+s:"長文読解",
+text:"Last month, Ken's school held a cultural festival. Students prepared food, games, and performances. Ken worked with his classmates to create a science quiz booth. Many visitors enjoyed it.",
+textjp:"先月ケンの学校で文化祭が開かれました。",
+p:"What event was held at Ken's school?",
+c:[
+"A cultural festival.",
+"A sports festival.",
+"A concert.",
+"A school trip."
+],
+a:0,
+jp:"文化祭です。",
+ex:"1文目より。"
+},
+{
+s:"長文読解",
+text:"Last month, Ken's school held a cultural festival. Students prepared food, games, and performances. Ken worked with his classmates to create a science quiz booth. Many visitors enjoyed it.",
+textjp:"先月ケンの学校で文化祭が開かれました。",
+p:"What booth did Ken help create?",
+c:[
+"A science quiz booth.",
+"A food booth.",
+"A sports booth.",
+"A book booth."
+],
+a:0,
+jp:"科学クイズブースです。",
+ex:"3文目より。"
+},
+
+{
+s:"Eメール読解",
+text:"Hi Ken,\nThank you for inviting me to your birthday party next Saturday. I'd love to come. What time will the party start?\nYuki",
+textjp:"ユキからケンへのメールです。",
+p:"Why did Yuki write this email?",
+c:[
+"To ask about the party time.",
+"To cancel the party.",
+"To buy a present.",
+"To invite Ken."
+],
+a:0,
+jp:"パーティーの開始時刻を聞くためです。",
+ex:"What time will the party start? より。"
+},
+{
+s:"Eメール読解",
+text:"Hi Ken,\nThank you for inviting me to your birthday party next Saturday. I'd love to come. What time will the party start?\nYuki",
+textjp:"ユキからケンへのメールです。",
+p:"When is Ken's party?",
+c:[
+"Next Saturday.",
+"Tomorrow.",
+"Today.",
+"Next month."
+],
+a:0,
+jp:"来週の土曜日です。",
+ex:"本文より。"
+},
+{
+s:"Eメール読解",
+text:"Dear Emma,\nI can't join the tennis practice tomorrow because I have to visit my grandparents. I'll be back next week.\nMike",
+textjp:"マイクからエマへのメールです。",
+p:"Why can't Mike join tennis practice?",
+c:[
+"He has to visit his grandparents.",
+"He is sick.",
+"He has homework.",
+"He is traveling abroad."
+],
+a:0,
+jp:"祖父母を訪ねるためです。",
+ex:"本文より。"
+},
+{
+s:"Eメール読解",
+text:"Dear Emma,\nI can't join the tennis practice tomorrow because I have to visit my grandparents. I'll be back next week.\nMike",
+textjp:"マイクからエマへのメールです。",
+p:"When will Mike return?",
+c:[
+"Next week.",
+"Tomorrow.",
+"Today.",
+"Next month."
+],
+a:0,
+jp:"来週です。",
+ex:"I'll be back next week. より。"
+},
+{
+s:"Eメール読解",
+text:"Hello Lisa,\nThank you for helping me with my homework yesterday. I could finish it before dinner. See you at school tomorrow.\nAnna",
+textjp:"アンナからリサへのメールです。",
+p:"Why is Anna writing this email?",
+c:[
+"To thank Lisa.",
+"To invite Lisa.",
+"To borrow a book.",
+"To cancel school."
+],
+a:0,
+jp:"リサにお礼を言うためです。",
+ex:"Thank you for helping me... より。"
+}
+]
+,
+[
+{
+s:"語句補充",
+p:"My sister has ( ) finished her homework.",
+c:["already","yet","never","soon"],
+a:0,
+jp:"姉はすでに宿題を終えました。",
+ex:"already は「すでに」。"
+},
+{
+s:"語句補充",
+p:"The library was ( ) by many students yesterday.",
+c:["used","using","uses","use"],
+a:0,
+jp:"図書館は昨日多くの生徒に利用されました。",
+ex:"受動態 be + 過去分詞。"
+},
+{
+s:"語句補充",
+p:"I hope ( ) a doctor in the future.",
+c:["to become","become","becoming","became"],
+a:0,
+jp:"私は将来医者になりたいです。",
+ex:"hope to ～。"
+},
+{
+s:"語句補充",
+p:"This problem is not as difficult ( ) I expected.",
+c:["as","than","for","to"],
+a:0,
+jp:"この問題は思ったほど難しくありません。",
+ex:"not as ... as ～。"
+},
+{
+s:"語句補充",
+p:"We must do something to protect the ( ).",
+c:["environment","festival","schedule","station"],
+a:0,
+jp:"私たちは環境を守るために何かしなければなりません。",
+ex:"environment＝環境。"
+},
+{
+s:"語句補充",
+p:"I have been busy ( ) last Monday.",
+c:["since","for","during","after"],
+a:0,
+jp:"私は先週の月曜日から忙しいです。",
+ex:"since＋起点。"
+},
+{
+s:"語句補充",
+p:"The girl ( ) won the contest is my cousin.",
+c:["who","which","where","when"],
+a:0,
+jp:"コンテストで優勝した少女は私のいとこです。",
+ex:"人を説明する関係代名詞 who。"
+},
+{
+s:"語句補充",
+p:"Please tell me how ( ) the station.",
+c:["to get to","get to","getting to","got to"],
+a:0,
+jp:"駅への行き方を教えてください。",
+ex:"how to ～。"
+},
+{
+s:"語句補充",
+p:"My brother is good ( ) playing basketball.",
+c:["at","for","with","to"],
+a:0,
+jp:"弟はバスケットボールが得意です。",
+ex:"be good at ～ing。"
+},
+{
+s:"語句補充",
+p:"I was tired, ( ) I went to bed early.",
+c:["so","because","but","if"],
+a:0,
+jp:"私は疲れていたので早く寝ました。",
+ex:"結果を表す so。"
+},
+{
+s:"語句補充",
+p:"This computer is one of the most useful ( ) in our school.",
+c:["machines","machine","machining","machined"],
+a:0,
+jp:"このコンピューターは学校で最も役立つ機械の一つです。",
+ex:"one of the most ～ の後は複数形。"
+},
+{
+s:"語句補充",
+p:"Have you ever ( ) sushi?",
+c:["tried","try","trying","tries"],
+a:0,
+jp:"寿司を食べたことがありますか。",
+ex:"現在完了経験。"
+},
+{
+s:"語句補充",
+p:"The meeting will start ( ) ten minutes.",
+c:["in","on","at","for"],
+a:0,
+jp:"会議は10分後に始まります。",
+ex:"in ten minutes。"
+},
+{
+s:"語句補充",
+p:"I'd like ( ) more about Japanese culture.",
+c:["to learn","learn","learning","learned"],
+a:0,
+jp:"日本文化についてもっと学びたいです。",
+ex:"would like to ～。"
+},
+{
+s:"語句補充",
+p:"The book was so popular that it sold ( ).",
+c:["quickly","quick","quicker","quickest"],
+a:0,
+jp:"その本はとても人気で早く売れました。",
+ex:"動詞 sold を修飾するので副詞。"
+},
+
+{
+s:"会話文",
+p:"A: What do you think of this movie?\nB: ( )",
+c:[
+"I think it's exciting.",
+"At the theater.",
+"Next Friday.",
+"A famous actor."
+],
+a:0,
+jp:"面白いと思います。",
+ex:"感想を尋ねられている。"
+},
+{
+s:"会話文",
+p:"A: Have you finished reading the book?\nB: ( )",
+c:[
+"Not yet.",
+"In the library.",
+"Twice a week.",
+"Very interesting."
+],
+a:0,
+jp:"まだです。",
+ex:"現在完了への返答。"
+},
+{
+s:"会話文",
+p:"A: Which club do you belong to?\nB: ( )",
+c:[
+"The tennis club.",
+"Every day.",
+"For two years.",
+"In the gym."
+],
+a:0,
+jp:"テニス部です。",
+ex:"所属するクラブを答える。"
+},
+{
+s:"会話文",
+p:"A: Could you help me carry these boxes?\nB: ( )",
+c:[
+"Of course.",
+"Two boxes.",
+"By bus.",
+"Last week."
+],
+a:0,
+jp:"もちろんです。",
+ex:"依頼への承諾。"
+},
+{
+s:"会話文",
+p:"A: Why are you studying English so hard?\nB: ( )",
+c:[
+"Because I want to study abroad.",
+"In my classroom.",
+"Every evening.",
+"My English teacher."
+],
+a:0,
+jp:"留学したいからです。",
+ex:"理由を答える。"
+}
+,
+{
+s:"語順整序",
+p:"( for / lived / has / she / here / five years )",
+c:[
+"She has lived here for five years.",
+"She lived has here for five years.",
+"Has she lived here for five years.",
+"She here has lived for five years."
+],
+a:0,
+jp:"彼女はここに5年間住んでいます。",
+ex:"現在完了の継続。"
+},
+{
+s:"語順整序",
+p:"( to / wants / my brother / study / abroad )",
+c:[
+"My brother wants to study abroad.",
+"My brother study wants to abroad.",
+"Wants my brother to study abroad.",
+"My brother to wants study abroad."
+],
+a:0,
+jp:"兄は留学したいと思っています。",
+ex:"want to ～。"
+},
+{
+s:"語順整序",
+p:"( interested / many students / are / science / in )",
+c:[
+"Many students are interested in science.",
+"Many students interested are in science.",
+"Are many students interested in science.",
+"In science many students are interested."
+],
+a:0,
+jp:"多くの生徒が科学に興味を持っています。",
+ex:"be interested in。"
+},
+{
+s:"語順整序",
+p:"( me / helped / my friend / with / English / my )",
+c:[
+"My friend helped me with my English.",
+"My friend me helped with my English.",
+"Helped my friend me with my English.",
+"My English helped my friend me."
+],
+a:0,
+jp:"友達が英語の勉強を手伝ってくれました。",
+ex:"help 人 with ～。"
+},
+{
+s:"語順整序",
+p:"( if / tomorrow / fine / is / it / go / we / will )",
+c:[
+"If it is fine tomorrow, we will go.",
+"We will if it is fine tomorrow go.",
+"If tomorrow is it fine, we will go.",
+"It is fine if tomorrow we will go."
+],
+a:0,
+jp:"もし明日晴れなら私たちは行きます。",
+ex:"if節＋未来。"
+},
+
+{
+s:"長文読解",
+text:"Yuta joined the school soccer team this year. At first, he was not very good at playing soccer. However, he practiced every day after school. Now he is one of the best players on the team.",
+textjp:"ユウタは今年サッカー部に入りました。",
+p:"When did Yuta join the team?",
+c:[
+"This year.",
+"Last year.",
+"Last month.",
+"Yesterday."
+],
+a:0,
+jp:"今年です。",
+ex:"1文目より。"
+},
+{
+s:"長文読解",
+text:"Yuta joined the school soccer team this year. At first, he was not very good at playing soccer. However, he practiced every day after school. Now he is one of the best players on the team.",
+textjp:"ユウタは今年サッカー部に入りました。",
+p:"What was Yuta like at first?",
+c:[
+"He was not very good at soccer.",
+"He was the best player.",
+"He was the captain.",
+"He was absent often."
+],
+a:0,
+jp:"最初はあまり上手ではありませんでした。",
+ex:"2文目より。"
+},
+{
+s:"長文読解",
+text:"Yuta joined the school soccer team this year. At first, he was not very good at playing soccer. However, he practiced every day after school. Now he is one of the best players on the team.",
+textjp:"ユウタは今年サッカー部に入りました。",
+p:"How often did he practice?",
+c:[
+"Every day.",
+"Once a week.",
+"Twice a month.",
+"Only on weekends."
+],
+a:0,
+jp:"毎日です。",
+ex:"3文目より。"
+},
+{
+s:"長文読解",
+text:"Yuta joined the school soccer team this year. At first, he was not very good at playing soccer. However, he practiced every day after school. Now he is one of the best players on the team.",
+textjp:"ユウタは今年サッカー部に入りました。",
+p:"Why did Yuta improve?",
+c:[
+"Because he practiced every day.",
+"Because he changed schools.",
+"Because he bought new shoes.",
+"Because he quit the team."
+],
+a:0,
+jp:"毎日練習したからです。",
+ex:"本文全体より。"
+},
+
+{
+s:"長文読解",
+text:"Mika enjoys using the Internet to learn new things. She often watches videos about science and history. Last month, she learned how people lived hundreds of years ago and shared what she learned with her classmates.",
+textjp:"ミカはインターネットで学ぶのが好きです。",
+p:"What does Mika use the Internet for?",
+c:[
+"Learning new things.",
+"Playing baseball.",
+"Shopping every day.",
+"Traveling abroad."
+],
+a:0,
+jp:"新しいことを学ぶためです。",
+ex:"1文目より。"
+},
+{
+s:"長文読解",
+text:"Mika enjoys using the Internet to learn new things. She often watches videos about science and history. Last month, she learned how people lived hundreds of years ago and shared what she learned with her classmates.",
+textjp:"ミカはインターネットで学ぶのが好きです。",
+p:"What videos does she often watch?",
+c:[
+"Science and history videos.",
+"Cooking videos only.",
+"Sports videos only.",
+"Music videos only."
+],
+a:0,
+jp:"科学と歴史の動画です。",
+ex:"2文目より。"
+},
+{
+s:"長文読解",
+text:"Mika enjoys using the Internet to learn new things. She often watches videos about science and history. Last month, she learned how people lived hundreds of years ago and shared what she learned with her classmates.",
+textjp:"ミカはインターネットで学ぶのが好きです。",
+p:"What did she learn last month?",
+c:[
+"How people lived long ago.",
+"How to drive a car.",
+"How to swim.",
+"How to cook."
+],
+a:0,
+jp:"昔の人々の暮らしです。",
+ex:"3文目より。"
+},
+{
+s:"長文読解",
+text:"Mika enjoys using the Internet to learn new things. She often watches videos about science and history. Last month, she learned how people lived hundreds of years ago and shared what she learned with her classmates.",
+textjp:"ミカはインターネットで学ぶのが好きです。",
+p:"Who did she share the information with?",
+c:[
+"Her classmates.",
+"Her parents.",
+"Her neighbors.",
+"Tourists."
+],
+a:0,
+jp:"クラスメートです。",
+ex:"3文目より。"
+},
+
+{
+s:"長文読解",
+text:"Last weekend, Riku and his family went camping in the mountains. They cooked dinner outside and watched the stars at night. Riku enjoyed the trip because he could spend time with his family in nature.",
+textjp:"リクは家族とキャンプへ行きました。",
+p:"Where did Riku go last weekend?",
+c:[
+"To the mountains.",
+"To the beach.",
+"To a museum.",
+"To a library."
+],
+a:0,
+jp:"山です。",
+ex:"1文目より。"
+},
+{
+s:"長文読解",
+text:"Last weekend, Riku and his family went camping in the mountains. They cooked dinner outside and watched the stars at night. Riku enjoyed the trip because he could spend time with his family in nature.",
+textjp:"リクは家族とキャンプへ行きました。",
+p:"Why did Riku enjoy the trip?",
+c:[
+"He spent time with his family in nature.",
+"He bought many gifts.",
+"He met famous people.",
+"He won a game."
+],
+a:0,
+jp:"自然の中で家族と過ごせたからです。",
+ex:"最後の文より。"
+},
+
+{
+s:"Eメール読解",
+text:"Hi Emma,\nOur school festival will be held on October 15. My class is preparing a food stand. I hope you can come and visit us.\nYuki",
+textjp:"ユキからエマへのメールです。",
+p:"What is Yuki's class preparing?",
+c:[
+"A food stand.",
+"A music show.",
+"A sports event.",
+"A library tour."
+],
+a:0,
+jp:"模擬店です。",
+ex:"本文より。"
+},
+{
+s:"Eメール読解",
+text:"Hi Emma,\nOur school festival will be held on October 15. My class is preparing a food stand. I hope you can come and visit us.\nYuki",
+textjp:"ユキからエマへのメールです。",
+p:"What does Yuki hope Emma will do?",
+c:[
+"Visit the festival.",
+"Join a soccer team.",
+"Move to another city.",
+"Take an exam."
+],
+a:0,
+jp:"文化祭に来ることです。",
+ex:"最後の文より。"
+},
+{
+s:"Eメール読解",
+text:"Dear Tom,\nThank you for lending me your dictionary. It was very helpful for my English homework. I'll return it to you tomorrow.\nKen",
+textjp:"ケンからトムへのメールです。",
+p:"Why is Ken thanking Tom?",
+c:[
+"For lending a dictionary.",
+"For helping with sports.",
+"For inviting him.",
+"For sending a letter."
+],
+a:0,
+jp:"辞書を貸してくれたからです。",
+ex:"本文より。"
+},
+{
+s:"Eメール読解",
+text:"Dear Tom,\nThank you for lending me your dictionary. It was very helpful for my English homework. I'll return it to you tomorrow.\nKen",
+textjp:"ケンからトムへのメールです。",
+p:"When will Ken return the dictionary?",
+c:[
+"Tomorrow.",
+"Today.",
+"Next week.",
+"Next month."
+],
+a:0,
+jp:"明日です。",
+ex:"I'll return it tomorrow. より。"
+},
+{
+s:"Eメール読解",
+text:"Hello Lisa,\nI'm going to visit Kyoto during spring vacation. Could you recommend some interesting places to see?\nAya",
+textjp:"アヤからリサへのメールです。",
+p:"What is Aya asking Lisa to do?",
+c:[
+"Recommend places in Kyoto.",
+"Visit her house.",
+"Buy a ticket.",
+"Teach English."
+],
+a:0,
+jp:"京都のおすすめの場所を教えてほしいです。",
+ex:"recommend some interesting places より。"
+}
+]
+,
+[
+{
+s:"語句補充",
+p:"My brother enjoys ( ) tennis on weekends.",
+c:["playing","play","played","to play"],
+a:0,
+jp:"兄は週末にテニスをするのを楽しんでいます。",
+ex:"enjoy の後は ～ing。"
+},
+{
+s:"語句補充",
+p:"This picture was ( ) by my grandfather.",
+c:["taken","taking","take","takes"],
+a:0,
+jp:"この写真は祖父によって撮られました。",
+ex:"受動態 be + 過去分詞。"
+},
+{
+s:"語句補充",
+p:"I need ( ) my room before dinner.",
+c:["to clean","clean","cleaning","cleaned"],
+a:0,
+jp:"夕食前に部屋を掃除する必要があります。",
+ex:"need to ～。"
+},
+{
+s:"語句補充",
+p:"The test was easier ( ) I expected.",
+c:["than","as","to","for"],
+a:0,
+jp:"そのテストは思ったより簡単でした。",
+ex:"比較級＋than。"
+},
+{
+s:"語句補充",
+p:"We are planning ( ) a trip to Kyoto.",
+c:["to take","take","taking","took"],
+a:0,
+jp:"私たちは京都への旅行を計画しています。",
+ex:"plan to ～。"
+},
+{
+s:"語句補充",
+p:"Have you ever ( ) a foreign country?",
+c:["visited","visit","visiting","visits"],
+a:0,
+jp:"外国を訪れたことがありますか。",
+ex:"現在完了経験。"
+},
+{
+s:"語句補充",
+p:"My mother asked me ( ) the window.",
+c:["to open","open","opening","opened"],
+a:0,
+jp:"母は私に窓を開けるよう頼みました。",
+ex:"ask 人 to ～。"
+},
+{
+s:"語句補充",
+p:"This river is ( ) than that one.",
+c:["longer","long","longest","more long"],
+a:0,
+jp:"この川はあの川より長いです。",
+ex:"比較級。"
+},
+{
+s:"語句補充",
+p:"The students were excited ( ) the school trip.",
+c:["about","with","at","from"],
+a:0,
+jp:"生徒たちは修学旅行を楽しみにしていました。",
+ex:"be excited about。"
+},
+{
+s:"語句補充",
+p:"I have known Ken ( ) three years.",
+c:["for","since","during","after"],
+a:0,
+jp:"私はケンを3年間知っています。",
+ex:"for＋期間。"
+},
+{
+s:"語句補充",
+p:"The book ( ) on the desk belongs to me.",
+c:["which is","who is","where is","when is"],
+a:0,
+jp:"机の上にある本は私のものです。",
+ex:"関係代名詞 which。"
+},
+{
+s:"語句補充",
+p:"You should stop ( ) video games now.",
+c:["playing","play","played","to played"],
+a:0,
+jp:"今はゲームをやめるべきです。",
+ex:"stop ～ing。"
+},
+{
+s:"語句補充",
+p:"My aunt teaches English at a high ( ).",
+c:["school","station","store","hospital"],
+a:0,
+jp:"おばは高校で英語を教えています。",
+ex:"high school。"
+},
+{
+s:"語句補充",
+p:"I was happy ( ) receive your letter.",
+c:["to","for","at","with"],
+a:0,
+jp:"あなたの手紙を受け取ってうれしかったです。",
+ex:"happy to ～。"
+},
+{
+s:"語句補充",
+p:"The weather was bad, ( ) we stayed home.",
+c:["so","because","if","although"],
+a:0,
+jp:"天気が悪かったので家にいました。",
+ex:"結果を表す so。"
+},
+
+{
+s:"会話文",
+p:"A: How often do you practice the piano?\nB: ( )",
+c:[
+"Every day.",
+"In my room.",
+"For two hours.",
+"A piano teacher."
+],
+a:0,
+jp:"毎日です。",
+ex:"頻度を答える。"
+},
+{
+s:"会話文",
+p:"A: What are you looking for?\nB: ( )",
+c:[
+"My notebook.",
+"At the station.",
+"Yesterday afternoon.",
+"Very carefully."
+],
+a:0,
+jp:"私のノートです。",
+ex:"探している物を答える。"
+},
+{
+s:"会話文",
+p:"A: Did you enjoy your trip?\nB: ( )",
+c:[
+"Yes, it was wonderful.",
+"Next summer.",
+"By train.",
+"At the hotel."
+],
+a:0,
+jp:"はい、とても楽しかったです。",
+ex:"旅行の感想を答える。"
+},
+{
+s:"会話文",
+p:"A: What would you like to drink?\nB: ( )",
+c:[
+"Orange juice, please.",
+"At the café.",
+"For lunch.",
+"A glass."
+],
+a:0,
+jp:"オレンジジュースをお願いします。",
+ex:"飲み物を答える。"
+},
+{
+s:"会話文",
+p:"A: When are you going to finish this report?\nB: ( )",
+c:[
+"By tomorrow.",
+"In my office.",
+"With my friend.",
+"Three pages."
+],
+a:0,
+jp:"明日までです。",
+ex:"時期を答える。"
+}
+,
+{
+s:"語順整序",
+p:"( have / for / known / I / him / ten years )",
+c:[
+"I have known him for ten years.",
+"I known have him for ten years.",
+"Have I known him for ten years.",
+"I him have known for ten years."
+],
+a:0,
+jp:"私は彼を10年間知っています。",
+ex:"現在完了＋for。"
+},
+{
+s:"語順整序",
+p:"( wants / my sister / to / be / a nurse )",
+c:[
+"My sister wants to be a nurse.",
+"My sister be wants to a nurse.",
+"Wants my sister to be a nurse.",
+"My sister to wants be a nurse."
+],
+a:0,
+jp:"姉は看護師になりたいと思っています。",
+ex:"want to be ～。"
+},
+{
+s:"語順整序",
+p:"( interested / my father / history / in / is )",
+c:[
+"My father is interested in history.",
+"My father interested is in history.",
+"Is my father interested in history.",
+"In history my father is interested."
+],
+a:0,
+jp:"父は歴史に興味があります。",
+ex:"be interested in。"
+},
+{
+s:"語順整序",
+p:"( asked / me / my teacher / to / study harder )",
+c:[
+"My teacher asked me to study harder.",
+"My teacher me asked to study harder.",
+"Asked my teacher me to study harder.",
+"Study harder my teacher asked me."
+],
+a:0,
+jp:"先生は私にもっと勉強するよう言いました。",
+ex:"ask 人 to ～。"
+},
+{
+s:"語順整序",
+p:"( if / sunny / is / tomorrow / it / go / we / will hiking )",
+c:[
+"If it is sunny tomorrow, we will go hiking.",
+"We will if it is sunny tomorrow go hiking.",
+"If tomorrow sunny is it, we will go hiking.",
+"It is sunny if tomorrow we will go hiking."
+],
+a:0,
+jp:"もし明日晴れならハイキングへ行きます。",
+ex:"if節＋未来。"
+},
+
+{
+s:"長文読解",
+text:"Haruka loves music and has played the piano since she was six years old. Last year she joined a music club and started performing at school events. She enjoys sharing her music with other students.",
+textjp:"ハルカは音楽が大好きです。",
+p:"How long has Haruka played the piano?",
+c:[
+"Since she was six years old.",
+"For one year.",
+"Since last month.",
+"Only at school."
+],
+a:0,
+jp:"6歳の頃からです。",
+ex:"1文目より。"
+},
+{
+s:"長文読解",
+text:"Haruka loves music and has played the piano since she was six years old. Last year she joined a music club and started performing at school events. She enjoys sharing her music with other students.",
+textjp:"ハルカは音楽が大好きです。",
+p:"What club did she join?",
+c:[
+"A music club.",
+"A tennis club.",
+"A science club.",
+"A drama club."
+],
+a:0,
+jp:"音楽クラブです。",
+ex:"2文目より。"
+},
+{
+s:"長文読解",
+text:"Haruka loves music and has played the piano since she was six years old. Last year she joined a music club and started performing at school events. She enjoys sharing her music with other students.",
+textjp:"ハルカは音楽が大好きです。",
+p:"Where did she perform?",
+c:[
+"At school events.",
+"At a station.",
+"At a library.",
+"At a museum."
+],
+a:0,
+jp:"学校行事です。",
+ex:"2文目より。"
+},
+{
+s:"長文読解",
+text:"Haruka loves music and has played the piano since she was six years old. Last year she joined a music club and started performing at school events. She enjoys sharing her music with other students.",
+textjp:"ハルカは音楽が大好きです。",
+p:"Why does Haruka enjoy music?",
+c:[
+"She likes sharing it with others.",
+"She wants money.",
+"She dislikes studying.",
+"He told her to practice."
+],
+a:0,
+jp:"他の生徒と音楽を共有するのが好きだからです。",
+ex:"最後の文より。"
+},
+
+{
+s:"長文読解",
+text:"Kenji visited Hokkaido during summer vacation. He enjoyed the cool weather and beautiful nature. He took many photographs and showed them to his friends when he returned home.",
+textjp:"ケンジは夏休みに北海道を訪れました。",
+p:"When did Kenji visit Hokkaido?",
+c:[
+"During summer vacation.",
+"During winter vacation.",
+"Last weekend.",
+"Yesterday."
+],
+a:0,
+jp:"夏休み中です。",
+ex:"1文目より。"
+},
+{
+s:"長文読解",
+text:"Kenji visited Hokkaido during summer vacation. He enjoyed the cool weather and beautiful nature. He took many photographs and showed them to his friends when he returned home.",
+textjp:"ケンジは夏休みに北海道を訪れました。",
+p:"What did he enjoy?",
+c:[
+"The cool weather and nature.",
+"The busy streets.",
+"The shopping malls.",
+"The amusement parks."
+],
+a:0,
+jp:"涼しい気候と自然です。",
+ex:"2文目より。"
+},
+{
+s:"長文読解",
+text:"Kenji visited Hokkaido during summer vacation. He enjoyed the cool weather and beautiful nature. He took many photographs and showed them to his friends when he returned home.",
+textjp:"ケンジは夏休みに北海道を訪れました。",
+p:"What did he take?",
+c:[
+"Photographs.",
+"Books.",
+"Tickets.",
+"Maps."
+],
+a:0,
+jp:"写真です。",
+ex:"3文目より。"
+},
+{
+s:"長文読解",
+text:"Kenji visited Hokkaido during summer vacation. He enjoyed the cool weather and beautiful nature. He took many photographs and showed them to his friends when he returned home.",
+textjp:"ケンジは夏休みに北海道を訪れました。",
+p:"Who did he show them to?",
+c:[
+"His friends.",
+"His teacher.",
+"His parents.",
+"Tourists."
+],
+a:0,
+jp:"友達です。",
+ex:"3文目より。"
+},
+
+{
+s:"長文読解",
+text:"Aya started learning French online six months ago. She studies for thirty minutes every evening. She hopes to travel to France someday and talk with local people there.",
+textjp:"アヤは6か月前にフランス語学習を始めました。",
+p:"How long has Aya studied French?",
+c:[
+"For six months.",
+"For six years.",
+"For one month.",
+"For one week."
+],
+a:0,
+jp:"6か月です。",
+ex:"1文目より。"
+},
+{
+s:"長文読解",
+text:"Aya started learning French online six months ago. She studies for thirty minutes every evening. She hopes to travel to France someday and talk with local people there.",
+textjp:"アヤは6か月前にフランス語学習を始めました。",
+p:"Why is Aya studying French?",
+c:[
+"She wants to talk with people in France.",
+"She wants a new computer.",
+"She dislikes English.",
+"She will move tomorrow."
+],
+a:0,
+jp:"フランスの人と話したいからです。",
+ex:"最後の文より。"
+},
+
+{
+s:"Eメール読解",
+text:"Hi Tom,\nThank you for helping me prepare for the English test. I got a much better score than before. Let's study together again next month.\nKenta",
+textjp:"ケンタからトムへのメールです。",
+p:"Why is Kenta writing this email?",
+c:[
+"To thank Tom.",
+"To invite Tom to a party.",
+"To borrow a book.",
+"To cancel a lesson."
+],
+a:0,
+jp:"トムにお礼を言うためです。",
+ex:"Thank you for helping me... より。"
+},
+{
+s:"Eメール読解",
+text:"Hi Tom,\nThank you for helping me prepare for the English test. I got a much better score than before. Let's study together again next month.\nKenta",
+textjp:"ケンタからトムへのメールです。",
+p:"What improved?",
+c:[
+"Kenta's test score.",
+"Tom's bicycle.",
+"The classroom.",
+"The weather."
+],
+a:0,
+jp:"テストの点数です。",
+ex:"I got a much better score. より。"
+},
+{
+s:"Eメール読解",
+text:"Dear Emma,\nOur class will visit a science museum on Friday. Please bring your notebook because we will take notes during the visit.\nMs. Brown",
+textjp:"ブラウン先生からエマへのメールです。",
+p:"Where will the class go?",
+c:[
+"A science museum.",
+"A zoo.",
+"A library.",
+"A station."
+],
+a:0,
+jp:"科学博物館です。",
+ex:"本文より。"
+},
+{
+s:"Eメール読解",
+text:"Dear Emma,\nOur class will visit a science museum on Friday. Please bring your notebook because we will take notes during the visit.\nMs. Brown",
+textjp:"ブラウン先生からエマへのメールです。",
+p:"What should students bring?",
+c:[
+"A notebook.",
+"A camera.",
+"A lunch box.",
+"A dictionary."
+],
+a:0,
+jp:"ノートです。",
+ex:"Please bring your notebook. より。"
+},
+{
+s:"Eメール読解",
+text:"Hello Yuki,\nI'm going to join a volunteer activity at the city park this Sunday. We will plant flowers and clean the area. Would you like to join us?\nMika",
+textjp:"ミカからユキへのメールです。",
+p:"What will the volunteers do?",
+c:[
+"Plant flowers and clean the park.",
+"Play soccer.",
+"Study English.",
+"Visit a museum."
+],
+a:0,
+jp:"花を植えて公園を掃除します。",
+ex:"本文より。"
+}
+]
+,
+[
+{
+s:"語句補充",
+p:"My parents encouraged me ( ) harder.",
+c:["to study","study","studying","studied"],
+a:0,
+jp:"両親は私にもっと勉強するよう励ましました。",
+ex:"encourage 人 to ～。"
+},
+{
+s:"語句補充",
+p:"This bridge was ( ) 50 years ago.",
+c:["built","build","building","builds"],
+a:0,
+jp:"この橋は50年前に建てられました。",
+ex:"受動態。"
+},
+{
+s:"語句補充",
+p:"I am interested in ( ) foreign languages.",
+c:["learning","learn","learned","to learned"],
+a:0,
+jp:"私は外国語を学ぶことに興味があります。",
+ex:"in の後は動名詞。"
+},
+{
+s:"語句補充",
+p:"The weather today is much ( ) than yesterday.",
+c:["better","good","best","well"],
+a:0,
+jp:"今日の天気は昨日よりずっと良いです。",
+ex:"比較級。"
+},
+{
+s:"語句補充",
+p:"Have you finished ( ) the report yet?",
+c:["writing","write","written","to write"],
+a:0,
+jp:"そのレポートを書き終えましたか。",
+ex:"finish ～ing。"
+},
+{
+s:"語句補充",
+p:"I have lived in Hakodate ( ) 2018.",
+c:["since","for","during","from"],
+a:0,
+jp:"私は2018年から函館に住んでいます。",
+ex:"since＋時点。"
+},
+{
+s:"語句補充",
+p:"The man ( ) is talking with my father is our coach.",
+c:["who","which","where","when"],
+a:0,
+jp:"父と話している男性は私たちのコーチです。",
+ex:"関係代名詞 who。"
+},
+{
+s:"語句補充",
+p:"My sister decided ( ) medicine at university.",
+c:["to study","study","studying","studied"],
+a:0,
+jp:"姉は大学で医学を学ぶことを決めました。",
+ex:"decide to ～。"
+},
+{
+s:"語句補充",
+p:"We were surprised ( ) the news.",
+c:["by","at","for","to"],
+a:0,
+jp:"私たちはその知らせに驚きました。",
+ex:"be surprised by ～。"
+},
+{
+s:"語句補充",
+p:"Tom can run ( ) than any other student.",
+c:["faster","fast","fastest","more fast"],
+a:0,
+jp:"トムはどの生徒よりも速く走れます。",
+ex:"比較級。"
+},
+{
+s:"語句補充",
+p:"You should be careful ( ) driving in the rain.",
+c:["when","than","because","if"],
+a:0,
+jp:"雨の日の運転には注意すべきです。",
+ex:"when ～ing。"
+},
+{
+s:"語句補充",
+p:"The students are looking forward to ( ) summer vacation.",
+c:["having","have","had","has"],
+a:0,
+jp:"生徒たちは夏休みを楽しみにしています。",
+ex:"look forward to ～ing。"
+},
+{
+s:"語句補充",
+p:"My grandfather told me ( ) up early.",
+c:["to get","get","getting","got"],
+a:0,
+jp:"祖父は私に早起きするよう言いました。",
+ex:"tell 人 to ～。"
+},
+{
+s:"語句補充",
+p:"This is the most exciting movie I have ever ( ).",
+c:["seen","see","seeing","saw"],
+a:0,
+jp:"これは私が今まで見た中で最もわくわくする映画です。",
+ex:"現在完了。"
+},
+{
+s:"語句補充",
+p:"I was late, ( ) I missed the bus.",
+c:["so","but","or","although"],
+a:0,
+jp:"私は遅れたのでバスに乗り遅れました。",
+ex:"結果を表す so。"
+},
+
+{
+s:"会話文",
+p:"A: What are your plans for the future?\nB: ( )",
+c:[
+"I want to become a doctor.",
+"At the hospital.",
+"Every weekend.",
+"Very interesting."
+],
+a:0,
+jp:"医者になりたいです。",
+ex:"将来の夢を答える。"
+},
+{
+s:"会話文",
+p:"A: How was your presentation?\nB: ( )",
+c:[
+"It went well.",
+"In the classroom.",
+"Next week.",
+"A notebook."
+],
+a:0,
+jp:"うまくいきました。",
+ex:"発表の感想。"
+},
+{
+s:"会話文",
+p:"A: Why don't you join our club?\nB: ( )",
+c:[
+"I'll think about it.",
+"Every Tuesday.",
+"At school.",
+"A soccer ball."
+],
+a:0,
+jp:"考えてみます。",
+ex:"勧誘への返答。"
+},
+{
+s:"会話文",
+p:"A: Have you ever been to Tokyo?\nB: ( )",
+c:[
+"Yes, twice.",
+"In April.",
+"By train.",
+"At Tokyo Station."
+],
+a:0,
+jp:"はい、2回あります。",
+ex:"経験を答える。"
+},
+{
+s:"会話文",
+p:"A: Could you tell me the way to the library?\nB: ( )",
+c:[
+"Go straight and turn left.",
+"Every afternoon.",
+"A history book.",
+"About ten minutes."
+],
+a:0,
+jp:"まっすぐ進んで左に曲がってください。",
+ex:"道案内をする。"
+}
+,
+{
+s:"語順整序",
+p:"( have / since / I / lived / here / 2018 )",
+c:[
+"I have lived here since 2018.",
+"I lived have here since 2018.",
+"Have I lived here since 2018.",
+"I here have lived since 2018."
+],
+a:0,
+jp:"私は2018年からここに住んでいます。",
+ex:"現在完了＋since。"
+},
+{
+s:"語順整序",
+p:"( decided / my brother / to / study / English / abroad )",
+c:[
+"My brother decided to study English abroad.",
+"My brother study decided to English abroad.",
+"Decided my brother to study English abroad.",
+"My brother to decided study English abroad."
+],
+a:0,
+jp:"兄は海外で英語を勉強することを決めました。",
+ex:"decide to ～。"
+},
+{
+s:"語順整序",
+p:"( interested / are / many children / in / animals )",
+c:[
+"Many children are interested in animals.",
+"Many children interested are in animals.",
+"Are many children interested in animals.",
+"In animals many children are interested."
+],
+a:0,
+jp:"多くの子どもたちが動物に興味を持っています。",
+ex:"be interested in。"
+},
+{
+s:"語順整序",
+p:"( me / my mother / asked / to / clean / my room )",
+c:[
+"My mother asked me to clean my room.",
+"My mother me asked to clean my room.",
+"Asked my mother me to clean my room.",
+"Clean my room my mother asked me."
+],
+a:0,
+jp:"母は私に部屋を掃除するよう言いました。",
+ex:"ask 人 to ～。"
+},
+{
+s:"語順整序",
+p:"( if / tomorrow / it / rains / stay / we / home / will )",
+c:[
+"If it rains tomorrow, we will stay home.",
+"We will if it rains tomorrow stay home.",
+"If tomorrow rains it we will stay home.",
+"It rains if tomorrow we will stay home."
+],
+a:0,
+jp:"もし明日雨なら家にいます。",
+ex:"if節＋未来。"
+},
+
+{
+s:"長文読解",
+text:"Sara enjoys cooking with her grandmother. Every Sunday they make different dishes together. Sara has learned many recipes and hopes to open her own restaurant in the future.",
+textjp:"サラは祖母と料理をするのが好きです。",
+p:"Who does Sara cook with?",
+c:[
+"Her grandmother.",
+"Her mother.",
+"Her teacher.",
+"Her friend."
+],
+a:0,
+jp:"祖母です。",
+ex:"1文目より。"
+},
+{
+s:"長文読解",
+text:"Sara enjoys cooking with her grandmother. Every Sunday they make different dishes together. Sara has learned many recipes and hopes to open her own restaurant in the future.",
+textjp:"サラは祖母と料理をするのが好きです。",
+p:"When do they cook together?",
+c:[
+"Every Sunday.",
+"Every Saturday.",
+"Every day.",
+"Once a month."
+],
+a:0,
+jp:"毎週日曜日です。",
+ex:"2文目より。"
+},
+{
+s:"長文読解",
+text:"Sara enjoys cooking with her grandmother. Every Sunday they make different dishes together. Sara has learned many recipes and hopes to open her own restaurant in the future.",
+textjp:"サラは祖母と料理をするのが好きです。",
+p:"What has Sara learned?",
+c:[
+"Many recipes.",
+"Many languages.",
+"Many sports.",
+"Many songs."
+],
+a:0,
+jp:"たくさんのレシピです。",
+ex:"3文目より。"
+},
+{
+s:"長文読解",
+text:"Sara enjoys cooking with her grandmother. Every Sunday they make different dishes together. Sara has learned many recipes and hopes to open her own restaurant in the future.",
+textjp:"サラは祖母と料理をするのが好きです。",
+p:"What is Sara's dream?",
+c:[
+"To open a restaurant.",
+"To become a doctor.",
+"To travel abroad.",
+"To teach English."
+],
+a:0,
+jp:"レストランを開くことです。",
+ex:"3文目より。"
+},
+
+{
+s:"長文読解",
+text:"Takuya joined a volunteer group last year. The group cleans beaches and parks near his town. Takuya believes that small actions can help protect the environment.",
+textjp:"タクヤは昨年ボランティア団体に入りました。",
+p:"When did Takuya join the group?",
+c:[
+"Last year.",
+"Last month.",
+"Yesterday.",
+"Last week."
+],
+a:0,
+jp:"昨年です。",
+ex:"1文目より。"
+},
+{
+s:"長文読解",
+text:"Takuya joined a volunteer group last year. The group cleans beaches and parks near his town. Takuya believes that small actions can help protect the environment.",
+textjp:"タクヤは昨年ボランティア団体に入りました。",
+p:"What does the group clean?",
+c:[
+"Beaches and parks.",
+"Schools and hospitals.",
+"Roads and stations.",
+"Libraries and museums."
+],
+a:0,
+jp:"海岸と公園です。",
+ex:"2文目より。"
+},
+{
+s:"長文読解",
+text:"Takuya joined a volunteer group last year. The group cleans beaches and parks near his town. Takuya believes that small actions can help protect the environment.",
+textjp:"タクヤは昨年ボランティア団体に入りました。",
+p:"What does Takuya want to protect?",
+c:[
+"The environment.",
+"His bicycle.",
+"His house.",
+"His school."
+],
+a:0,
+jp:"環境です。",
+ex:"3文目より。"
+},
+{
+s:"長文読解",
+text:"Takuya joined a volunteer group last year. The group cleans beaches and parks near his town. Takuya believes that small actions can help protect the environment.",
+textjp:"タクヤは昨年ボランティア団体に入りました。",
+p:"What does Takuya believe?",
+c:[
+"Small actions can make a difference.",
+"Only adults can help.",
+"Cleaning is boring.",
+"Volunteering is difficult."
+],
+a:0,
+jp:"小さな行動でも役立つと信じています。",
+ex:"3文目より。"
+},
+
+{
+s:"長文読解",
+text:"Akari likes reading books about space. Recently she borrowed several books about planets from the library. She wants to learn more about the universe and become a scientist someday.",
+textjp:"アカリは宇宙についての本を読むのが好きです。",
+p:"What does Akari like reading about?",
+c:[
+"Space.",
+"Animals.",
+"History.",
+"Sports."
+],
+a:0,
+jp:"宇宙です。",
+ex:"1文目より。"
+},
+{
+s:"長文読解",
+text:"Akari likes reading books about space. Recently she borrowed several books about planets from the library. She wants to learn more about the universe and become a scientist someday.",
+textjp:"アカリは宇宙についての本を読むのが好きです。",
+p:"What does she want to become?",
+c:[
+"A scientist.",
+"A pilot.",
+"A teacher.",
+"A nurse."
+],
+a:0,
+jp:"科学者です。",
+ex:"3文目より。"
+},
+
+{
+s:"Eメール読解",
+text:"Hi Yuki,\nOur basketball team will have a practice game this Saturday. Please come to the gym by 9:00 a.m. Don't forget your uniform.\nCoach Sato",
+textjp:"佐藤コーチからユキへのメールです。",
+p:"What will the team have on Saturday?",
+c:[
+"A practice game.",
+"A school festival.",
+"A concert.",
+"A field trip."
+],
+a:0,
+jp:"練習試合です。",
+ex:"1文目より。"
+},
+{
+s:"Eメール読解",
+text:"Hi Yuki,\nOur basketball team will have a practice game this Saturday. Please come to the gym by 9:00 a.m. Don't forget your uniform.\nCoach Sato",
+textjp:"佐藤コーチからユキへのメールです。",
+p:"What should Yuki bring?",
+c:[
+"A uniform.",
+"A dictionary.",
+"A lunch box.",
+"A camera."
+],
+a:0,
+jp:"ユニフォームです。",
+ex:"Don't forget your uniform. より。"
+},
+{
+s:"Eメール読解",
+text:"Dear Ken,\nThank you for coming to my birthday party yesterday. I had a wonderful time. The book you gave me was very interesting.\nAki",
+textjp:"アキからケンへのメールです。",
+p:"Why is Aki writing this email?",
+c:[
+"To thank Ken.",
+"To borrow a book.",
+"To invite Ken.",
+"To apologize."
+],
+a:0,
+jp:"ケンにお礼を言うためです。",
+ex:"Thank you for coming... より。"
+},
+{
+s:"Eメール読解",
+text:"Dear Ken,\nThank you for coming to my birthday party yesterday. I had a wonderful time. The book you gave me was very interesting.\nAki",
+textjp:"アキからケンへのメールです。",
+p:"What present did Ken give Aki?",
+c:[
+"A book.",
+"A watch.",
+"A bag.",
+"A bicycle."
+],
+a:0,
+jp:"本です。",
+ex:"The book you gave me... より。"
+},
+{
+s:"Eメール読解",
+text:"Hello Emma,\nI'm going to visit Osaka during winter vacation. Do you know any famous places that I should see there?\nRina",
+textjp:"リナからエマへのメールです。",
+p:"What information does Rina want?",
+c:[
+"Famous places in Osaka.",
+"Train tickets.",
+"A hotel reservation.",
+"English homework."
+],
+a:0,
+jp:"大阪の有名な場所です。",
+ex:"famous places that I should see there より。"
+}
+]
+,
+[
+{
+s:"語句補充",
+p:"I am thinking about ( ) a new computer.",
+c:["buying","buy","bought","to bought"],
+a:0,
+jp:"私は新しいコンピューターを買うことを考えています。",
+ex:"think about の後は ～ing。"
+},
+{
+s:"語句補充",
+p:"The school festival was ( ) by many people.",
+c:["enjoyed","enjoy","enjoying","enjoys"],
+a:0,
+jp:"文化祭は多くの人に楽しまれました。",
+ex:"受動態。"
+},
+{
+s:"語句補充",
+p:"My brother hopes ( ) overseas someday.",
+c:["to work","work","working","worked"],
+a:0,
+jp:"兄はいつか海外で働きたいと思っています。",
+ex:"hope to ～。"
+},
+{
+s:"語句補充",
+p:"This book is much ( ) than I expected.",
+c:["more interesting","interesting","most interesting","interest"],
+a:0,
+jp:"この本は思ったより面白いです。",
+ex:"比較級。"
+},
+{
+s:"語句補充",
+p:"I have not finished ( ) this novel yet.",
+c:["reading","read","reads","to read"],
+a:0,
+jp:"私はまだこの小説を読み終えていません。",
+ex:"finish ～ing。"
+},
+{
+s:"語句補充",
+p:"She has lived in Tokyo ( ) three years.",
+c:["for","since","from","during"],
+a:0,
+jp:"彼女は東京に3年間住んでいます。",
+ex:"for＋期間。"
+},
+{
+s:"語句補充",
+p:"The woman ( ) is speaking on the stage is a famous writer.",
+c:["who","which","where","when"],
+a:0,
+jp:"ステージで話している女性は有名な作家です。",
+ex:"関係代名詞 who。"
+},
+{
+s:"語句補充",
+p:"My teacher advised me ( ) harder.",
+c:["to study","study","studying","studied"],
+a:0,
+jp:"先生は私にもっと勉強するよう助言しました。",
+ex:"advise 人 to ～。"
+},
+{
+s:"語句補充",
+p:"The children were excited ( ) going on a trip.",
+c:["about","with","for","at"],
+a:0,
+jp:"子どもたちは旅行に行くことを楽しみにしていました。",
+ex:"be excited about。"
+},
+{
+s:"語句補充",
+p:"Ken can swim ( ) than his brother.",
+c:["faster","fast","fastest","more fast"],
+a:0,
+jp:"ケンは兄より速く泳げます。",
+ex:"比較級。"
+},
+{
+s:"語句補充",
+p:"I am looking forward to ( ) you again.",
+c:["seeing","see","saw","seen"],
+a:0,
+jp:"また会えるのを楽しみにしています。",
+ex:"look forward to ～ing。"
+},
+{
+s:"語句補充",
+p:"This is one of the best movies I have ever ( ).",
+c:["seen","see","seeing","saw"],
+a:0,
+jp:"これは私が今まで見た中で最高の映画の一つです。",
+ex:"現在完了。"
+},
+{
+s:"語句補充",
+p:"You must practice every day ( ) improve your English.",
+c:["to","for","at","with"],
+a:0,
+jp:"英語を上達させるため毎日練習しなければなりません。",
+ex:"to 不定詞（目的）。"
+},
+{
+s:"語句補充",
+p:"The game was exciting, ( ) everyone enjoyed it.",
+c:["so","although","because","if"],
+a:0,
+jp:"その試合は面白かったので皆楽しみました。",
+ex:"結果を表す so。"
+},
+{
+s:"語句補充",
+p:"My cousin is interested in ( ) photographs.",
+c:["taking","take","took","taken"],
+a:0,
+jp:"いとこは写真を撮ることに興味があります。",
+ex:"in の後は動名詞。"
+},
+
+{
+s:"会話文",
+p:"A: What did you do during summer vacation?\nB: ( )",
+c:[
+"I visited my grandparents.",
+"Next month.",
+"At the station.",
+"For three days."
+],
+a:0,
+jp:"祖父母を訪ねました。",
+ex:"何をしたかを答える。"
+},
+{
+s:"会話文",
+p:"A: How long does it take to get there?\nB: ( )",
+c:[
+"About thirty minutes.",
+"By bus.",
+"Last week.",
+"Very often."
+],
+a:0,
+jp:"約30分です。",
+ex:"所要時間を答える。"
+},
+{
+s:"会話文",
+p:"A: What do you want to do after high school?\nB: ( )",
+c:[
+"I want to go to university.",
+"At the library.",
+"Every day.",
+"A science book."
+],
+a:0,
+jp:"大学へ進学したいです。",
+ex:"将来の予定を答える。"
+},
+{
+s:"会話文",
+p:"A: Could I borrow your dictionary?\nB: ( )",
+c:[
+"Sure, here you are.",
+"In my bag.",
+"Tomorrow morning.",
+"Three dictionaries."
+],
+a:0,
+jp:"もちろん、どうぞ。",
+ex:"依頼への承諾。"
+},
+{
+s:"会話文",
+p:"A: Why are you learning English?\nB: ( )",
+c:[
+"Because I want to travel abroad.",
+"At school.",
+"Every evening.",
+"My teacher."
+],
+a:0,
+jp:"海外旅行をしたいからです。",
+ex:"理由を答える。"
+}
+,
+{
+s:"語順整序",
+p:"( have / lived / my grandparents / here / for / many years )",
+c:[
+"My grandparents have lived here for many years.",
+"My grandparents lived have here for many years.",
+"Have my grandparents lived here for many years.",
+"My grandparents here have lived for many years."
+],
+a:0,
+jp:"祖父母は長年ここに住んでいます。",
+ex:"現在完了＋for。"
+},
+{
+s:"語順整序",
+p:"( wants / my friend / to / study / abroad )",
+c:[
+"My friend wants to study abroad.",
+"My friend study wants to abroad.",
+"Wants my friend to study abroad.",
+"My friend to wants study abroad."
+],
+a:0,
+jp:"友達は留学したいと思っています。",
+ex:"want to ～。"
+},
+{
+s:"語順整序",
+p:"( interested / are / many students / in / science )",
+c:[
+"Many students are interested in science.",
+"Many students interested are in science.",
+"Are many students interested in science.",
+"In science many students are interested."
+],
+a:0,
+jp:"多くの生徒が科学に興味を持っています。",
+ex:"be interested in。"
+},
+{
+s:"語順整序",
+p:"( me / my father / advised / to / exercise / regularly )",
+c:[
+"My father advised me to exercise regularly.",
+"My father me advised to exercise regularly.",
+"Advised my father me to exercise regularly.",
+"Exercise regularly my father advised me."
+],
+a:0,
+jp:"父は私に定期的に運動するよう勧めました。",
+ex:"advise 人 to ～。"
+},
+{
+s:"語順整序",
+p:"( if / tomorrow / it / is / sunny / we / will / go fishing )",
+c:[
+"If it is sunny tomorrow, we will go fishing.",
+"We will if it is sunny tomorrow go fishing.",
+"If tomorrow sunny is it we will go fishing.",
+"It is sunny if tomorrow we will go fishing."
+],
+a:0,
+jp:"もし明日晴れなら釣りに行きます。",
+ex:"if節＋未来。"
+},
+
+{
+s:"長文読解",
+text:"Ryo loves animals and volunteers at a local animal shelter every weekend. He helps feed the dogs and cleans their rooms. He wants to become a veterinarian in the future.",
+textjp:"リョウは毎週末動物保護施設でボランティアをしています。",
+p:"Where does Ryo volunteer?",
+c:[
+"At an animal shelter.",
+"At a hospital.",
+"At a library.",
+"At a school."
+],
+a:0,
+jp:"動物保護施設です。",
+ex:"1文目より。"
+},
+{
+s:"長文読解",
+text:"Ryo loves animals and volunteers at a local animal shelter every weekend. He helps feed the dogs and cleans their rooms. He wants to become a veterinarian in the future.",
+textjp:"リョウは毎週末動物保護施設でボランティアをしています。",
+p:"What does he do there?",
+c:[
+"He feeds dogs and cleans rooms.",
+"He teaches students.",
+"He sells food.",
+"He grows vegetables."
+],
+a:0,
+jp:"犬にえさを与え、部屋を掃除します。",
+ex:"2文目より。"
+},
+{
+s:"長文読解",
+text:"Ryo loves animals and volunteers at a local animal shelter every weekend. He helps feed the dogs and cleans their rooms. He wants to become a veterinarian in the future.",
+textjp:"リョウは毎週末動物保護施設でボランティアをしています。",
+p:"How often does he volunteer?",
+c:[
+"Every weekend.",
+"Every day.",
+"Once a month.",
+"Twice a year."
+],
+a:0,
+jp:"毎週末です。",
+ex:"1文目より。"
+},
+{
+s:"長文読解",
+text:"Ryo loves animals and volunteers at a local animal shelter every weekend. He helps feed the dogs and cleans their rooms. He wants to become a veterinarian in the future.",
+textjp:"リョウは毎週末動物保護施設でボランティアをしています。",
+p:"What does he want to become?",
+c:[
+"A veterinarian.",
+"A teacher.",
+"A pilot.",
+"A chef."
+],
+a:0,
+jp:"獣医です。",
+ex:"3文目より。"
+},
+
+{
+s:"長文読解",
+text:"Mina joined an online English conversation class last year. She talks with students from different countries every week. Her English has improved and she has made many new friends.",
+textjp:"ミナは昨年オンライン英会話クラスに参加しました。",
+p:"When did Mina join the class?",
+c:[
+"Last year.",
+"Last month.",
+"This week.",
+"Yesterday."
+],
+a:0,
+jp:"昨年です。",
+ex:"1文目より。"
+},
+{
+s:"長文読解",
+text:"Mina joined an online English conversation class last year. She talks with students from different countries every week. Her English has improved and she has made many new friends.",
+textjp:"ミナは昨年オンライン英会話クラスに参加しました。",
+p:"Who does she talk with?",
+c:[
+"Students from different countries.",
+"Only her teacher.",
+"Her family.",
+"Tourists."
+],
+a:0,
+jp:"さまざまな国の生徒です。",
+ex:"2文目より。"
+},
+{
+s:"長文読解",
+text:"Mina joined an online English conversation class last year. She talks with students from different countries every week. Her English has improved and she has made many new friends.",
+textjp:"ミナは昨年オンライン英会話クラスに参加しました。",
+p:"How often does she talk with them?",
+c:[
+"Every week.",
+"Every month.",
+"Every day.",
+"Twice a year."
+],
+a:0,
+jp:"毎週です。",
+ex:"2文目より。"
+},
+{
+s:"長文読解",
+text:"Mina joined an online English conversation class last year. She talks with students from different countries every week. Her English has improved and she has made many new friends.",
+textjp:"ミナは昨年オンライン英会話クラスに参加しました。",
+p:"What improved?",
+c:[
+"Her English.",
+"Her bicycle.",
+"Her house.",
+"Her computer."
+],
+a:0,
+jp:"英語力です。",
+ex:"3文目より。"
+},
+
+{
+s:"長文読解",
+text:"Takumi and his classmates planted trees near their school last spring. The project was organized to make the area greener. Takumi was happy because he could help the environment.",
+textjp:"タクミたちは学校の近くに木を植えました。",
+p:"What did Takumi and his classmates do?",
+c:[
+"They planted trees.",
+"They built a school.",
+"They cleaned a river.",
+"They painted a wall."
+],
+a:0,
+jp:"木を植えました。",
+ex:"1文目より。"
+},
+{
+s:"長文読解",
+text:"Takumi and his classmates planted trees near their school last spring. The project was organized to make the area greener. Takumi was happy because he could help the environment.",
+textjp:"タクミたちは学校の近くに木を植えました。",
+p:"Why was Takumi happy?",
+c:[
+"He could help the environment.",
+"He got a prize.",
+"He traveled abroad.",
+"He bought a bicycle."
+],
+a:0,
+jp:"環境保護に役立てたからです。",
+ex:"最後の文より。"
+},
+
+{
+s:"Eメール読解",
+text:"Hi Ken,\nOur class is planning a trip to the science museum next Friday. Please submit the permission form by Wednesday.\nMr. Tanaka",
+textjp:"田中先生からケンへのメールです。",
+p:"Where will the class go?",
+c:[
+"A science museum.",
+"A zoo.",
+"A park.",
+"A stadium."
+],
+a:0,
+jp:"科学博物館です。",
+ex:"1文目より。"
+},
+{
+s:"Eメール読解",
+text:"Hi Ken,\nOur class is planning a trip to the science museum next Friday. Please submit the permission form by Wednesday.\nMr. Tanaka",
+textjp:"田中先生からケンへのメールです。",
+p:"What should Ken submit?",
+c:[
+"A permission form.",
+"A report.",
+"A ticket.",
+"A notebook."
+],
+a:0,
+jp:"参加承諾書です。",
+ex:"2文目より。"
+},
+{
+s:"Eメール読解",
+text:"Dear Yuki,\nThank you for helping at the volunteer event last weekend. Many people enjoyed the activities, and your support was very important.\nMika",
+textjp:"ミカからユキへのメールです。",
+p:"Why is Mika writing this email?",
+c:[
+"To thank Yuki.",
+"To invite Yuki.",
+"To apologize.",
+"To borrow money."
+],
+a:0,
+jp:"お礼を言うためです。",
+ex:"Thank you for helping... より。"
+},
+{
+s:"Eメール読解",
+text:"Dear Yuki,\nThank you for helping at the volunteer event last weekend. Many people enjoyed the activities, and your support was very important.\nMika",
+textjp:"ミカからユキへのメールです。",
+p:"When was the volunteer event?",
+c:[
+"Last weekend.",
+"Yesterday.",
+"Today.",
+"Next week."
+],
+a:0,
+jp:"先週末です。",
+ex:"本文より。"
+},
+{
+s:"Eメール読解",
+text:"Hello Tom,\nI'm going to stay in Kyoto for three days during spring vacation. Could you tell me some good restaurants there?\nAoi",
+textjp:"アオイからトムへのメールです。",
+p:"What does Aoi want to know?",
+c:[
+"Good restaurants in Kyoto.",
+"Train schedules.",
+"English homework.",
+"Hotel prices."
+],
+a:0,
+jp:"京都のおすすめレストランです。",
+ex:"Could you tell me some good restaurants there? より。"
+}
+]
+
+];
+
+let Q = [];
+let i = 0;
+let ans = {};
+let ROUND = 0;
+
+let RANDOM_MODE = false;
+const $ = x => document.querySelector(x);
+document
+ .querySelectorAll(".roundBtn")
+ .forEach(btn=>{
+
+   btn.onclick=()=>{
+
+     document
+      .querySelectorAll(".roundBtn")
+      .forEach(b=>{
+        b.classList.remove("active");
+      });
+
+     btn.classList.add("active");
+
+     ROUND =
+      Number(btn.dataset.round);
+
+   };
+
+ });
+$("#randomMode").onclick = ()=>{
+
+  RANDOM_MODE = true;
+
+  document
+   .querySelectorAll(".roundBtn")
+   .forEach(b=>{
+     b.classList.remove("active");
+   });
+
+  $("#randomMode")
+    .classList.add("active");
+
+};
+function shuffle(arr){
+
+  for(let i = arr.length - 1; i > 0; i--){
+
+    const j =
+      Math.floor(
+        Math.random() * (i + 1)
+      );
+
+    [arr[i], arr[j]] =
+    [arr[j], arr[i]];
+
+  }
+
+}
+
+function load(){
+
+ 
+if(RANDOM_MODE){
+
+  let vocab = [];
+  let conversation = [];
+  let order = [];
+  let reading = [];
+  let email = [];
+
+  BANK.flat().forEach(q=>{
+
+    if(q.s==="語句補充"){
+      vocab.push(q);
+    }
+    else if(q.s==="会話文"){
+      conversation.push(q);
+    }
+    else if(q.s==="語順整序"){
+      order.push(q);
+    }
+    else if(q.s==="長文読解"){
+      reading.push(q);
+    }
+    else if(q.s==="Eメール読解"){
+      email.push(q);
+    }
+
+  });
+
+  shuffle(vocab);
+  shuffle(conversation);
+  shuffle(order);
+  shuffle(reading);
+  shuffle(email);
+
+  Q = [
+    ...vocab.slice(0,15),
+    ...conversation.slice(0,5),
+    ...order.slice(0,5),
+    ...reading.slice(0,10),
+    ...email.slice(0,5)
+  ];
+}
+else{
+
+  Q = JSON.parse(
+    JSON.stringify(BANK[ROUND] || [])
+  );
+
+}
+  Q.forEach(q=>{
+
+    let items = q.c.map(
+      (text,n)=>({
+        text:text,
+        ok:n===q.a
+      })
+    );
+
+    shuffle(items);
+
+    q.c = items.map(
+      v=>v.text
+    );
+
+    q.a = items.findIndex(
+      v=>v.ok
+    );
+
+  });
+
+}
+
+function render(){
+
+  let q = Q[i];
+
+ $("#where").textContent =
+ RANDOM_MODE
+ ? `総合ランダム ${i+1}/40`
+ : `第${ROUND+1}回 ${i+1}/40`;
+
+  $("#no").textContent =
+    `QUESTION ${i+1}`;
+
+  $("#pass").innerHTML = q.text
+    ? `
+        <div class="feedback">
+          ${q.text}
+        </div>
+      `
+    : "";
+
+  $("#prompt").textContent =
+    q.p;
+  let html = "";
+
+  q.c.forEach((choice,n)=>{
+
+    html += `
+      <button
+       class="choice ${ans[i]===n ? 'active':''}"
+        onclick="selectAnswer(${n})">
+        ${String.fromCharCode(65+n)}.
+        ${choice}
+      </button>
+    `;
+
+  });
+
+  html += `
+<button
+  class="primary"
+  onclick="showExplanation()">
+  解説を見る
+</button>
+`;
+
+$("#input").innerHTML = html;
+$("#jump").innerHTML =
+
+Q.map((q,n)=>{
+
+  let cls = "jumpBtn";
+
+  if(n===i){
+    cls += " current";
+  }
+  else if(ans[n]!==undefined){
+    cls += " done";
+  }
+
+  return `
+    <button
+      class="${cls}"
+      onclick="jumpTo(${n})">
+      ${n+1}
+    </button>
+  `;
+
+}).join("");
+$("#fb").innerHTML = "";
+
+}
+
+function selectAnswer(n){
+
+  ans[i] = n;
+
+  render();
+
+}
+
+function jumpTo(n){
+
+  i = n;
+
+  render();
+
+}
+
+function showExplanation(){
+
+  let q = Q[i];
+
+  let correct =
+    ans[i] === q.a;
+
+  $("#fb").innerHTML = `
+    <div class="feedback">
+      <b>
+      ${correct ? "○ 正解" : "× 不正解"}
+      </b>
+
+      <p>
+      正答：
+      ${q.c[q.a]}
+      </p>
+
+      <p>
+      全訳：
+      ${q.jp}
+      </p>
+
+      <p>
+      解説：
+      ${q.ex}
+      </p>
+
+    </div>
+  `;
+
+  $("#fb").scrollIntoView({
+    behavior:"smooth",
+    block:"start"
+  });
+
+}
+
+function finish(){
+
+  let score = Q.reduce(
+    (a,q,n)=>a+(ans[n]===q.a),
+    0
+  );
+
+  // 試験画面を隠す
+  $("#exam").classList.add("hide");
+
+  // 結果画面を表示
+  $("#result").classList.remove("hide");
+
+  // スコア表示
+ $("#score").textContent =
+RANDOM_MODE
+ ? `総合ランダム ${score}/${Q.length}`
+ : `第${ROUND+1}回 ${score}/${Q.length}`;
+
+  // 復習一覧生成
+  $("#reviews").innerHTML =
+
+    Q.map((q,n)=>{
+
+      const correct =
+        ans[n]===q.a;
+
+      return `
+
+      <div class="feedback"
+           style="
+             margin-bottom:15px;
+             background:${
+               correct
+                 ? '#dcfce7'
+                 : '#fee2e2'
+             };
+           ">
+
+        <h3>
+          問${n+1}
+          ${correct ? "○" : "×"}
+        </h3>
+
+        <p>
+          <b>問題</b><br>
+          ${q.p}
+        </p>
+
+        <p>
+          <b>正答</b><br>
+          ${q.c[q.a]}
+        </p>
+
+        <p>
+          <b>全訳</b><br>
+          ${q.jp}
+        </p>
+
+        <p>
+          <b>解説</b><br>
+          ${q.ex}
+        </p>
+
+      </div>
+
+      `;
+
+    }).join("");
+
+}
+$("#go").onclick = ()=>{
+
+  if(!BANK[0].length){
+
+    alert(
+      "まだ問題が登録されていません。"
+    );
+
+    return;
+  }
+
+  load();
+
+  $("#start").classList.add("hide");
+  $("#exam").classList.remove("hide");
+
+  render();
+
+};
+
+$("#prev").onclick = ()=>{
+  if(i>0){
+    i--;
+    render();
+
+    window.scrollTo({
+      top:0,
+      behavior:"smooth"
+    });
+  }
+};
+
+$("#next").onclick = ()=>{
+  if(i < Q.length - 1){
+    i++;
+    render();
+
+    window.scrollTo({
+      top:0,
+      behavior:"smooth"
+    });
+
+  }else{
+    finish();
+  }
+};
+
+$("#home").onclick = ()=>{
+
+  if(
+    confirm("タイトル画面へ戻りますか？")
+  ){
+    location.reload();
+  }
+
+};
+</script>
+
+</body>
+</html>
