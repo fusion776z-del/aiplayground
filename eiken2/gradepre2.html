@@ -1889,56 +1889,53 @@ RANDOM_MODE
   // 復習一覧生成
   $("#reviews").innerHTML =
 
-    Q.map((q,n)=>{
+ Q.map((q,n)=>{
+  const correct =
+    ans[n]===q.a;
 
-      const correct =
-        ans[n]===q.a;
+  const answerText =
+    q.c
+      ? q.c[q.a]
+      : q.sample;
 
-      return `
+  return `
+  <div class="feedback"
+       style="
+         margin-bottom:15px;
+         background:${
+           correct
+             ? '#dcfce7'
+             : '#fee2e2'
+         };
+       ">
+    <h3>
+      問${n+1}
+      ${correct ? "○" : "×"}
+    </h3>
 
-      <div class="feedback"
-           style="
-             margin-bottom:15px;
-             background:${
-               correct
-                 ? '#dcfce7'
-                 : '#fee2e2'
-             };
-           ">
+    <p>
+      <b>問題</b><br>
+      ${q.p}
+    </p>
 
-        <h3>
-          問${n+1}
-          ${correct ? "○" : "×"}
-        </h3>
+    <p>
+      <b>正答</b><br>
+      ${answerText}
+    </p>
 
-        <p>
-          <b>問題</b><br>
-          ${q.p}
-        </p>
+    <p>
+      <b>全訳</b><br>
+      ${q.jp || q.samplejp || ""}
+    </p>
 
-        <p>
-          <b>正答</b><br>
-          let answerText =
- q.c
- ? q.c[q.a]
- : q.sample;
-        </p>
-
-        <p>
-          <b>全訳</b><br>
-          ${q.jp}
-        </p>
-
-        <p>
-          <b>解説</b><br>
-          ${q.ex}
-        </p>
-
-      </div>
-
-      `;
-
-    }).join("");
+    <p>
+      <b>解説</b><br>
+      ${q.ex}
+    </p>
+  </div>
+  `;
+})
+.join("");
 
 }
 $("#go").onclick = ()=>{
