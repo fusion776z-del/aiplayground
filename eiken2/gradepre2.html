@@ -124,6 +124,10 @@ footer{
 .jumpBtn.done{
   background:#86efac;
 }
+.jumpBtn.wrong{
+  background:#fca5a5;
+  color:#7f1d1d;
+}
 .rounds{
   display:grid;
   grid-template-columns:repeat(3,1fr);
@@ -1793,12 +1797,18 @@ Q.map((q,n)=>{
 
   let cls = "jumpBtn";
 
-  if(n===i){
-    cls += " current";
-  }
-  else if(ans[n]!==undefined){
+if(n===i){
+  cls += " current";
+}
+else if(ans[n]!==undefined){
+
+  if(ans[n]===Q[n].a){
     cls += " done";
+  }else{
+    cls += " wrong";
   }
+
+}
 
   return `
     <button
