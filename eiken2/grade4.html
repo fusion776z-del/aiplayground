@@ -2110,30 +2110,76 @@ function load(){
 
 if(RANDOM_MODE){
 
-   let all = [];
+   let reading = [];
+   let others = [];
 
-   BANK.forEach(set=>{
-      all.push(...set);
+   BANK.flat().forEach(q=>{
+
+      if(q.s==="長文読解"){
+         reading.push(q);
+      }else{
+         others.push(q);
+      }
+
    });
 
-   shuffle(all);
+   shuffle(others);
+   shuffle(reading);
 
-   Q = JSON.parse(
-      JSON.stringify(
-         all.slice(0,33)
-      )
-   );
+   Q = [
+      ...others.slice(0,25),
+      ...reading.slice(0,8)
+   ];
 
 }else{
 
-   Q = JSON.parse(
+   let source = JSON.parse(
       JSON.stringify(
          BANK[ROUND] || []
       )
    );
 
+   let reading = [];
+   let others = [];
+
+   source.forEach(q=>{
+
+      if(q.s==="長文読解"){
+         reading.push(q);
+      }else{
+         others.push(q);
+      }
+
+   });
+
+   shuffle(others);
+   shuffle(reading);
+
+   Q = [
+      ...others,
+      ...reading
+   ];
+
 }
+Q.forEach(q=>{
+
+  if(!q.c) return;
+
+  let items = q.c.map(
+    (text,n)=>({
+      text,
+      ok:n===q.a
+    })
+  );
+
+  shuffle(items);
+
+  q.c = items.map(v=>v.text);
+  q.a = items.findIndex(v=>v.ok);
+
+});
 }
+
 function render(){
 
   let q = Q[i];
