@@ -83,7 +83,7 @@ footer{
   max-width:620px;
   margin:auto;
   display:grid;
-  grid-template-columns:1fr 1fr 1fr;
+  grid-template-columns:1fr 1fr;
   gap:10px;
 }
 .nav button{
@@ -126,6 +126,20 @@ footer{
 .jumpBtn.wrong{
   background:#fca5a5;
   color:#7f1d1d;
+}
+.questionNav{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:15px;
+}
+
+.questionNav button{
+  padding:14px;
+  border-radius:12px;
+  border:1px solid #ccc;
+  cursor:pointer;
+  background:white;
 }
 .rounds{
   display:grid;
@@ -216,13 +230,18 @@ footer{
 </main>
 
 <footer>
-<div class="nav">
-<button id="home">タイトル</button>
-<button id="prev">‹ 前へ</button>
-<button id="next">次へ ›</button>
-</div>
-</footer>
+  <div class="nav">
 
+    <button id="home">
+      タイトル
+    </button>
+
+    <button id="explainBtn">
+      解説を見る
+    </button>
+
+  </div>
+</footer>
 </section>
 
 <section id="result" class="hide">
@@ -2183,7 +2202,21 @@ Q.forEach(q=>{
 
 });
 }
+function prevQuestion(){
+  if(i > 0){
+    i--;
+    render();
+  }
+}
 
+function nextQuestion(){
+  if(i < Q.length - 1){
+    i++;
+    render();
+  }else{
+    finish();
+  }
+}
 function render(){
 
   let q = Q[i];
@@ -2221,12 +2254,21 @@ RANDOM_MODE
 
   });
 
-  html += `
+
+html += `
+<div class="questionNav">
+
 <button
-  class="primary"
-  onclick="showExplanation()">
-  解説を見る
+ onclick="prevQuestion()">
+‹ 前へ
 </button>
+
+<button
+ onclick="nextQuestion()">
+次へ ›
+</button>
+
+</div>
 `;
 
 $("#input").innerHTML = html;
@@ -2408,41 +2450,17 @@ $("#go").onclick = ()=>{
 
 };
 
-$("#prev").onclick = ()=>{
-  if(i>0){
-    i--;
-    render();
-
-    window.scrollTo({
-      top:0,
-      behavior:"smooth"
-    });
-  }
-};
-
-$("#next").onclick = ()=>{
-  if(i < Q.length - 1){
-    i++;
-    render();
-
-    window.scrollTo({
-      top:0,
-      behavior:"smooth"
-    });
-
-  }else{
-    finish();
-  }
-};
 
 $("#home").onclick = ()=>{
-
   if(
     confirm("タイトル画面へ戻りますか？")
   ){
     location.reload();
   }
+};
 
+$("#explainBtn").onclick = ()=>{
+  showExplanation();
 };
 </script>
 
