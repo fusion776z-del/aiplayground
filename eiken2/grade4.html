@@ -2133,55 +2133,54 @@ function load(){
 
 if(RANDOM_MODE){
 
-   let reading = [];
-   let others = [];
+let fill = [];
+let dialog = [];
+let order = [];
+let reading = [];
 
-   BANK.flat().forEach(q=>{
+BANK.flat().forEach(q=>{
 
-      if(q.s==="長文読解"){
-         reading.push(q);
-      }else{
-         others.push(q);
-      }
+  if(q.s==="語句補充"){
+    fill.push(q);
+  }
 
-   });
+  else if(q.s==="会話文"){
+    dialog.push(q);
+  }
 
-   shuffle(others);
-   shuffle(reading);
+  else if(q.s==="語順整序"){
+    order.push(q);
+  }
 
-   Q = [
-      ...others.slice(0,25),
-      ...reading.slice(0,8)
-   ];
+  else if(q.s==="長文読解"){
+    reading.push(q);
+  }
 
+});
+
+shuffle(fill);
+shuffle(dialog);
+shuffle(order);
+shuffle(reading);
+
+Q = [
+
+  ...fill.slice(0,15),
+
+  ...dialog.slice(0,5),
+
+  ...order.slice(0,5),
+
+  ...reading.slice(0,8)
+
+];
 }else{
 
-   let source = JSON.parse(
+   Q = JSON.parse(
       JSON.stringify(
          BANK[ROUND] || []
       )
    );
-
-   let reading = [];
-   let others = [];
-
-   source.forEach(q=>{
-
-      if(q.s==="長文読解"){
-         reading.push(q);
-      }else{
-         others.push(q);
-      }
-
-   });
-
-   shuffle(others);
-   shuffle(reading);
-
-   Q = [
-      ...others,
-      ...reading
-   ];
 
 }
 Q.forEach(q=>{
