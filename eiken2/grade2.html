@@ -3190,43 +3190,18 @@ $("#go").onclick = ()=>{
 
 };
 
-$("#prev").onclick = ()=>{
-  if(i>0){
-    i--;
-    render();
+window.onload = ()=>{
 
-    window.scrollTo({
-      top:0,
-      behavior:"smooth"
-    });
-  }
-};
+  $("#home").onclick = ()=>{
+    if(confirm("タイトル画面へ戻りますか？")){
+      location.reload();
+    }
+  };
 
-$("#next").onclick = ()=>{
-  if(i < Q.length - 1){
-    i++;
-    render();
+  $("#explainBtn").onclick = ()=>{
+    showExplanation();
+  };
 
-    window.scrollTo({
-      top:0,
-      behavior:"smooth"
-    });
-
-  }else{
-    finish();
-  }
-};
-$("#home").onclick = ()=>{
-
-  if(
-    confirm("タイトル画面へ戻りますか？")
-  ){
-    location.reload();
-  }
-
-};
-$("#explainBtn").onclick = ()=>{
-  showExplanation();
 };
 </script>
 

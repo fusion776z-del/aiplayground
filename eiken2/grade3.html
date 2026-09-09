@@ -3075,44 +3075,19 @@ $("#go").onclick = ()=>{
 
 };
 
-$("#prev").onclick = ()=>{
-  if(i>0){
-    i--;
-    render();
 
-    window.scrollTo({
-      top:0,
-      behavior:"smooth"
-    });
-  }
-};
+window.onload = () => {
 
-$("#next").onclick = ()=>{
-  if(i < Q.length - 1){
-    i++;
-    render();
+  $("#home").onclick = ()=>{
+    if(confirm("タイトル画面へ戻りますか？")){
+      location.reload();
+    }
+  };
 
-    window.scrollTo({
-      top:0,
-      behavior:"smooth"
-    });
+  $("#explainBtn").onclick = ()=>{
+    showExplanation();
+  };
 
-  }else{
-    finish();
-  }
-};
-
-$("#home").onclick = ()=>{
-
-  if(
-    confirm("タイトル画面へ戻りますか？")
-  ){
-    location.reload();
-  }
-
-};
-$("#explainBtn").onclick = ()=>{
-  showExplanation();
 };
 </script>
 
