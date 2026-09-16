@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>フィギュアモンスターズ Ver0.2</title>
+<title>フィギュアモンスターズ Ver0.4</title>
 
 <style>
 body{
@@ -18,10 +18,10 @@ body{
 }
 
 .game{
-    width:380px;
-    background:#2e2e48;
-    border-radius:20px;
-    padding:20px;
+
+    width:95%;
+    max-width:400px;
+
 }
 
 h1{
@@ -47,11 +47,14 @@ h1{
 }
 
 button{
-    margin:4px;
-    padding:10px;
-    border:none;
-    border-radius:10px;
-    cursor:pointer;
+
+    margin:6px;
+    padding:15px;
+
+    width:100%;
+
+    font-size:18px;
+
 }
 
 .feed{
@@ -182,15 +185,24 @@ input{
 <p>名前：<span id="displayName">未設定</span></p>
 <p>Lv <span id="level">1</span></p>
 
-<p>満腹度</p>
+<p>
+満腹度 :
+<span id="hungerText">50</span>%
+</p>
+
 <div class="bar">
     <div class="fill" id="hungerBar"></div>
 </div>
 
-<p>経験値</p>
+<p>
+経験値 :
+<span id="expText">0</span>%
+</p>
+
 <div class="bar">
     <div class="fill" id="expBar"></div>
 </div>
+
 
 <button class="feed" onclick="feed()">🍖 ごはん</button>
 <button class="train" onclick="train()">⚔️ 訓練</button>
@@ -233,7 +245,9 @@ border-radius:10px;
 <span id="buildType">未設定</span>
 </p>
 
-<button onclick="analyzeImage()">
+<button
+id="scanButton"
+onclick="analyzeImage()">
 AI解析
 </button>
 
@@ -270,22 +284,34 @@ style="display:none;">
 <script>
 
 const monsters = [
-{
-name:"たまご",
-emoji:"🥚"
-},
-{
-name:"ミニドラ",
-emoji:"🐣"
-},
-{
-name:"アクアドラゴン",
-emoji:"🐉"
-},
-{
-name:"アストラルドラゴン",
-emoji:"🦄"
-}
+
+{name:"たまご",emoji:"🥚"},
+{name:"ミニドラ",emoji:"🐣"},
+{name:"ドラゴン",emoji:"🐉"},
+{name:"アストラルドラゴン",emoji:"🦄"},
+{name:"エンシェントドラゴン",emoji:"🐲"},
+{name:"カオスドラゴン",emoji:"👹"},
+{name:"神竜",emoji:"🌟"},
+{name:"フレイムロード",emoji:"🔥"},
+{name:"アクアロード",emoji:"💧"},
+{name:"サンダーロード",emoji:"⚡"},
+{name:"フォレストキング",emoji:"🌿"},
+{name:"シャドウロード",emoji:"🌙"},
+{name:"インフェルノドラゴン",emoji:"🔥"},
+{name:"リヴァイアサン",emoji:"🐋"},
+{name:"ライトニングロード",emoji:"⚡"},
+{name:"ユグドラシル",emoji:"🌳"},
+{name:"ダークエンペラー",emoji:"👿"},
+{name:"炎帝竜",emoji:"☀️"},
+{name:"海神竜",emoji:"🌊"},
+{name:"雷神竜",emoji:"⚡"},
+{name:"世界樹竜",emoji:"🌍"},
+{name:"魔王竜",emoji:"💀"},
+{name:"フェニックスロード",emoji:"🪽"},
+{name:"ポセイドンロード",emoji:"🔱"},
+{name:"ゼウスロード",emoji:"⚡"},
+{name:"ガイアロード",emoji:"🌎"},
+{name:"ルシファーロード",emoji:"😈"},
 ];
 
 let level = 1;
@@ -297,6 +323,8 @@ let element = "";
 let buildType = "";
 let imageData = "";
 let rarity = "";
+let scanned = false;
+let branch = "";
 
 function updateUI(){
 
@@ -313,6 +341,33 @@ exp + "%";
 
 document.getElementById("hungerBar").style.width =
 hunger + "%";
+const hungerBar =
+document.getElementById("hungerBar");
+
+if(hunger > 50){
+
+    hungerBar.style.background =
+    "limegreen";
+
+}
+else if(hunger > 20){
+
+    hungerBar.style.background =
+    "orange";
+
+}
+else{
+
+    hungerBar.style.background =
+    "red";
+
+}
+
+document.getElementById("hungerText")
+.innerText = hunger;
+
+document.getElementById("expText")
+.innerText = exp;
 
 let nickname =
 document.getElementById("nickname").value;
@@ -408,10 +463,199 @@ log("ドラゴンに進化！");
 
 else if(level >= 10 && stage === 2){
 
-stage = 3;
-unlockMonster(3);
-log("アストラルドラゴンに進化！");
+    stage = 3;
+    unlockMonster(3);
+
+    log("アストラルドラゴンに進化！");
 }
+
+else if(level >= 15 && stage === 3){
+
+    stage = 4;
+    unlockMonster(4);
+
+    log("エンシェントドラゴンに進化！");
+}
+
+else if(level >= 20 &&
+        stage === 4){
+
+    if(branch === "fire"){
+
+        stage = 7;
+        unlockMonster(7);
+
+        log("🔥 フレイムロードに進化！");
+
+    }
+    else if(branch === "water"){
+
+        stage = 8;
+        unlockMonster(8);
+
+        log("💧 アクアロードに進化！");
+
+    }
+    else if(branch === "thunder"){
+
+        stage = 9;
+        unlockMonster(9);
+
+        log("⚡ サンダーロードに進化！");
+
+    }
+    else if(branch === "nature"){
+
+        stage = 10;
+        unlockMonster(10);
+
+        log("🌿 フォレストキングに進化！");
+
+    }
+    else if(branch === "dark"){
+
+        stage = 11;
+        unlockMonster(11);
+
+        log("🌙 シャドウロードに進化！");
+
+    }
+
+}
+else if(level >= 30 && stage === 7){
+
+    stage = 12;
+    unlockMonster(12);
+
+    log("🔥 インフェルノドラゴンに進化！");
+}
+else if(level >= 30 && stage === 8){
+
+    stage = 13;
+    unlockMonster(13);
+
+    log("💧 リヴァイアサンに進化！");
+}
+else if(level >= 30 && stage === 9){
+
+    stage = 14;
+    unlockMonster(14);
+
+    log("⚡ ライトニングロードに進化！");
+}
+else if(level >= 30 && stage === 10){
+
+    stage = 15;
+    unlockMonster(15);
+
+    log("🌿 ユグドラシルに進化！");
+}
+else if(level >= 30 && stage === 11){
+
+    stage = 16;
+    unlockMonster(16);
+
+    log("👿 ダークエンペラーに進化！");
+}
+else if(level >= 50 && stage === 12){
+
+    stage = 17;
+    unlockMonster(17);
+
+    log("☀️ 炎帝竜に進化！");
+}
+else if(level >= 50 && stage === 13){
+
+    stage = 18;
+    unlockMonster(18);
+
+    log("🌊 海神竜に進化！");
+}
+else if(level >= 50 && stage === 14){
+
+    stage = 19;
+    unlockMonster(19);
+
+    log("⚡ 雷神竜に進化！");
+}
+
+else if(level >= 50 && stage === 15){
+
+    stage = 20;
+    unlockMonster(20);
+
+    log("🌍 世界樹竜に進化！");
+}
+
+else if(level >= 50 && stage === 16){
+
+    stage = 21;
+    unlockMonster(21);
+
+    log("💀 魔王竜に進化！");
+}
+
+else if(
+    level >= 100 &&
+    stage === 17 &&
+    rarity === "★★★★★ SSR"
+){
+
+    stage = 22;
+    unlockMonster(22);
+
+    log("🪽 フェニックスロードに覚醒！");
+}
+
+else if(
+    level >= 100 &&
+    stage === 18 &&
+    rarity === "★★★★★ SSR"
+){
+
+    stage = 23;
+    unlockMonster(23);
+
+    log("🔱 ポセイドンロードに覚醒！");
+}
+
+else if(
+    level >= 100 &&
+    stage === 19 &&
+    rarity === "★★★★★ SSR"
+){
+
+    stage = 24;
+    unlockMonster(24);
+
+    log("⚡ ゼウスロードに覚醒！");
+}
+
+else if(
+    level >= 100 &&
+    stage === 20 &&
+    rarity === "★★★★★ SSR"
+){
+
+    stage = 25;
+    unlockMonster(25);
+
+    log("🌎 ガイアロードに覚醒！");
+}
+
+else if(
+    level >= 100 &&
+    stage === 21 &&
+    rarity === "★★★★★ SSR"
+){
+
+    stage = 26;
+    unlockMonster(26);
+
+    log("😈 ルシファーロードに覚醒！");
+}
+
+
 
 else{
 
@@ -469,7 +713,8 @@ element,
 buildType,
 imageData,
 rarity,
-
+scanned,
+branch,
 lastPlayed: Date.now()
 
 };
@@ -492,11 +737,20 @@ function loadGame(){
         return;
     }
 
-    const data =
+const data =
 JSON.parse(raw);
 
 rarity =
 data.rarity || "";
+scanned =
+data.scanned || false;
+branch =
+data.branch || "";
+level = data.level;
+exp = data.exp;
+hunger = data.hunger;
+stage = data.stage;
+dex = data.dex || [0];
 
 const now = Date.now();
 
@@ -512,13 +766,6 @@ if(hunger < 0){
 
     hunger = 0;
 }
-
-
-level = data.level;
-exp = data.exp;
-hunger = data.hunger;
-stage = data.stage;
-dex = data.dex || [0];
 
 document.getElementById("nickname").value =
 data.nickname || "";
@@ -640,9 +887,14 @@ else{
 
 function analyzeImage(){
 
+    if(scanned){
+
+        log("このモンスターはすでに解析済みです！");
+        return;
+    }
+
     const file =
     document.getElementById("imageInput").files[0];
-
     if(!file){
 
         log("画像を選択してください");
@@ -708,7 +960,31 @@ function analyzeImage(){
                 elements.length
             )
         ];
+if(element.includes("火")){
 
+    branch = "fire";
+
+}
+else if(element.includes("水")){
+
+    branch = "water";
+
+}
+else if(element.includes("雷")){
+
+    branch = "thunder";
+
+}
+else if(element.includes("自然")){
+
+    branch = "nature";
+
+}
+else if(element.includes("闇")){
+
+    branch = "dark";
+
+}
         buildType =
         types[
             Math.floor(
@@ -724,7 +1000,7 @@ function analyzeImage(){
         document.getElementById("buildType")
         .textContent =
         buildType;
-
+scanned = true;
         updateMonsterCard();
 
         log(
@@ -762,7 +1038,14 @@ setInterval(() => {
 
 }, 60000);
 loadGame();
+if(scanned){
+scanned = true;
+    document.getElementById("scanButton")
+    .disabled = true;
 
+    document.getElementById("scanButton")
+    .innerText = "解析済み";
+}
 updateUI();
 
 </script>
