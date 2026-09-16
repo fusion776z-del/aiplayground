@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>フィギュアモンスターズ Ver0.2</title>
+
+<style>
+body{
+    margin:0;
+    background:#1b1b2f;
+    color:white;
+    font-family:sans-serif;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height:100vh;
+}
+
+.game{
+    width:380px;
+    background:#2e2e48;
+    border-radius:20px;
+    padding:20px;
+}
+
+h1{
+    text-align:center;
+}
+
+.monster{
+    text-align:center;
+    font-size:90px;
+}
+
+.bar{
+    height:20px;
+    background:#444;
+    border-radius:10px;
+    overflow:hidden;
+    margin-bottom:10px;
+}
+
+.fill{
+    height:100%;
+    background:limegreen;
+}
+
+button{
+    margin:4px;
+    padding:10px;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+}
+
+.feed{
+    background:#f6b93b;
+}
+
+.train{
+    background:#60a3bc;
+}
+
+.evolve{
+    background:#d980fa;
+}
+
+.save{
+    background:#78e08f;
+}
+
+.reset{
+    background:#eb2f06;
+    color:white;
+}
+
+input{
+    width:100%;
+    padding:8px;
+    margin-bottom:10px;
+    border-radius:8px;
+    border:none;
+    box-sizing:border-box;
+}
+
+.log{
+    margin-top:10px;
+    background:#111;
+    padding:10px;
+    border-radius:10px;
+    min-height:50px;
+}
+
+.dex{
+    margin-top:15px;
+    background:#181818;
+    border-radius:10px;
+    padding:10px;
+}
+
+.dex-item{
+    padding:5px;
+}
+.monster-card{
+
+    margin-top:15px;
+    padding:15px;
+
+    border-radius:15px;
+
+    text-align:center;
+
+    font-weight:bold;
+
+    transition:0.3s;
+
+    border:2px solid rgba(255,255,255,0.2);
+
+}
+
+.fire{
+    background:linear-gradient(135deg,#ff512f,#dd2476);
+}
+
+.water{
+    background:linear-gradient(135deg,#2193b0,#6dd5ed);
+}
+
+.thunder{
+    background:linear-gradient(135deg,#f7971e,#ffd200);
+    color:black;
+}
+
+.nature{
+    background:linear-gradient(135deg,#56ab2f,#a8e063);
+    color:black;
+}
+
+.dark{
+    background:linear-gradient(135deg,#41295a,#2f0743);
+}
+.rarity{
+
+    font-size:20px;
+    font-weight:bold;
+
+    margin:10px 0;
+}
+.ssr{
+    color:#ffd700;
+    text-shadow:0 0 10px gold;
+}
+
+.sr{
+    color:#ff66ff;
+}
+
+.r{
+    color:#66ccff;
+}
+
+.n{
+    color:#ffffff;
+}
+</style>
+
+</head>
+<body>
+
+<div class="game">
+
+<h1>フィギュアモンスターズ</h1>
+
+<label>モンスター名</label>
+<input id="nickname" placeholder="名前を入力">
+
+<div class="monster" id="monster">🥚</div>
+
+<h2 id="species">たまご</h2>
+
+<p>名前：<span id="displayName">未設定</span></p>
+<p>Lv <span id="level">1</span></p>
+
+<p>満腹度</p>
+<div class="bar">
+    <div class="fill" id="hungerBar"></div>
+</div>
+
+<p>経験値</p>
+<div class="bar">
+    <div class="fill" id="expBar"></div>
+</div>
+
+<button class="feed" onclick="feed()">🍖 ごはん</button>
+<button class="train" onclick="train()">⚔️ 訓練</button>
+<button class="evolve" onclick="evolve()">✨ 進化</button>
+<button class="save" onclick="saveGame()">💾 保存</button>
+
+<button class="reset" onclick="resetGame()">
+初期化
+</button>
+
+<div class="log" id="log">
+ようこそ！
+</div>
+<hr>
+
+<h3>📷 AIスキャン</h3>
+
+<input
+type="file"
+id="imageInput"
+accept="image/*">
+
+<br><br>
+
+<img
+id="preview"
+style="
+display:none;
+max-width:200px;
+border-radius:10px;
+">
+
+<p>
+属性：
+<span id="element">未設定</span>
+</p>
+
+<p>
+タイプ：
+<span id="buildType">未設定</span>
+</p>
+
+<button onclick="analyzeImage()">
+AI解析
+</button>
+
+<div
+id="monsterCard"
+class="monster-card"
+style="display:none;">
+
+<h3 id="cardTitle">
+モンスターカード
+</h3>
+
+<p id="cardRarity" class="rarity">
+★★★★★ SSR
+</p>
+
+<p id="cardElement">
+属性
+</p>
+
+<p id="cardType">
+タイプ
+</p>
+
+</div>
+
+<hr><div class="dex">
+<h3>📖 モンスター図鑑</h3>
+<div id="dexList"></div>
+</div>
+
+</div>
+
+<script>
+
+const monsters = [
+{
+name:"たまご",
+emoji:"🥚"
+},
+{
+name:"ミニドラ",
+emoji:"🐣"
+},
+{
+name:"アクアドラゴン",
+emoji:"🐉"
+},
+{
+name:"アストラルドラゴン",
+emoji:"🦄"
+}
+];
+
+let level = 1;
+let exp = 0;
+let hunger = 50;
+let stage = 0;
+let dex = [];
+let element = "";
+let buildType = "";
+let imageData = "";
+let rarity = "";
+
+function updateUI(){
+
+document.getElementById("level").innerText = level;
+
+document.getElementById("species").innerText =
+monsters[stage].name;
+
+document.getElementById("monster").innerText =
+monsters[stage].emoji;
+
+document.getElementById("expBar").style.width =
+exp + "%";
+
+document.getElementById("hungerBar").style.width =
+hunger + "%";
+
+let nickname =
+document.getElementById("nickname").value;
+
+document.getElementById("displayName").innerText =
+nickname || "未設定";
+
+renderDex();
+}
+
+function log(text){
+document.getElementById("log").innerText = text;
+}
+
+function feed(){
+
+hunger += 10;
+
+if(hunger > 100){
+hunger = 100;
+}
+
+log("ごはんを食べた！");
+saveGame();
+updateUI();
+}
+
+function train(){
+
+    if(hunger < 10){
+
+        log("おなかが減って訓練できない！");
+        return;
+    }
+
+    exp += 20;
+    hunger -= 5;
+
+    if(hunger < 0){
+        hunger = 0;
+    }
+
+    if(exp >= 100){
+
+        exp = 0;
+        level++;
+
+        log("レベルアップ！ Lv" + level);
+    }
+
+    saveGame();
+    updateUI();
+}
+function evolve(){
+
+if(level >= 3 && stage === 0){
+
+stage = 1;
+unlockMonster(1);
+log("ミニドラに進化！");
+}
+
+else if(level >= 5 && stage === 1){
+
+stage = 2;
+unlockMonster(2);
+
+if(element.includes("火")){
+
+log("🔥 フレイムドラゴンに進化！");
+}
+else if(element.includes("水")){
+
+log("💧 アクアドラゴンに進化！");
+}
+else if(element.includes("雷")){
+
+log("⚡ サンダービーストに進化！");
+}
+else if(element.includes("自然")){
+
+log("🌿 フォレストフェアリーに進化！");
+}
+else if(element.includes("闇")){
+
+log("🌙 シャドウワイバーンに進化！");
+}
+else{
+
+log("ドラゴンに進化！");
+}
+}
+
+else if(level >= 10 && stage === 2){
+
+stage = 3;
+unlockMonster(3);
+log("アストラルドラゴンに進化！");
+}
+
+else{
+
+log("まだ進化できない");
+}
+
+saveGame();
+updateUI();
+}
+
+function unlockMonster(id){
+
+if(!dex.includes(id)){
+dex.push(id);
+}
+}
+
+function renderDex(){
+
+let html = "";
+
+dex.forEach(id => {
+
+html += `
+<div class="dex-item">
+${monsters[id].emoji}
+${monsters[id].name}
+</div>
+`;
+
+});
+
+if(html === ""){
+html = "未発見";
+}
+
+document.getElementById("dexList").innerHTML =
+html;
+}
+
+function saveGame(){
+
+const saveData = {
+
+level,
+exp,
+hunger,
+stage,
+dex,
+
+nickname:
+document.getElementById("nickname").value,
+
+element,
+buildType,
+imageData,
+rarity,
+
+lastPlayed: Date.now()
+
+};
+localStorage.setItem(
+"figureMonsterSave",
+JSON.stringify(saveData)
+);
+}
+
+function loadGame(){
+
+    const raw =
+    localStorage.getItem(
+        "figureMonsterSave"
+    );
+
+    if(!raw){
+
+        unlockMonster(0);
+        return;
+    }
+
+    const data =
+JSON.parse(raw);
+
+rarity =
+data.rarity || "";
+
+const now = Date.now();
+
+const minutes =
+Math.floor(
+(now - data.lastPlayed) /
+60000
+);
+
+hunger -= minutes;
+
+if(hunger < 0){
+
+    hunger = 0;
+}
+
+
+level = data.level;
+exp = data.exp;
+hunger = data.hunger;
+stage = data.stage;
+dex = data.dex || [0];
+
+document.getElementById("nickname").value =
+data.nickname || "";
+element =
+data.element || "";
+
+buildType =
+data.buildType || "";
+
+imageData =
+data.imageData || "";
+
+document.getElementById("element")
+.textContent =
+element || "未設定";
+
+document.getElementById("buildType")
+.textContent =
+buildType || "未設定";
+
+if(imageData){
+
+const preview =
+document.getElementById("preview");
+
+preview.src = imageData;
+preview.style.display = "block";
+}
+if(element){
+
+    updateMonsterCard();
+}
+
+log("セーブデータを読み込みました");
+}
+
+function resetGame(){
+
+if(confirm("データを削除しますか？")){
+
+localStorage.removeItem(
+"figureMonsterSave"
+);
+
+location.reload();
+}
+}
+function updateMonsterCard(){
+
+    const card =
+    document.getElementById("monsterCard");
+
+    card.style.display = "block";
+
+    card.className = "monster-card";
+
+    document.getElementById("cardTitle")
+    .innerText =
+    document.getElementById("nickname").value ||
+    "名無しモンスター";
+
+    document.getElementById("cardElement")
+    .innerText = element;
+
+    document.getElementById("cardType")
+    .innerText = buildType;
+
+    document.getElementById("cardRarity")
+    .innerText = rarity;
+
+    if(element.includes("火")){
+
+        card.classList.add("fire");
+
+    }else if(element.includes("水")){
+
+        card.classList.add("water");
+
+    }else if(element.includes("雷")){
+
+        card.classList.add("thunder");
+
+    }else if(element.includes("自然")){
+
+        card.classList.add("nature");
+
+    }else if(element.includes("闇")){
+
+        card.classList.add("dark");
+    }
+
+    const rarityLabel =
+    document.getElementById("cardRarity");
+
+    rarityLabel.className = "rarity";
+
+   if(rarity === "★★★★★ SSR"){
+
+    rarityLabel.classList.add("ssr");
+
+}
+else if(rarity === "★★★★ SR"){
+
+    rarityLabel.classList.add("sr");
+
+}
+else if(rarity === "★★★ R"){
+
+    rarityLabel.classList.add("r");
+
+}
+else{
+
+    rarityLabel.classList.add("n");
+
+}
+
+}
+
+function analyzeImage(){
+
+    const file =
+    document.getElementById("imageInput").files[0];
+
+    if(!file){
+
+        log("画像を選択してください");
+        return;
+    }
+
+    const roll =
+    Math.random();
+
+    if(roll < 0.05){
+
+        rarity = "★★★★★ SSR";
+
+    }else if(roll < 0.20){
+
+        rarity = "★★★★ SR";
+
+    }else if(roll < 0.50){
+
+        rarity = "★★★ R";
+
+    }else{
+
+        rarity = "★★ N";
+    }
+
+    const reader =
+    new FileReader();
+
+    reader.onload = function(e){
+
+        imageData =
+        e.target.result;
+
+        const preview =
+        document.getElementById("preview");
+
+        preview.src =
+        imageData;
+
+        preview.style.display =
+        "block";
+
+        const elements = [
+            "🔥 火",
+            "💧 水",
+            "⚡ 雷",
+            "🌿 自然",
+            "🌙 闇"
+        ];
+
+        const types = [
+            "パワー型",
+            "スピード型",
+            "防御型",
+            "回復型"
+        ];
+
+        element =
+        elements[
+            Math.floor(
+                Math.random() *
+                elements.length
+            )
+        ];
+
+        buildType =
+        types[
+            Math.floor(
+                Math.random() *
+                types.length
+            )
+        ];
+
+        document.getElementById("element")
+        .textContent =
+        element;
+
+        document.getElementById("buildType")
+        .textContent =
+        buildType;
+
+        updateMonsterCard();
+
+        log(
+            element +
+            "属性の" +
+            buildType +
+            "として解析されました！"
+        );
+
+        saveGame();
+    };
+
+    reader.readAsDataURL(file);
+}
+document
+.getElementById("nickname")
+.addEventListener("input",()=>{
+
+saveGame();
+updateUI();
+
+});
+
+setInterval(() => {
+
+    hunger--;
+
+    if(hunger < 0){
+
+        hunger = 0;
+    }
+
+    saveGame();
+    updateUI();
+
+}, 60000);
+loadGame();
+
+updateUI();
+
+</script>
+
+</body>
+</html>
