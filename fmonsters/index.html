@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>フィギュアモンスターズ Ver0.4</title>
+<title>フィギュアモンスターズ Ver0.5</title>
 
 <style>
 body{
@@ -48,13 +48,23 @@ h1{
 
 button{
 
-    margin:6px;
-    padding:15px;
+    margin:0;
+
+    padding:10px;
 
     width:100%;
 
-    font-size:18px;
+    font-size:15px;
+}
+.button-grid{
 
+    display:grid;
+
+    grid-template-columns:1fr 1fr;
+
+    gap:8px;
+
+    margin-top:10px;
 }
 
 .feed{
@@ -166,6 +176,27 @@ input{
 .n{
     color:#ffffff;
 }
+.evolving{
+
+    animation:
+    flash 0.3s infinite;
+}
+
+@keyframes flash{
+
+    0%{
+        opacity:1;
+    }
+
+    50%{
+        opacity:0;
+    }
+
+    100%{
+        opacity:1;
+    }
+
+}
 </style>
 
 </head>
@@ -198,24 +229,70 @@ input{
 経験値 :
 <span id="expText">0</span>%
 </p>
-
 <div class="bar">
     <div class="fill" id="expBar"></div>
 </div>
 
 
-<button class="feed" onclick="feed()">🍖 ごはん</button>
-<button class="train" onclick="train()">⚔️ 訓練</button>
-<button class="evolve" onclick="evolve()">✨ 進化</button>
-<button class="save" onclick="saveGame()">💾 保存</button>
+<div class="button-grid">
 
-<button class="reset" onclick="resetGame()">
-初期化
+<button
+class="feed"
+onclick="feed()">
+🍖 ごはん
 </button>
+
+<button
+class="train"
+onclick="train()">
+⚔️ 訓練
+</button>
+
+<button
+onclick="awaken()">
+💎 覚醒
+</button>
+
+<button
+onclick="rebirth()">
+🔄 転生
+</button>
+
+<button
+class="save"
+onclick="saveGame()">
+💾 保存
+</button>
+
+<button
+class="reset"
+onclick="resetGame()">
+🗑 初期化
+</button>
+
+</div>
 
 <div class="log" id="log">
 ようこそ！
 </div>
+
+<p>
+💎 覚醒石 :
+<span id="stoneText">0</span>
+</p>
+<p>
+🏆 転生ポイント :
+<span id="rebirthText">0</span>
+</p>
+<p>
+🏅 属性制覇率 :
+<span id="branchRate">
+0 / 5
+</span>
+</p>
+<p id="branchList"></p>
+
+
 <hr>
 
 <h3>📷 AIスキャン</h3>
@@ -244,7 +321,31 @@ border-radius:10px;
 タイプ：
 <span id="buildType">未設定</span>
 </p>
+<div id="rebirthSelect" style="display:none;">
 
+<h3>転生属性を選択</h3>
+
+<button onclick="selectBranch('fire')">
+🔥 火
+</button>
+
+<button onclick="selectBranch('water')">
+💧 水
+</button>
+
+<button onclick="selectBranch('thunder')">
+⚡ 雷
+</button>
+
+<button onclick="selectBranch('nature')">
+🌿 自然
+</button>
+
+<button onclick="selectBranch('dark')">
+🌙 闇
+</button>
+
+</div>
 <button
 id="scanButton"
 onclick="analyzeImage()">
@@ -276,6 +377,9 @@ style="display:none;">
 
 <hr><div class="dex">
 <h3>📖 モンスター図鑑</h3>
+<p id="dexRate">
+0 / 27
+</p>
 <div id="dexList"></div>
 </div>
 
@@ -314,6 +418,207 @@ const monsters = [
 {name:"ルシファーロード",emoji:"😈"},
 ];
 
+const evolutionTable = [
+
+{
+    from:0,
+    level:3,
+    to:1,
+    text:"🐣 ミニドラに進化！"
+},
+
+{
+    from:1,
+    level:5,
+    to:2,
+    text:"🐉 ドラゴンに進化！"
+},
+
+{
+    from:2,
+    level:10,
+    to:3,
+    text:"🦄 アストラルドラゴンに進化！"
+},
+
+{
+    from:3,
+    level:15,
+    to:4,
+    text:"🐲 エンシェントドラゴンに進化！"
+}
+
+];
+
+const branchEvolutionTable = {
+
+fire:[
+
+{
+    from:4,
+    level:20,
+    to:7,
+    text:"🔥 フレイムロードに進化！"
+},
+
+{
+    from:7,
+    level:30,
+    to:12,
+    text:"🔥 インフェルノドラゴンに進化！"
+},
+
+{
+    from:12,
+    level:50,
+    to:17,
+    text:"☀️ 炎帝竜に進化！"
+},
+
+{
+    from:17,
+    level:100,
+    rarity:"★★★★★ SSR",
+    to:22,
+    text:"🪽 フェニックスロードに覚醒！"
+}
+
+],
+
+water:[
+
+{
+    from:4,
+    level:20,
+    to:8,
+    text:"💧 アクアロードに進化！"
+},
+
+{
+    from:8,
+    level:30,
+    to:13,
+    text:"🐋 リヴァイアサンに進化！"
+},
+
+{
+    from:13,
+    level:50,
+    to:18,
+    text:"🌊 海神竜に進化！"
+},
+
+{
+    from:18,
+    level:100,
+    rarity:"★★★★★ SSR",
+    to:23,
+    text:"🔱 ポセイドンロードに覚醒！"
+}
+
+],
+
+thunder:[
+
+{
+    from:4,
+    level:20,
+    to:9,
+    text:"⚡ サンダーロードに進化！"
+},
+
+{
+    from:9,
+    level:30,
+    to:14,
+    text:"⚡ ライトニングロードに進化！"
+},
+
+{
+    from:14,
+    level:50,
+    to:19,
+    text:"⚡ 雷神竜に進化！"
+},
+
+{
+    from:19,
+    level:100,
+    rarity:"★★★★★ SSR",
+    to:24,
+    text:"⚡ ゼウスロードに覚醒！"
+}
+
+],
+
+nature:[
+
+{
+    from:4,
+    level:20,
+    to:10,
+    text:"🌿 フォレストキングに進化！"
+},
+
+{
+    from:10,
+    level:30,
+    to:15,
+    text:"🌳 ユグドラシルに進化！"
+},
+
+{
+    from:15,
+    level:50,
+    to:20,
+    text:"🌍 世界樹竜に進化！"
+},
+
+{
+    from:20,
+    level:100,
+    rarity:"★★★★★ SSR",
+    to:25,
+    text:"🌎 ガイアロードに覚醒！"
+}
+
+],
+
+dark:[
+
+{
+    from:4,
+    level:20,
+    to:11,
+    text:"🌙 シャドウロードに進化！"
+},
+
+{
+    from:11,
+    level:30,
+    to:16,
+    text:"👿 ダークエンペラーに進化！"
+},
+
+{
+    from:16,
+    level:50,
+    to:21,
+    text:"💀 魔王竜に進化！"
+},
+
+{
+    from:21,
+    level:100,
+    rarity:"★★★★★ SSR",
+    to:26,
+    text:"😈 ルシファーロードに覚醒！"
+}
+
+]
+
+};
+
 let level = 1;
 let exp = 0;
 let hunger = 50;
@@ -325,6 +630,10 @@ let imageData = "";
 let rarity = "";
 let scanned = false;
 let branch = "";
+let awakeningStone = 0;
+let rebirthPoint = 0;
+let nextBranch = "";
+let completedBranches = [];
 
 function updateUI(){
 
@@ -368,13 +677,39 @@ document.getElementById("hungerText")
 
 document.getElementById("expText")
 .innerText = exp;
+document.getElementById("stoneText")
+.innerText = awakeningStone;
+document.getElementById(
+    "rebirthText"
+).innerText = rebirthPoint;
+document.getElementById(
+    "branchRate"
+).innerText =
 
+completedBranches.length +
+" / 5";
 let nickname =
 document.getElementById("nickname").value;
 
 document.getElementById("displayName").innerText =
-nickname || "未設定";
 
+nickname || "未設定";
+document.getElementById(
+    "dexRate"
+).innerText =
+
+dex.length +
+" / " +
+monsters.length;
+document.getElementById(
+    "branchList"
+).innerHTML = `
+${completedBranches.includes("fire") ? "✅" : "⬜"} 火<br>
+${completedBranches.includes("water") ? "✅" : "⬜"} 水<br>
+${completedBranches.includes("thunder") ? "✅" : "⬜"} 雷<br>
+${completedBranches.includes("nature") ? "✅" : "⬜"} 自然<br>
+${completedBranches.includes("dark") ? "✅" : "⬜"} 闇
+`;
 renderDex();
 }
 
@@ -404,267 +739,289 @@ function train(){
     }
 
     exp += 20;
+
     hunger -= 5;
 
     if(hunger < 0){
+
         hunger = 0;
     }
 
     if(exp >= 100){
 
         exp = 0;
+
         level++;
 
-        log("レベルアップ！ Lv" + level);
+        log(
+            "レベルアップ！ Lv" +
+            level
+        );
+
+        if(level % 10 === 0){
+
+            awakeningStone++;
+
+            rarityUpgrade();
+        }
+
+        evolve();
     }
 
     saveGame();
     updateUI();
 }
+
+function awaken(){
+
+    if(rarity === "★★★★★ SSR"){
+
+        log("すでにSSRです！");
+        return;
+    }
+
+    if(awakeningStone < 5){
+
+        log("覚醒石が足りません！");
+        return;
+    }
+
+    awakeningStone -= 5;
+
+    if(rarity === "★★ N"){
+
+        rarity = "★★★ R";
+    }
+    else if(rarity === "★★★ R"){
+
+        rarity = "★★★★ SR";
+    }
+    else if(rarity === "★★★★ SR"){
+
+        rarity = "★★★★★ SSR";
+    }
+
+    log("💎 覚醒成功！");
+
+    updateMonsterCard();
+
+    saveGame();
+    updateUI();
+}
+function rebirth(){
+
+    if(stage < 22){
+
+        log(
+            "神話モンスターでのみ転生できます！"
+        );
+
+        return;
+    }
+
+    document.getElementById(
+        "rebirthSelect"
+    ).style.display = "block";
+
+}
+
+
+function selectBranch(type){
+
+    nextBranch = type;
+
+    rebirthPoint++;
+
+    level = 1;
+    exp = 0;
+    hunger = 50;
+
+    stage = 0;
+
+    rarity = "★★ N";
+
+    const types = [
+
+    "パワー型",
+    "スピード型",
+    "防御型",
+    "回復型"
+
+];
+
+buildType =
+
+types[
+    Math.floor(
+        Math.random() *
+        types.length
+    )
+];
+
+    if(type === "fire"){
+
+        element = "🔥 火";
+        branch = "fire";
+    }
+    else if(type === "water"){
+
+        element = "💧 水";
+        branch = "water";
+    }
+    else if(type === "thunder"){
+
+        element = "⚡ 雷";
+        branch = "thunder";
+    }
+    else if(type === "nature"){
+
+        element = "🌿 自然";
+        branch = "nature";
+    }
+    else if(type === "dark"){
+
+        element = "🌙 闇";
+        branch = "dark";
+    }
+
+    scanned = true;
+
+    document.getElementById(
+        "element"
+    ).textContent = element;
+
+    document.getElementById(
+        "buildType"
+    ).textContent = buildType;
+
+    document.getElementById(
+        "rebirthSelect"
+    ).style.display = "none";
+
+    updateMonsterCard();
+
+    log(
+        "🔄 転生完了！"
+    );
+
+    saveGame();
+    updateUI();
+}
+function evolveWithEffect(
+    newStage,
+    message
+){
+
+    const monster =
+    document.getElementById("monster");
+
+    monster.classList.add(
+        "evolving"
+    );
+
+    log("✨✨✨進化中...✨✨✨");
+
+    setTimeout(() => {
+
+        stage = newStage;
+
+        unlockMonster(newStage);
+
+        monster.classList.remove(
+            "evolving"
+        );
+
+        log(message);
+if(newStage >= 22){
+
+    if(
+        !completedBranches.includes(
+            branch
+        )
+    ){
+
+        completedBranches.push(
+            branch
+        );
+    }
+
+}
+
+        saveGame();
+
+        updateUI();
+
+    }, 2000);
+
+}
 function evolve(){
 
-if(level >= 3 && stage === 0){
+    const normalEvolution =
+    evolutionTable.find(e =>
 
-stage = 1;
-unlockMonster(1);
-log("ミニドラに進化！");
-}
+        e.from === stage &&
+        level >= e.level
 
-else if(level >= 5 && stage === 1){
+    );
 
-stage = 2;
-unlockMonster(2);
+    if(normalEvolution){
 
-if(element.includes("火")){
+        evolveWithEffect(
+            normalEvolution.to,
+            normalEvolution.text
+        );
 
-log("🔥 フレイムドラゴンに進化！");
-}
-else if(element.includes("水")){
-
-log("💧 アクアドラゴンに進化！");
-}
-else if(element.includes("雷")){
-
-log("⚡ サンダービーストに進化！");
-}
-else if(element.includes("自然")){
-
-log("🌿 フォレストフェアリーに進化！");
-}
-else if(element.includes("闇")){
-
-log("🌙 シャドウワイバーンに進化！");
-}
-else{
-
-log("ドラゴンに進化！");
-}
-}
-
-else if(level >= 10 && stage === 2){
-
-    stage = 3;
-    unlockMonster(3);
-
-    log("アストラルドラゴンに進化！");
-}
-
-else if(level >= 15 && stage === 3){
-
-    stage = 4;
-    unlockMonster(4);
-
-    log("エンシェントドラゴンに進化！");
-}
-
-else if(level >= 20 &&
-        stage === 4){
-
-    if(branch === "fire"){
-
-        stage = 7;
-        unlockMonster(7);
-
-        log("🔥 フレイムロードに進化！");
-
-    }
-    else if(branch === "water"){
-
-        stage = 8;
-        unlockMonster(8);
-
-        log("💧 アクアロードに進化！");
-
-    }
-    else if(branch === "thunder"){
-
-        stage = 9;
-        unlockMonster(9);
-
-        log("⚡ サンダーロードに進化！");
-
-    }
-    else if(branch === "nature"){
-
-        stage = 10;
-        unlockMonster(10);
-
-        log("🌿 フォレストキングに進化！");
-
-    }
-    else if(branch === "dark"){
-
-        stage = 11;
-        unlockMonster(11);
-
-        log("🌙 シャドウロードに進化！");
-
+        return;
     }
 
-}
-else if(level >= 30 && stage === 7){
+    const branchTable =
+    branchEvolutionTable[branch];
 
-    stage = 12;
-    unlockMonster(12);
+    if(!branchTable){
 
-    log("🔥 インフェルノドラゴンに進化！");
-}
-else if(level >= 30 && stage === 8){
+        return;
+    }
 
-    stage = 13;
-    unlockMonster(13);
+    const branchEvolution =
+    branchTable.find(e => {
 
-    log("💧 リヴァイアサンに進化！");
-}
-else if(level >= 30 && stage === 9){
+        if(e.from !== stage){
 
-    stage = 14;
-    unlockMonster(14);
+            return false;
+        }
 
-    log("⚡ ライトニングロードに進化！");
-}
-else if(level >= 30 && stage === 10){
+        if(level < e.level){
 
-    stage = 15;
-    unlockMonster(15);
+            return false;
+        }
 
-    log("🌿 ユグドラシルに進化！");
-}
-else if(level >= 30 && stage === 11){
+        if(
+            e.rarity &&
+            rarity !== e.rarity
+        ){
 
-    stage = 16;
-    unlockMonster(16);
+            return false;
+        }
 
-    log("👿 ダークエンペラーに進化！");
-}
-else if(level >= 50 && stage === 12){
+        return true;
 
-    stage = 17;
-    unlockMonster(17);
+    });
 
-    log("☀️ 炎帝竜に進化！");
-}
-else if(level >= 50 && stage === 13){
+    if(!branchEvolution){
 
-    stage = 18;
-    unlockMonster(18);
+        return;
+    }
 
-    log("🌊 海神竜に進化！");
-}
-else if(level >= 50 && stage === 14){
+    evolveWithEffect(
 
-    stage = 19;
-    unlockMonster(19);
+        branchEvolution.to,
 
-    log("⚡ 雷神竜に進化！");
+        branchEvolution.text
+
+    );
+
 }
 
-else if(level >= 50 && stage === 15){
-
-    stage = 20;
-    unlockMonster(20);
-
-    log("🌍 世界樹竜に進化！");
-}
-
-else if(level >= 50 && stage === 16){
-
-    stage = 21;
-    unlockMonster(21);
-
-    log("💀 魔王竜に進化！");
-}
-
-else if(
-    level >= 100 &&
-    stage === 17 &&
-    rarity === "★★★★★ SSR"
-){
-
-    stage = 22;
-    unlockMonster(22);
-
-    log("🪽 フェニックスロードに覚醒！");
-}
-
-else if(
-    level >= 100 &&
-    stage === 18 &&
-    rarity === "★★★★★ SSR"
-){
-
-    stage = 23;
-    unlockMonster(23);
-
-    log("🔱 ポセイドンロードに覚醒！");
-}
-
-else if(
-    level >= 100 &&
-    stage === 19 &&
-    rarity === "★★★★★ SSR"
-){
-
-    stage = 24;
-    unlockMonster(24);
-
-    log("⚡ ゼウスロードに覚醒！");
-}
-
-else if(
-    level >= 100 &&
-    stage === 20 &&
-    rarity === "★★★★★ SSR"
-){
-
-    stage = 25;
-    unlockMonster(25);
-
-    log("🌎 ガイアロードに覚醒！");
-}
-
-else if(
-    level >= 100 &&
-    stage === 21 &&
-    rarity === "★★★★★ SSR"
-){
-
-    stage = 26;
-    unlockMonster(26);
-
-    log("😈 ルシファーロードに覚醒！");
-}
-
-
-
-else{
-
-log("まだ進化できない");
-}
-
-saveGame();
-updateUI();
-}
 
 function unlockMonster(id){
 
@@ -703,18 +1060,23 @@ const saveData = {
 level,
 exp,
 hunger,
+awakeningStone,
+rebirthPoint,
+completedBranches,
 stage,
 dex,
+
 
 nickname:
 document.getElementById("nickname").value,
 
 element,
 buildType,
-imageData,
+
 rarity,
 scanned,
 branch,
+nextBranch,
 lastPlayed: Date.now()
 
 };
@@ -746,9 +1108,19 @@ scanned =
 data.scanned || false;
 branch =
 data.branch || "";
+nextBranch =
+data.nextBranch || "";
 level = data.level;
 exp = data.exp;
 hunger = data.hunger;
+awakeningStone =
+data.awakeningStone || 0;
+
+rebirthPoint =
+data.rebirthPoint || 0;
+completedBranches =
+data.completedBranches || [];
+
 stage = data.stage;
 dex = data.dex || [0];
 
@@ -775,8 +1147,7 @@ data.element || "";
 buildType =
 data.buildType || "";
 
-imageData =
-data.imageData || "";
+
 
 document.getElementById("element")
 .textContent =
@@ -786,17 +1157,17 @@ document.getElementById("buildType")
 .textContent =
 buildType || "未設定";
 
-if(imageData){
 
-const preview =
-document.getElementById("preview");
-
-preview.src = imageData;
-preview.style.display = "block";
-}
 if(element){
 
     updateMonsterCard();
+}
+
+if(scanned){
+
+    document.getElementById(
+        "scanButton"
+    ).style.display = "none";
 }
 
 log("セーブデータを読み込みました");
@@ -884,7 +1255,42 @@ else{
 }
 
 }
+function rarityUpgrade(){
 
+    const roll = Math.random();
+
+    if(rarity === "★★ N"){
+
+        if(roll < 0.5){
+
+            rarity = "★★★ R";
+
+            log("🌟 N → R に昇格！");
+        }
+    }
+
+    else if(rarity === "★★★ R"){
+
+        if(roll < 0.3){
+
+            rarity = "★★★★ SR";
+
+            log("✨ R → SR に昇格！");
+        }
+    }
+
+    else if(rarity === "★★★★ SR"){
+
+        if(roll < 0.1){
+
+            rarity = "★★★★★ SSR";
+
+            log("👑 SR → SSR に昇格！");
+        }
+    }
+
+    updateMonsterCard();
+}
 function analyzeImage(){
 
     if(scanned){
@@ -953,13 +1359,36 @@ function analyzeImage(){
             "回復型"
         ];
 
-        element =
-        elements[
-            Math.floor(
-                Math.random() *
-                elements.length
-            )
-        ];
+        if(nextBranch === "fire"){
+
+    element = "🔥 火";
+}
+else if(nextBranch === "water"){
+
+    element = "💧 水";
+}
+else if(nextBranch === "thunder"){
+
+    element = "⚡ 雷";
+}
+else if(nextBranch === "nature"){
+
+    element = "🌿 自然";
+}
+else if(nextBranch === "dark"){
+
+    element = "🌙 闇";
+}
+else{
+
+    element =
+    elements[
+        Math.floor(
+            Math.random() *
+            elements.length
+        )
+    ];
+}
 if(element.includes("火")){
 
     branch = "fire";
@@ -992,6 +1421,7 @@ else if(element.includes("闇")){
                 types.length
             )
         ];
+nextBranch = "";
 
         document.getElementById("element")
         .textContent =
@@ -1038,14 +1468,6 @@ setInterval(() => {
 
 }, 60000);
 loadGame();
-if(scanned){
-scanned = true;
-    document.getElementById("scanButton")
-    .disabled = true;
-
-    document.getElementById("scanButton")
-    .innerText = "解析済み";
-}
 updateUI();
 
 </script>
