@@ -30,7 +30,7 @@ h1{
 
 .monster{
     text-align:center;
-    font-size:90px;
+    font-size:150px;
 }
 
 .bar{
@@ -118,20 +118,13 @@ input{
 .monster-card{
 
     margin-top:15px;
-    padding:15px;
 
-    border-radius:15px;
+    padding:20px;
 
-    text-align:center;
+    border-radius:20px;
 
-    font-weight:bold;
-
-    transition:0.3s;
-
-    border:2px solid rgba(255,255,255,0.2);
-
+    min-height:220px;
 }
-
 .fire{
     background:linear-gradient(135deg,#ff512f,#dd2476);
 }
@@ -195,8 +188,20 @@ input{
     100%{
         opacity:1;
     }
-
 }
+#monsterImage{
+
+    width:100%;
+    max-width:450px;
+
+    display:block;
+    margin:auto;
+
+    border-radius:15px;
+
+    object-fit:contain;
+}
+
 </style>
 
 </head>
@@ -209,7 +214,10 @@ input{
 <label>モンスター名</label>
 <input id="nickname" placeholder="名前を入力">
 
-<div class="monster" id="monster">🥚</div>
+<img
+id="monsterImage"
+src=""
+alt="monster">
 
 <h2 id="species">たまご</h2>
 
@@ -386,9 +394,35 @@ style="display:none;">
 </div>
 
 <script>
+const monsterImages = {
+
+7:"images/frame.png",
+8:"images/aqua.png",
+9:"images/thunder.png",
+10:"images/Forest.png",
+11:"images/Shadow.png",
+
+12:"images/Inferno.png",
+13:"images/Leviathan.png",
+14:"images/Lightning.png",
+15:"images/Yggdrasil.png",
+16:"images/Dark.png",
+
+17:"images/Fire Emperor.png",
+18:"images/Sea God.png",
+19:"images/Thunder God.png",
+20:"images/World Tree.png",
+21:"images/Demon King.png",
+
+22:"images/Phoenix.png",
+23:"images/Poseidon.png",
+24:"images/Zeus.png",
+25:"images/Gaia.png",
+26:"images/Lucifer.png"
+
+};
 
 const monsters = [
-
 {name:"たまご",emoji:"🥚"},
 {name:"ミニドラ",emoji:"🐣"},
 {name:"ドラゴン",emoji:"🐉"},
@@ -641,9 +675,23 @@ document.getElementById("level").innerText = level;
 
 document.getElementById("species").innerText =
 monsters[stage].name;
+const image =
+document.getElementById(
+    "monsterImage"
+);
 
-document.getElementById("monster").innerText =
-monsters[stage].emoji;
+if(monsterImages[stage]){
+
+    image.src =
+    monsterImages[stage];
+
+}
+else{
+
+    image.src =
+    "images/egg.png";
+
+}
 
 document.getElementById("expBar").style.width =
 exp + "%";
@@ -913,7 +961,9 @@ function evolveWithEffect(
 ){
 
     const monster =
-    document.getElementById("monster");
+    document.getElementById(
+    "monsterImage"
+);
 
     monster.classList.add(
         "evolving"
