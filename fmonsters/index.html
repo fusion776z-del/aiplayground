@@ -201,6 +201,112 @@ input{
 
     object-fit:contain;
 }
+#imageModal{
+
+    position:fixed;
+
+    top:0;
+    left:0;
+
+    width:100%;
+    height:100%;
+
+    background:
+    rgba(0,0,0,0.95);
+
+    display:none;
+
+    justify-content:center;
+    align-items:center;
+
+    z-index:9999;
+}
+
+#fullMonsterImage{
+
+    max-width:95%;
+    max-height:95%;
+
+    border-radius:15px;
+}
+.floating{
+
+    animation:
+    floating 4s ease-in-out infinite;
+}
+
+@keyframes floating{
+
+    0%{
+        transform:
+        translateY(0px);
+    }
+
+    50%{
+        transform:
+        translateY(-10px);
+    }
+
+    100%{
+        transform:
+        translateY(0px);
+    }
+}
+
+.glowAura{
+
+    filter:
+    drop-shadow(
+        0 0 20px gold
+    );
+}
+
+.magicCircle{
+
+    position:relative;
+}
+
+.magicCircle::before{
+
+    content:"";
+
+    position:absolute;
+
+    width:120%;
+    height:120%;
+
+    left:-10%;
+    top:-10%;
+
+    border-radius:50%;
+
+    background:
+    radial-gradient(
+        circle,
+        rgba(255,215,0,.35),
+        transparent 70%
+    );
+
+    animation:
+    rotateCircle 15s linear infinite;
+
+    z-index:-1;
+}
+
+@keyframes rotateCircle{
+
+    from{
+        transform:
+        rotate(0deg);
+    }
+
+    to{
+        transform:
+        rotate(360deg);
+    }
+}
+
+
 
 </style>
 
@@ -217,8 +323,14 @@ input{
 <img
 id="monsterImage"
 src=""
-alt="monster">
+alt="monster"
+onclick="openMonsterImage()">
+<div id="imageModal">
 
+<img
+id="fullMonsterImage">
+
+</div>
 <h2 id="species">たまご</h2>
 
 <p>名前：<span id="displayName">未設定</span></p>
@@ -395,35 +507,36 @@ style="display:none;">
 
 <script>
 const monsterImages = {
+
 0:"Images/Egg.png",
 1:"Images/Mini.png",
 2:"Images/Dragon.png",
 3:"Images/Astral.png",
 4:"Images/Ancient.png",
 
-7:"Images/frame.png",
-8:"Images/aqua.png",
-9:"Images/thunder.png",
-10:"Images/Forest.png",
-11:"Images/Shadow.png",
+5:"Images/frame.png",
+6:"Images/aqua.png",
+7:"Images/thunder.png",
+8:"Images/Forest.png",
+9:"Images/Shadow.png",
 
-12:"Images/Inferno.png",
-13:"Images/Leviathan.png",
-14:"Images/Lightning.png",
-15:"Images/Yggdrasil.png",
-16:"Images/Dark.png",
+10:"Images/Inferno.png",
+11:"Images/Leviathan.png",
+12:"Images/Lightning.png",
+13:"Images/Yggdrasil.png",
+14:"Images/Dark.png",
 
-17:"Images/Fire Emperor.png",
-18:"Images/Sea God.png",
-19:"Images/Thunder God.png",
-20:"Images/World Tree.png",
-21:"Images/Demon King.png",
+15:"Images/Fire Emperor.png",
+16:"Images/Sea God.png",
+17:"Images/Thunder God.png",
+18:"Images/World Tree.png",
+19:"Images/Demon King.png",
 
-22:"Images/Phoenix.png",
-23:"Images/Poseidon.png",
-24:"Images/Zeus.png",
-25:"Images/Gaia.png",
-26:"Images/Lucifer.png"
+20:"Images/Phoenix.png",
+21:"Images/Poseidon.png",
+22:"Images/Zeus.png",
+23:"Images/Gaia.png",
+24:"Images/Lucifer.png"
 
 };
 
@@ -433,8 +546,7 @@ const monsters = [
 {name:"ドラゴン",emoji:"🐉"},
 {name:"アストラルドラゴン",emoji:"🦄"},
 {name:"エンシェントドラゴン",emoji:"🐲"},
-{name:"カオスドラゴン",emoji:"👹"},
-{name:"神竜",emoji:"🌟"},
+
 {name:"フレイムロード",emoji:"🔥"},
 {name:"アクアロード",emoji:"💧"},
 {name:"サンダーロード",emoji:"⚡"},
@@ -496,29 +608,29 @@ fire:[
 {
     from:4,
     level:20,
-    to:7,
+    to:5,
     text:"🔥 フレイムロードに進化！"
 },
 
 {
-    from:7,
+    from:5,
     level:30,
-    to:12,
+    to:10,
     text:"🔥 インフェルノドラゴンに進化！"
 },
 
 {
-    from:12,
+    from:10,
     level:50,
-    to:17,
+    to:15,
     text:"☀️ 炎帝竜に進化！"
 },
 
 {
-    from:17,
+    from:15,
     level:70,
     rarity:"★★★★★ SSR",
-    to:22,
+    to:20,
     text:"🪽 フェニックスロードに覚醒！"
 }
 
@@ -529,29 +641,29 @@ water:[
 {
     from:4,
     level:20,
-    to:8,
+    to:6,
     text:"💧 アクアロードに進化！"
 },
 
 {
-    from:8,
+    from:6,
     level:30,
-    to:13,
+    to:11,
     text:"🐋 リヴァイアサンに進化！"
 },
 
 {
-    from:13,
+    from:11,
     level:50,
-    to:18,
+    to:16,
     text:"🌊 海神竜に進化！"
 },
 
 {
-    from:18,
+    from:16,
     level:70,
     rarity:"★★★★★ SSR",
-    to:23,
+    to:21,
     text:"🔱 ポセイドンロードに覚醒！"
 }
 
@@ -562,29 +674,29 @@ thunder:[
 {
     from:4,
     level:20,
-    to:9,
+    to:7,
     text:"⚡ サンダーロードに進化！"
 },
 
 {
-    from:9,
+    from:7,
     level:30,
-    to:14,
+    to:12,
     text:"⚡ ライトニングロードに進化！"
 },
 
 {
-    from:14,
+    from:12,
     level:50,
-    to:19,
+    to:17,
     text:"⚡ 雷神竜に進化！"
 },
 
 {
-    from:19,
+    from:17,
     level:70,
     rarity:"★★★★★ SSR",
-    to:24,
+    to:22,
     text:"⚡ ゼウスロードに覚醒！"
 }
 
@@ -595,29 +707,29 @@ nature:[
 {
     from:4,
     level:20,
-    to:10,
+    to:8,
     text:"🌿 フォレストキングに進化！"
 },
 
 {
-    from:10,
+    from:8,
     level:30,
-    to:15,
+    to:13,
     text:"🌳 ユグドラシルに進化！"
 },
 
 {
-    from:15,
+    from:13,
     level:50,
-    to:20,
+    to:18,
     text:"🌍 世界樹竜に進化！"
 },
 
 {
-    from:20,
+    from:18,
     level:70,
     rarity:"★★★★★ SSR",
-    to:25,
+    to:23,
     text:"🌎 ガイアロードに覚醒！"
 }
 
@@ -628,29 +740,29 @@ dark:[
 {
     from:4,
     level:20,
-    to:11,
+    to:9,
     text:"🌙 シャドウロードに進化！"
 },
 
 {
-    from:11,
+    from:9,
     level:30,
-    to:16,
+    to:14,
     text:"👿 ダークエンペラーに進化！"
 },
 
 {
-    from:16,
+    from:14,
     level:50,
-    to:21,
+    to:19,
     text:"💀 魔王竜に進化！"
 },
 
 {
-    from:21,
+    from:19,
     level:70,
     rarity:"★★★★★ SSR",
-    to:26,
+    to:24,
     text:"😈 ルシファーロードに覚醒！"
 }
 
@@ -683,6 +795,12 @@ monsters[stage].name;
 const image =
 document.getElementById(
     "monsterImage"
+);
+
+image.classList.remove(
+    "floating",
+    "glowAura",
+    "magicCircle"
 );
 
 if(monsterImages[stage]){
@@ -785,46 +903,26 @@ updateUI();
 
 function train(){
 
-    if(hunger < 10){
+    hunger = 100;
 
-        log("おなかが減って訓練できない！");
-        return;
-    }
+    exp = 0;
 
-    exp += 20;
+    level += 5;
 
-    hunger -= 5;
+    awakeningStone += 10;
 
-    if(hunger < 0){
+    rarity = "★★★★★ SSR";
 
-        hunger = 0;
-    }
+    log(
+        "デバッグモード Lv" +
+        level
+    );
 
-    if(exp >= 100){
-
-        exp = 0;
-
-        level++;
-
-        log(
-            "レベルアップ！ Lv" +
-            level
-        );
-
-        if(level % 10 === 0){
-
-            awakeningStone++;
-
-            rarityUpgrade();
-        }
-
-        evolve();
-    }
+    evolve();
 
     saveGame();
     updateUI();
 }
-
 function awaken(){
 
     if(rarity === "★★★★★ SSR"){
@@ -863,7 +961,7 @@ function awaken(){
 }
 function rebirth(){
 
-    if(stage < 22){
+    if(stage < 20){
 
         log(
             "神話モンスターでのみ転生できます！"
@@ -1522,6 +1620,36 @@ setInterval(() => {
     updateUI();
 
 }, 60000);
+function openMonsterImage(){
+
+    const modal =
+    document.getElementById(
+        "imageModal"
+    );
+
+    const fullImage =
+    document.getElementById(
+        "fullMonsterImage"
+    );
+
+    fullImage.src =
+    document.getElementById(
+        "monsterImage"
+    ).src;
+
+    modal.style.display =
+    "flex";
+}
+
+document
+.getElementById(
+    "imageModal"
+)
+.onclick = function(){
+
+    this.style.display =
+    "none";
+};
 loadGame();
 updateUI();
 
