@@ -260,37 +260,170 @@ input{
         0 0 20px gold
     );
 }
+.fireGlow{
+    filter:
+    drop-shadow(0 0 20px #ff4500)
+    drop-shadow(0 0 40px #ff8800);
+}
 
+.waterGlow{
+    filter:
+    drop-shadow(0 0 20px #00bfff)
+    drop-shadow(0 0 40px #00ffff);
+}
+
+.thunderGlow{
+    filter:
+    drop-shadow(0 0 20px #ffff00)
+    drop-shadow(0 0 40px #ffd700);
+}
+
+.natureGlow{
+    filter:
+    drop-shadow(0 0 20px #00ff66)
+    drop-shadow(0 0 40px #66ff99);
+}
+
+.darkGlow{
+    filter:
+    drop-shadow(0 0 20px #aa00ff)
+    drop-shadow(0 0 40px #ff00ff);
+}
 .magicCircle{
 
     position:relative;
 }
+.sparkle{
+    animation:sparkle 1.5s infinite;
+}
 
-.magicCircle::before{
+@keyframes sparkle{
+    0%{
+        filter:
+        drop-shadow(0 0 5px #00bfff);
+    }
 
-    content:"";
+    50%{
+        filter:
+        drop-shadow(0 0 20px #00bfff)
+        drop-shadow(0 0 40px #00ffff)
+        drop-shadow(0 0 60px #0088ff);
+    }
 
-    position:absolute;
+    100%{
+        filter:
+        drop-shadow(0 0 5px #00bfff);
+    }
+}
+.fireAura{
+    animation: fireSparkle 1.5s infinite;
+}
 
-    width:120%;
-    height:120%;
+@keyframes fireSparkle{
+    0%{
+        filter:
+        drop-shadow(0 0 5px #ff4500);
+    }
 
-    left:-10%;
-    top:-10%;
+    50%{
+        filter:
+        drop-shadow(0 0 20px #ff4500)
+        drop-shadow(0 0 40px #ff8800)
+        drop-shadow(0 0 60px red);
+    }
 
-    border-radius:50%;
+    100%{
+        filter:
+        drop-shadow(0 0 5px #ff4500);
+    }
+}
+.waterAura{
+    animation: waterSparkle 1.5s infinite;
+}
 
-    background:
-    radial-gradient(
-        circle,
-        rgba(255,215,0,.35),
-        transparent 70%
-    );
+@keyframes waterSparkle{
+    0%{
+        filter:
+        drop-shadow(0 0 5px #00bfff);
+    }
 
-    animation:
-    rotateCircle 15s linear infinite;
+    50%{
+        filter:
+        drop-shadow(0 0 20px #00bfff)
+        drop-shadow(0 0 40px #00ffff)
+        drop-shadow(0 0 60px #0088ff);
+    }
 
-    z-index:-1;
+    100%{
+        filter:
+        drop-shadow(0 0 5px #00bfff);
+    }
+}
+.thunderAura{
+    animation: thunderSparkle 1.5s infinite;
+}
+
+@keyframes thunderSparkle{
+    0%{
+        filter:
+        drop-shadow(0 0 5px yellow);
+    }
+
+    50%{
+        filter:
+        drop-shadow(0 0 20px yellow)
+        drop-shadow(0 0 40px gold)
+        drop-shadow(0 0 60px orange);
+    }
+
+    100%{
+        filter:
+        drop-shadow(0 0 5px yellow);
+    }
+}
+.natureAura{
+    animation: natureSparkle 1.5s infinite;
+}
+
+@keyframes natureSparkle{
+    0%{
+        filter:
+        drop-shadow(0 0 5px #00ff66);
+    }
+
+    50%{
+        filter:
+        drop-shadow(0 0 20px #00ff66)
+        drop-shadow(0 0 40px #66ff99)
+        drop-shadow(0 0 60px #00cc44);
+    }
+
+    100%{
+        filter:
+        drop-shadow(0 0 5px #00ff66);
+    }
+}
+.darkAura{
+    animation: darkSparkle 1.5s infinite;
+}
+
+@keyframes darkSparkle{
+    0%{
+        filter:
+        drop-shadow(0 0 5px #aa00ff);
+    }
+
+    50%{
+        filter:
+        drop-shadow(0 0 20px #aa00ff)
+        drop-shadow(0 0 40px #ff00ff)
+        drop-shadow(0 0 60px #6600cc);
+    }
+
+    100%{
+        filter:
+        drop-shadow(0 0 5px #aa00ff);
+    }
 }
 
 @keyframes rotateCircle{
@@ -306,7 +439,50 @@ input{
     }
 }
 
+.fireCircle::before{
+    background:
+    radial-gradient(
+        circle,
+        rgba(255,80,0,.4),
+        transparent 70%
+    );
+}
 
+.waterCircle::before{
+    background:
+    radial-gradient(
+        circle,
+        rgba(0,180,255,.4),
+        transparent 70%
+    );
+}
+
+.thunderCircle::before{
+    background:
+    radial-gradient(
+        circle,
+        rgba(255,255,0,.4),
+        transparent 70%
+    );
+}
+
+.natureCircle::before{
+    background:
+    radial-gradient(
+        circle,
+        rgba(0,255,100,.4),
+        transparent 70%
+    );
+}
+
+.darkCircle::before{
+    background:
+    radial-gradient(
+        circle,
+        rgba(180,0,255,.4),
+        transparent 70%
+    );
+}
 
 </style>
 
@@ -793,15 +969,69 @@ document.getElementById("level").innerText = level;
 document.getElementById("species").innerText =
 monsters[stage].name;
 const image =
+
 document.getElementById(
     "monsterImage"
 );
-
 image.classList.remove(
-    "floating",
-    "glowAura",
-    "magicCircle"
+    "sparkle",
+    "fireAura",
+    "waterAura",
+    "thunderAura",
+    "natureAura",
+    "darkAura",
+    "fireGlow",
+    "waterGlow",
+    "thunderGlow",
+    "natureGlow",
+    "darkGlow"
 );
+if(stage >= 5){
+
+    if(branch === "fire"){
+        image.classList.add("fireAura");
+    }
+
+    else if(branch === "water"){
+        image.classList.add("waterAura");
+    }
+
+    else if(branch === "thunder"){
+        image.classList.add("thunderAura");
+    }
+
+    else if(branch === "nature"){
+        image.classList.add("natureAura");
+    }
+
+    else if(branch === "dark"){
+        image.classList.add("darkAura");
+    }
+}
+if(stage >= 20){
+
+    image.classList.add("magicCircle");
+
+    if(branch === "fire"){
+        image.classList.add("fireGlow");
+    }
+
+    if(branch === "water"){
+        image.classList.add("waterGlow");
+    }
+
+    if(branch === "thunder"){
+        image.classList.add("thunderGlow");
+    }
+
+    if(branch === "nature"){
+        image.classList.add("natureGlow");
+    }
+
+    if(branch === "dark"){
+        image.classList.add("darkGlow");
+    }
+}
 
 if(monsterImages[stage]){
 
