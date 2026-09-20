@@ -170,6 +170,8 @@ input{
     color:#ffffff;
 }
 
+
+
 #monsterImage{
 
     width:100%;
@@ -406,7 +408,47 @@ input{
         drop-shadow(0 0 5px #aa00ff);
     }
 }
+.rainbowGlow{
+    animation: rainbowAura 2s linear infinite;
+}
 
+@keyframes rainbowAura{
+    0%{
+        filter:
+        drop-shadow(0 0 20px red)
+        drop-shadow(0 0 40px orange);
+    }
+
+    20%{
+        filter:
+        drop-shadow(0 0 20px yellow)
+        drop-shadow(0 0 40px lime);
+    }
+
+    40%{
+        filter:
+        drop-shadow(0 0 20px cyan)
+        drop-shadow(0 0 40px blue);
+    }
+
+    60%{
+        filter:
+        drop-shadow(0 0 20px violet)
+        drop-shadow(0 0 40px magenta);
+    }
+
+    80%{
+        filter:
+        drop-shadow(0 0 20px pink)
+        drop-shadow(0 0 40px gold);
+    }
+
+    100%{
+        filter:
+        drop-shadow(0 0 20px red)
+        drop-shadow(0 0 40px orange);
+    }
+}
 @keyframes rotateCircle{
 
     from{
@@ -464,6 +506,66 @@ input{
         transparent 70%
     );
 }
+#monsterNameOverlay{
+    position:absolute;
+    top:15px;
+    left:15px;
+    z-index:10;
+
+    padding:8px 14px;
+
+    background:rgba(0,0,0,0.5);
+    border-radius:12px;
+
+    color:white;
+    font-size:24px;
+    font-weight:bold;
+
+    text-shadow:
+        0 0 8px #000,
+        0 0 15px #000;
+}
+
+.monster-container{
+    position:relative;
+}
+
+.monster-name{
+    position:absolute;
+    top:10px;
+    left:50%;
+    transform:translateX(-50%);
+
+    z-index:999;
+
+    display:flex;
+    align-items:center;
+    gap:10px;
+
+    color:white;
+    font-size:28px;
+    font-weight:bold;
+
+    white-space:nowrap;
+
+    background:rgba(0,0,0,.5);
+    padding:6px 12px;
+    border-radius:10px;
+}
+#displayName{
+    font-family: "Yu Mincho", serif;
+    font-weight:900;
+    letter-spacing:2px;
+    font-size:32px;
+}
+#species{
+    display:none;
+}
+#nameLevel{
+    color:#ffd700;
+    font-size:20px;
+    font-weight:900;
+}
 
 </style>
 
@@ -471,17 +573,26 @@ input{
 <body>
 
 <div class="game">
-
 <h1>フィギュアモンスターズ</h1>
 
-<label>モンスター名</label>
-<input id="nickname" placeholder="名前を入力">
+<input
+    id="nickname"
+    style="display:none;">
 
-<img
-id="monsterImage"
-src=""
-alt="monster"
-onclick="openMonsterImage()">
+<div class="monster-container">
+
+    <div class="monster-name">
+        <span id="displayName">たまご</span>
+        <span id="nameLevel">Lv.1</span>
+    </div>
+
+    <img
+        id="monsterImage"
+        src=""
+        alt="monster"
+        onclick="openMonsterImage()">
+
+</div>
 <div id="imageModal">
 
 <img
@@ -490,8 +601,7 @@ id="fullMonsterImage">
 </div>
 <h2 id="species">たまご</h2>
 
-<p>名前：<span id="displayName">未設定</span></p>
-<p>Lv <span id="level">1</span></p>
+
 
 <p>
 満腹度 :
@@ -685,7 +795,7 @@ const monsterImages = {
 
 15:"Images/Fire Emperor.jpg",
 16:"Images/Sea God.jpg",
-17:"Images/Thunder God.jpg",
+17:"Images/ThunderGod.jpg",
 18:"Images/WorldTree.jpg",
 19:"Images/Demon King.jpg",
 
@@ -945,8 +1055,9 @@ let completedBranches = [];
 
 function updateUI(){
 
-document.getElementById("level").innerText = level;
 
+document.getElementById("nameLevel").innerText =
+"Lv." + level;
 document.getElementById("species").innerText =
 monsters[stage].name;
 const image =
@@ -965,7 +1076,8 @@ image.classList.remove(
     "waterGlow",
     "thunderGlow",
     "natureGlow",
-    "darkGlow"
+    "darkGlow",
+    "rainbowGlow"
 );
 if(stage >= 5){
 
@@ -990,30 +1102,9 @@ if(stage >= 5){
     }
 }
 if(stage >= 20){
-
     image.classList.add("magicCircle");
-
-    if(branch === "fire"){
-        image.classList.add("fireGlow");
-    }
-
-    if(branch === "water"){
-        image.classList.add("waterGlow");
-    }
-
-    if(branch === "thunder"){
-        image.classList.add("thunderGlow");
-    }
-
-    if(branch === "nature"){
-        image.classList.add("natureGlow");
-    }
-
-    if(branch === "dark"){
-        image.classList.add("darkGlow");
-    }
+    image.classList.add("rainbowGlow");
 }
-
 if(monsterImages[stage]){
 
     image.src =
@@ -1070,12 +1161,49 @@ document.getElementById(
 
 completedBranches.length +
 " / 5";
+document.getElementById("displayName").innerText =
+monsters[stage].name;
+
+const name = document.getElementById("displayName");
+
+/* 属性色 */
+if(branch === "fire"){
+    name.style.color = "#ff5533";
+}
+else if(branch === "water"){
+    name.style.color = "#33ccff";
+}
+else if(branch === "thunder"){
+    name.style.color = "#ffd700";
+}
+else if(branch === "nature"){
+    name.style.color = "#66ff66";
+}
+else if(branch === "dark"){
+    name.style.color = "#cc66ff";
+}
+else{
+    name.style.color = "white";
+}
+
+if(rarity === "★★★★★ SSR"){
+    name.style.textShadow =
+        "0 0 10px gold, " +
+        "0 0 20px gold, " +
+        "0 0 40px orange";
+}
+else{
+    name.style.textShadow=
+        "0 0 10px black, " +
+        "0 0 20px black";
+}
+
 let nickname =
-document.getElementById("nickname").value;
+monsters[stage].name;
 
 document.getElementById("displayName").innerText =
 
-nickname || "未設定";
+monsters[stage].name;
 document.getElementById(
     "dexRate"
 ).innerText =
@@ -1296,7 +1424,7 @@ function evolveWithEffect(
         );
 
         log(message);
-if(newStage >= 22){
+if(newStage >= 20){
 
     if(
         !completedBranches.includes(
