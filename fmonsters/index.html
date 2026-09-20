@@ -26,6 +26,14 @@ body{
 
 h1{
     text-align:center;
+
+    font-size:clamp(
+        14px,
+        6vw,
+        40px
+    );
+
+    white-space:nowrap;
 }
 
 .monster{
@@ -305,65 +313,60 @@ input{
 @keyframes fireSparkle{
     0%{
         filter:
-        drop-shadow(0 0 5px #ff4500);
+        drop-shadow(0 0 3px #ff4500);
     }
 
     50%{
         filter:
-        drop-shadow(0 0 20px #ff4500)
-        drop-shadow(0 0 40px #ff8800)
-        drop-shadow(0 0 60px red);
+        drop-shadow(0 0 5px #ff4500)
+        drop-shadow(0 0 5px #ff8800)
+        drop-shadow(0 0 5px red);
     }
 
     100%{
         filter:
-        drop-shadow(0 0 5px #ff4500);
+        drop-shadow(0 0 3px #ff4500);
     }
-}
-.waterAura{
-    animation: waterSparkle 1.5s infinite;
 }
 
 @keyframes waterSparkle{
     0%{
         filter:
-        drop-shadow(0 0 5px #00bfff);
+        drop-shadow(0 0 3px #00bfff);
     }
 
     50%{
         filter:
-        drop-shadow(0 0 20px #00bfff)
-        drop-shadow(0 0 40px #00ffff)
-        drop-shadow(0 0 60px #0088ff);
+        drop-shadow(0 0 5px #00bfff)
+        drop-shadow(0 0 5px #00ffff)
+        drop-shadow(0 0 5px #0088ff);
     }
 
     100%{
         filter:
-        drop-shadow(0 0 5px #00bfff);
+        drop-shadow(0 0 3px #00bfff);
     }
-}
-.thunderAura{
-    animation: thunderSparkle 1.5s infinite;
 }
 
 @keyframes thunderSparkle{
     0%{
         filter:
-        drop-shadow(0 0 5px yellow);
+        drop-shadow(0 0 3px yellow);
     }
 
     50%{
         filter:
-        drop-shadow(0 0 20px yellow)
-        drop-shadow(0 0 40px gold)
-        drop-shadow(0 0 60px orange);
+        drop-shadow(0 0 5px yellow)
+        drop-shadow(0 0 5px gold)
+        drop-shadow(0 0 5px orange);
     }
 
     100%{
         filter:
-        drop-shadow(0 0 5px yellow);
+        drop-shadow(0 0 3px yellow);
     }
 }
+
 .natureAura{
     animation: natureSparkle 1.5s infinite;
 }
@@ -376,9 +379,9 @@ input{
 
     50%{
         filter:
-        drop-shadow(0 0 20px #00ff66)
-        drop-shadow(0 0 40px #66ff99)
-        drop-shadow(0 0 60px #00cc44);
+        drop-shadow(0 0 5px #00ff66)
+        drop-shadow(0 0 5px #66ff99)
+        drop-shadow(0 0 5px #00cc44);
     }
 
     100%{
@@ -398,9 +401,9 @@ input{
 
     50%{
         filter:
-        drop-shadow(0 0 20px #aa00ff)
-        drop-shadow(0 0 40px #ff00ff)
-        drop-shadow(0 0 60px #6600cc);
+        drop-shadow(0 0 5px #aa00ff)
+        drop-shadow(0 0 5px #ff00ff)
+        drop-shadow(0 0 5px #6600cc);
     }
 
     100%{
@@ -535,28 +538,36 @@ input{
     top:10px;
     left:50%;
     transform:translateX(-50%);
-
     z-index:999;
 
     display:flex;
     align-items:center;
-    gap:10px;
+    justify-content:center;
+    gap:6px;
+
+    width:90%;
+    max-width:420px;
 
     color:white;
-    font-size:28px;
     font-weight:bold;
-
-    white-space:nowrap;
 
     background:rgba(0,0,0,.5);
     padding:6px 12px;
     border-radius:10px;
+
+    overflow:hidden;
 }
+
 #displayName{
-    font-family: "Yu Mincho", serif;
+    font-family:"Yu Mincho",serif;
     font-weight:900;
-    letter-spacing:2px;
-    font-size:32px;
+
+    font-size:24px;
+
+    white-space:nowrap;
+
+    flex:1;
+    text-align:center;
 }
 #species{
     display:none;
