@@ -566,6 +566,30 @@ input{
     font-size:20px;
     font-weight:900;
 }
+.legendSparkle{
+    animation: legendSparkle 1.5s infinite;
+}
+
+@keyframes legendSparkle{
+    0%{
+        filter:
+        brightness(1)
+        drop-shadow(0 0 5px white);
+    }
+
+    50%{
+        filter:
+        brightness(1.3)
+        drop-shadow(0 0 15px white)
+        drop-shadow(0 0 30px gold);nanimo 
+    }
+
+    100%{
+        filter:
+        brightness(1)
+        drop-shadow(0 0 5px white);
+    }
+}
 
 </style>
 
@@ -682,32 +706,6 @@ onclick="resetGame()">
 
 <hr>
 
-<h3>📷 AIスキャン</h3>
-
-<input
-type="file"
-id="imageInput"
-accept="image/*">
-
-<br><br>
-
-<img
-id="preview"
-style="
-display:none;
-max-width:200px;
-border-radius:10px;
-">
-
-<p>
-属性：
-<span id="element">未設定</span>
-</p>
-
-<p>
-タイプ：
-<span id="buildType">未設定</span>
-</p>
 <div id="rebirthSelect" style="display:none;">
 
 <h3>転生属性を選択</h3>
@@ -733,11 +731,7 @@ border-radius:10px;
 </button>
 
 </div>
-<button
-id="scanButton"
-onclick="analyzeImage()">
-AI解析
-</button>
+
 
 <div
 id="monsterCard"
@@ -1044,9 +1038,7 @@ let stage = 0;
 let dex = [];
 let element = "";
 let buildType = "";
-let imageData = "";
 let rarity = "";
-let scanned = false;
 let branch = "";
 let awakeningStone = 0;
 let rebirthPoint = 0;
@@ -1077,9 +1069,10 @@ image.classList.remove(
     "thunderGlow",
     "natureGlow",
     "darkGlow",
-    "rainbowGlow"
+    "rainbowGlow",
+    "legendSparkle"
 );
-if(stage >= 5){
+if(stage >= 10){
 
     if(branch === "fire"){
         image.classList.add("fireAura");
@@ -1100,6 +1093,9 @@ if(stage >= 5){
     else if(branch === "dark"){
         image.classList.add("darkAura");
     }
+}
+if(stage >= 15 && stage < 20){
+    image.classList.add("legendSparkle");
 }
 if(stage >= 20){
     image.classList.add("magicCircle");
@@ -1374,15 +1370,6 @@ types[
         branch = "dark";
     }
 
-    scanned = true;
-
-    document.getElementById(
-        "element"
-    ).textContent = element;
-
-    document.getElementById(
-        "buildType"
-    ).textContent = buildType;
 
     document.getElementById(
         "rebirthSelect"
@@ -1563,10 +1550,7 @@ nickname:
 document.getElementById("nickname").value,
 
 element,
-buildType,
-
 rarity,
-scanned,
 branch,
 nextBranch,
 lastPlayed: Date.now()
@@ -1585,19 +1569,54 @@ function loadGame(){
         "figureMonsterSave"
     );
 
-    if(!raw){
+if(!raw){
 
-        unlockMonster(0);
-        return;
+    unlockMonster(0);
+
+    const branches = [
+        "fire",
+        "water",
+        "thunder",
+        "nature",
+        "dark"
+    ];
+
+    branch =
+    branches[
+        Math.floor(
+            Math.random() *
+            branches.length
+        )
+    ];
+
+    if(branch === "fire"){
+        element = "🔥 火";
     }
+    else if(branch === "water"){
+        element = "💧 水";
+    }
+    else if(branch === "thunder"){
+        element = "⚡ 雷";
+    }
+    else if(branch === "nature"){
+        element = "🌿 自然";
+    }
+    else if(branch === "dark"){
+        element = "🌙 闇";
+    }
+
+    saveGame();
+
+    return;
+}
+
 
 const data =
 JSON.parse(raw);
 
 rarity =
 data.rarity || "";
-scanned =
-data.scanned || false;
+
 branch =
 data.branch || "";
 nextBranch =
@@ -1636,31 +1655,12 @@ data.nickname || "";
 element =
 data.element || "";
 
-buildType =
-data.buildType || "";
-
-
-
-document.getElementById("element")
-.textContent =
-element || "未設定";
-
-document.getElementById("buildType")
-.textContent =
-buildType || "未設定";
-
 
 if(element){
 
     updateMonsterCard();
 }
 
-if(scanned){
-
-    document.getElementById(
-        "scanButton"
-    ).style.display = "none";
-}
 
 log("セーブデータを読み込みました");
 }
@@ -1783,160 +1783,7 @@ function rarityUpgrade(){
 
     updateMonsterCard();
 }
-function analyzeImage(){
 
-    if(scanned){
-
-        log("このモンスターはすでに解析済みです！");
-        return;
-    }
-
-    const file =
-    document.getElementById("imageInput").files[0];
-    if(!file){
-
-        log("画像を選択してください");
-        return;
-    }
-
-    const roll =
-    Math.random();
-
-    if(roll < 0.05){
-
-        rarity = "★★★★★ SSR";
-
-    }else if(roll < 0.20){
-
-        rarity = "★★★★ SR";
-
-    }else if(roll < 0.50){
-
-        rarity = "★★★ R";
-
-    }else{
-
-        rarity = "★★ N";
-    }
-
-    const reader =
-    new FileReader();
-
-    reader.onload = function(e){
-
-        imageData =
-        e.target.result;
-
-        const preview =
-        document.getElementById("preview");
-
-        preview.src =
-        imageData;
-
-        preview.style.display =
-        "block";
-
-        const elements = [
-            "🔥 火",
-            "💧 水",
-            "⚡ 雷",
-            "🌿 自然",
-            "🌙 闇"
-        ];
-
-        const types = [
-            "パワー型",
-            "スピード型",
-            "防御型",
-            "回復型"
-        ];
-
-        if(nextBranch === "fire"){
-
-    element = "🔥 火";
-}
-else if(nextBranch === "water"){
-
-    element = "💧 水";
-}
-else if(nextBranch === "thunder"){
-
-    element = "⚡ 雷";
-}
-else if(nextBranch === "nature"){
-
-    element = "🌿 自然";
-}
-else if(nextBranch === "dark"){
-
-    element = "🌙 闇";
-}
-else{
-
-    element =
-    elements[
-        Math.floor(
-            Math.random() *
-            elements.length
-        )
-    ];
-}
-if(element.includes("火")){
-
-    branch = "fire";
-
-}
-else if(element.includes("水")){
-
-    branch = "water";
-
-}
-else if(element.includes("雷")){
-
-    branch = "thunder";
-
-}
-else if(element.includes("自然")){
-
-    branch = "nature";
-
-}
-else if(element.includes("闇")){
-
-    branch = "dark";
-
-}
-        buildType =
-        types[
-            Math.floor(
-                Math.random() *
-                types.length
-            )
-        ];
-nextBranch = "";
-
-        document.getElementById("element")
-        .textContent =
-        element;
-
-        document.getElementById("buildType")
-        .textContent =
-        buildType;
-scanned = true;
-        updateMonsterCard();
-
-        log(
-            element +
-            "属性の" +
-            buildType +
-            "として解析されました！"
-        );
-
-        saveGame();
-    };
-
-    reader.readAsDataURL(file);
-}
 document
 .getElementById("nickname")
 .addEventListener("input",()=>{
