@@ -637,7 +637,13 @@ input{
     margin-bottom:5px;
 }
 
+.dex-item{
 
+    padding:8px;
+
+    border-bottom:
+    1px solid #333;
+}
 </style>
 
 </head>
@@ -1572,28 +1578,58 @@ if(!dex.includes(id)){
 dex.push(id);
 }
 }
-
 function renderDex(){
 
-let html = "";
+    let html = "";
 
-dex.forEach(id => {
+    dex.forEach(id => {
 
-html += `
-<div class="dex-item">
-${monsters[id].emoji}
-${monsters[id].name}
-</div>
-`;
+        html += `
+        <div class="dex-item">
 
-});
+            <a
+            onclick="showDexMonster(${id})"
+            style="
+                cursor:pointer;
+                color:white;
+                text-decoration:none;
+            ">
 
-if(html === ""){
-html = "未発見";
+            ${monsters[id].emoji}
+            ${monsters[id].name}
+
+            </a>
+
+        </div>
+        `;
+    });
+
+    if(html === ""){
+        html = "未発見";
+    }
+
+    document.getElementById(
+        "dexList"
+    ).innerHTML = html;
 }
 
-document.getElementById("dexList").innerHTML =
-html;
+function showDexMonster(id){
+
+    const modal =
+    document.getElementById(
+        "imageModal"
+    );
+
+    const fullImage =
+    document.getElementById(
+        "fullMonsterImage"
+    );
+
+    fullImage.src =
+    monsterImages[id];
+
+    modal.style.display =
+    "flex";
 }
 
 function saveGame(){
