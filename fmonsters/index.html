@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>フィギュアモンスターズ Ver0.6</title>
+<title>フィギュアモンスターズ Ver0.7</title>
 
 <style>
 body{
@@ -601,6 +601,38 @@ input{
         drop-shadow(0 0 5px white);
     }
 }
+.status-overlay{
+
+    position:absolute;
+
+    left:0;
+    bottom:0;
+
+    width:100%;
+
+    padding:12px;
+
+    box-sizing:border-box;
+
+    background:
+    linear-gradient(
+        transparent,
+        rgba(0,0,0,.9)
+    );
+
+    z-index:50;
+}
+.status-label{
+
+    color:white;
+
+    font-weight:bold;
+
+    font-size:18px;
+
+    margin-bottom:5px;
+}
+
 
 </style>
 
@@ -626,6 +658,31 @@ input{
         src=""
         alt="monster"
         onclick="openMonsterImage()">
+<div class="status-overlay">
+
+    <div class="status-label">
+        満腹度 :
+        <span id="hungerText">50</span>%
+    </div>
+
+    <div class="bar">
+        <div class="fill"
+             id="hungerBar">
+        </div>
+    </div>
+
+    <div class="status-label">
+        経験値 :
+        <span id="expText">0</span>%
+    </div>
+
+    <div class="bar">
+        <div class="fill"
+             id="expBar">
+        </div>
+    </div>
+
+</div>
 
 </div>
 <div id="imageModal">
@@ -638,22 +695,6 @@ id="fullMonsterImage">
 
 
 
-<p>
-満腹度 :
-<span id="hungerText">50</span>%
-</p>
-
-<div class="bar">
-    <div class="fill" id="hungerBar"></div>
-</div>
-
-<p>
-経験値 :
-<span id="expText">0</span>%
-</p>
-<div class="bar">
-    <div class="fill" id="expBar"></div>
-</div>
 
 
 <div class="button-grid">
@@ -1305,6 +1346,7 @@ function awaken(){
     saveGame();
     updateUI();
 }
+
 function rebirth(){
 
     if(stage < 20){
@@ -1316,12 +1358,19 @@ function rebirth(){
         return;
     }
 
+    const select =
     document.getElementById(
         "rebirthSelect"
-    ).style.display = "block";
+    );
 
+    select.style.display =
+    "block";
+
+    select.scrollIntoView({
+        behavior:"smooth",
+        block:"center"
+    });
 }
-
 
 function selectBranch(type){
 
