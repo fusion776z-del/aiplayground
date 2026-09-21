@@ -132,6 +132,7 @@ input{
     border-radius:20px;
 
     min-height:220px;
+text-align:center;
 }
 .fire{
     background:linear-gradient(135deg,#ff512f,#dd2476);
@@ -639,11 +640,40 @@ input{
 
 .dex-item{
 
-    padding:8px;
+    background:#222;
 
-    border-bottom:
-    1px solid #333;
+    border-radius:12px;
+
+    padding:10px;
+
+    margin-bottom:10px;
+
+    text-align:center;
+
+    cursor:pointer;
+
+    transition:.2s;
 }
+
+.dex-item:hover{
+
+    background:#333;
+
+    transform:scale(1.02);
+}
+.dex-thumb{
+
+    width:100%;
+
+    height:120px;
+
+    object-fit:cover;
+
+    border-radius:10px;
+
+    margin-bottom:8px;
+}
+
 </style>
 
 </head>
@@ -800,9 +830,6 @@ id="monsterCard"
 class="monster-card"
 style="display:none;">
 
-<h3 id="cardTitle">
-モンスターカード
-</h3>
 
 <p id="cardRarity" class="rarity">
 ★★★★★ SSR
@@ -1602,6 +1629,7 @@ function renderDex(){
 
         </div>
         `;
+
     });
 
     if(html === ""){
@@ -1785,11 +1813,7 @@ function updateMonsterCard(){
 
     card.className = "monster-card";
 
-    document.getElementById("cardTitle")
-    .innerText =
-    document.getElementById("nickname").value ||
-    "名無しモンスター";
-
+    
     document.getElementById("cardElement")
     .innerText = element;
 
