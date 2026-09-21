@@ -1,77 +1,2082 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>AI Playground</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-  <style>
-    *{margin:0;padding:0;box-sizing:border-box;}
-    body{background:#050816;color:white;overflow-x:hidden;font-family:'Inter',sans-serif;min-height:100vh;}
-    #bgCanvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:-10;}
-    .bg{position:fixed;inset:0;background:radial-gradient(circle at top left,#1b2a52 0%,transparent 30%),radial-gradient(circle at bottom right,#00f0ff22 0%,transparent 35%),#050816;z-index:-3;}
-    .grid{position:fixed;inset:0;background-image:linear-gradient(rgba(255,255,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.04) 1px,transparent 1px);background-size:40px 40px;mask-image:linear-gradient(to bottom,rgba(0,0,0,1),rgba(0,0,0,0.2));z-index:-2;}
-    .glow{position:absolute;border-radius:50%;filter:blur(100px);opacity:0.5;animation:float 8s ease-in-out infinite;pointer-events:none;}
-    .g1{width:300px;height:300px;background:#00ffff;top:10%;left:10%;}
-    .g2{width:250px;height:250px;background:#7b61ff;bottom:10%;right:10%;animation-delay:2s;}
-    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-30px)}}
-    .hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:40px 20px 80px;position:relative;}
-    .badge{border:1px solid #00f0ff55;padding:10px 20px;border-radius:999px;background:#00f0ff10;color:#8efcff;margin-bottom:25px;backdrop-filter:blur(12px);animation:fadeUp 1s ease;}
-    .title{font-size:clamp(3rem,8vw,7rem);font-family:'Orbitron',sans-serif;font-weight:700;line-height:1;margin-bottom:25px;background:linear-gradient(90deg,#fff,#00ffff,#7b61ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:glitch 5s infinite;}
-    @keyframes glitch{0%,100%{text-shadow:none}20%{text-shadow:2px 0 #00ffff}40%{text-shadow:-2px 0 #7b61ff}60%{text-shadow:3px 0 #00ffff}}
-    .subtitle{max-width:700px;color:#c8d3f5;font-size:1.2rem;line-height:1.8;margin-bottom:50px;animation:fadeUp 1.4s ease;}
-    @keyframes fadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
-    .cards{width:100%;max-width:1200px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:30px;margin-top:20px;}
-    .card{position:relative;padding:35px;border-radius:28px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);backdrop-filter:blur(20px);transition:0.4s;overflow:hidden;text-decoration:none;color:white;min-height:220px;}
-    .card::before{content:"";position:absolute;inset:0;background:linear-gradient(135deg,transparent,rgba(255,255,255,0.08),transparent);opacity:0;transition:0.4s;}
-    .card:hover::before{opacity:1;}
-    .card:hover{transform:translateY(-10px) rotateX(5deg) rotateY(-5deg);box-shadow:0 10px 40px rgba(0,255,255,0.15);}
-    .card.sky-card{border-color:rgba(255,216,77,0.35);background:radial-gradient(circle at top right,rgba(255,216,77,0.18),transparent 36%),radial-gradient(circle at bottom left,rgba(99,216,255,0.16),transparent 42%),rgba(255,255,255,0.05);}
-    .card.sky-card:hover{box-shadow:0 0 22px rgba(255,216,77,0.35),0 12px 46px rgba(99,216,255,0.18);border-color:rgba(255,216,77,0.75);}
-    .card.uwasa-card{border-color:rgba(255,55,90,0.38);background:radial-gradient(circle at top right,rgba(155,0,35,0.28),transparent 38%),radial-gradient(circle at bottom left,rgba(105,0,160,0.22),transparent 42%),rgba(18,5,20,0.72);}
-    .card.uwasa-card:hover{border-color:rgba(255,70,110,0.8);box-shadow:0 0 24px rgba(255,40,80,0.32),0 12px 46px rgba(90,0,130,0.28);}
-    .icon{font-size:3rem;margin-bottom:20px;}
-    .card h3{font-size:1.5rem;margin-bottom:15px;font-family:'Orbitron',sans-serif;}
-    .card p{color:#b7c3ec;line-height:1.8;}
-    .sky-card p{color:#fff3b8;}
-    .uwasa-card p{color:#ffd4de;}
-    @media(max-width:768px){.title{font-size:3rem}.subtitle{font-size:1rem}.cards{grid-template-columns:1fr}.card{text-align:center}}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>フィギュアモンスターズ Ver1.0</title>
+
+<style>
+body{
+    margin:0;
+    background:#1b1b2f;
+    color:white;
+    font-family:sans-serif;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height:100vh;
+}
+
+.game{
+
+    width:95%;
+    max-width:400px;
+
+}
+
+h1{
+    text-align:center;
+
+    font-size:clamp(
+        14px,
+        6vw,
+        40px
+    );
+
+    white-space:nowrap;
+}
+
+.monster{
+    text-align:center;
+    font-size:150px;
+}
+
+.bar{
+    height:20px;
+    background:#444;
+    border-radius:10px;
+    overflow:hidden;
+    margin-bottom:10px;
+}
+
+.fill{
+    height:100%;
+    background:limegreen;
+}
+
+button{
+
+    margin:0;
+
+    padding:10px;
+
+    width:100%;
+
+    font-size:15px;
+}
+.button-grid{
+
+    display:grid;
+
+    grid-template-columns:1fr 1fr;
+
+    gap:8px;
+
+    margin-top:10px;
+}
+
+.feed{
+    background:#f6b93b;
+}
+
+.train{
+    background:#60a3bc;
+}
+
+.evolve{
+    background:#d980fa;
+}
+
+.save{
+    background:#78e08f;
+}
+
+.reset{
+    background:#eb2f06;
+    color:white;
+}
+
+input{
+    width:100%;
+    padding:8px;
+    margin-bottom:10px;
+    border-radius:8px;
+    border:none;
+    box-sizing:border-box;
+}
+
+.log{
+    margin-top:10px;
+    background:#111;
+    padding:10px;
+    border-radius:10px;
+    min-height:50px;
+}
+
+.dex{
+    margin-top:15px;
+    background:#181818;
+    border-radius:10px;
+    padding:10px;
+}
+
+.dex-item{
+    padding:5px;
+}
+.monster-card{
+
+    margin-top:15px;
+
+    padding:20px;
+
+    border-radius:20px;
+
+text-align:center;
+}
+.fire{
+    background:linear-gradient(135deg,#ff512f,#dd2476);
+}
+
+.water{
+    background:linear-gradient(135deg,#2193b0,#6dd5ed);
+}
+
+.thunder{
+    background:linear-gradient(135deg,#f7971e,#ffd200);
+    color:black;
+}
+
+.nature{
+    background:linear-gradient(135deg,#56ab2f,#a8e063);
+    color:black;
+}
+
+.dark{
+    background:linear-gradient(135deg,#41295a,#2f0743);
+}
+.kami{
+
+    background:
+    linear-gradient(
+        135deg,
+        #ffd6ea,
+        #ffc0cb,
+        #fff5fa
+    );
+
+    color:#7a2c4a;
+
+    box-shadow:
+    0 0 15px rgba(255,192,203,.8);
+}
+
+.rarity{
+
+    font-size:20px;
+    font-weight:bold;
+
+    margin:10px 0;
+}
+.ssr{
+    color:#ffd700;
+    text-shadow:0 0 10px gold;
+}
+
+.sr{
+    color:#ff66ff;
+}
+
+.r{
+    color:#66ccff;
+}
+
+.n{
+    color:#ffffff;
+}
+
+
+
+#monsterImage{
+
+    width:100%;
+    max-width:450px;
+
+    display:block;
+    margin:auto;
+
+    border-radius:15px;
+
+    object-fit:contain;
+}
+#imageModal{
+
+    position:fixed;
+
+    top:0;
+    left:0;
+
+    width:100%;
+    height:100%;
+
+    background:
+    rgba(0,0,0,0.95);
+
+    display:none;
+
+    justify-content:center;
+    align-items:center;
+
+    z-index:9999;
+}
+
+#fullMonsterImage{
+
+    max-width:95%;
+    max-height:95%;
+
+    border-radius:15px;
+}
+.floating{
+
+    animation:
+    floating 4s ease-in-out infinite;
+}
+
+@keyframes floating{
+
+    0%{
+        transform:
+        translateY(0px);
+    }
+
+    50%{
+        transform:
+        translateY(-10px);
+    }
+
+    100%{
+        transform:
+        translateY(0px);
+    }
+}
+
+.glowAura{
+
+    filter:
+    drop-shadow(
+        0 0 20px gold
+    );
+}
+.fireGlow{
+    filter:
+    drop-shadow(0 0 20px #ff4500)
+    drop-shadow(0 0 40px #ff8800);
+}
+
+.waterGlow{
+    filter:
+    drop-shadow(0 0 20px #00bfff)
+    drop-shadow(0 0 40px #00ffff);
+}
+
+.thunderGlow{
+    filter:
+    drop-shadow(0 0 20px #ffff00)
+    drop-shadow(0 0 40px #ffd700);
+}
+
+.natureGlow{
+    filter:
+    drop-shadow(0 0 20px #00ff66)
+    drop-shadow(0 0 40px #66ff99);
+}
+
+.darkGlow{
+    filter:
+    drop-shadow(0 0 20px #aa00ff)
+    drop-shadow(0 0 40px #ff00ff);
+}
+.magicCircle{
+
+    position:relative;
+}
+.sparkle{
+    animation:sparkle 1.5s infinite;
+}
+
+@keyframes sparkle{
+    0%{
+        filter:
+        drop-shadow(0 0 5px #00bfff);
+    }
+
+    50%{
+        filter:
+        drop-shadow(0 0 20px #00bfff)
+        drop-shadow(0 0 40px #00ffff)
+        drop-shadow(0 0 60px #0088ff);
+    }
+
+    100%{
+        filter:
+        drop-shadow(0 0 5px #00bfff);
+    }
+}
+.fireAura{
+    animation: fireSparkle 1.5s infinite;
+}
+
+@keyframes fireSparkle{
+    0%{
+        filter:
+        drop-shadow(0 0 3px #ff4500);
+    }
+
+    50%{
+        filter:
+        drop-shadow(0 0 5px #ff4500)
+        drop-shadow(0 0 5px #ff8800)
+        drop-shadow(0 0 5px red);
+    }
+
+    100%{
+        filter:
+        drop-shadow(0 0 3px #ff4500);
+    }
+}
+.waterAura{
+    animation: waterSparkle 1.5s infinite;
+}
+@keyframes waterSparkle{
+    0%{
+        filter:
+        drop-shadow(0 0 3px #00bfff);
+    }
+
+    50%{
+        filter:
+        drop-shadow(0 0 5px #00bfff)
+        drop-shadow(0 0 5px #00ffff)
+        drop-shadow(0 0 5px #0088ff);
+    }
+
+    100%{
+        filter:
+        drop-shadow(0 0 3px #00bfff);
+    }
+}
+.thunderAura{
+    animation: thunderSparkle 1.5s infinite;
+}
+@keyframes thunderSparkle{
+    0%{
+        filter:
+        drop-shadow(0 0 3px yellow);
+    }
+
+    50%{
+        filter:
+        drop-shadow(0 0 5px yellow)
+        drop-shadow(0 0 5px gold)
+        drop-shadow(0 0 5px orange);
+    }
+
+    100%{
+        filter:
+        drop-shadow(0 0 3px yellow);
+    }
+}
+
+.natureAura{
+    animation: natureSparkle 1.5s infinite;
+}
+
+@keyframes natureSparkle{
+    0%{
+        filter:
+        drop-shadow(0 0 5px #00ff66);
+    }
+
+    50%{
+        filter:
+        drop-shadow(0 0 5px #00ff66)
+        drop-shadow(0 0 5px #66ff99)
+        drop-shadow(0 0 5px #00cc44);
+    }
+
+    100%{
+        filter:
+        drop-shadow(0 0 5px #00ff66);
+    }
+}
+.darkAura{
+    animation: darkSparkle 1.5s infinite;
+}
+
+@keyframes darkSparkle{
+    0%{
+        filter:
+        drop-shadow(0 0 5px #aa00ff);
+    }
+
+    50%{
+        filter:
+        drop-shadow(0 0 5px #aa00ff)
+        drop-shadow(0 0 5px #ff00ff)
+        drop-shadow(0 0 5px #6600cc);
+    }
+
+    100%{
+        filter:
+        drop-shadow(0 0 5px #aa00ff);
+    }
+}
+.rainbowGlow{
+    animation: rainbowAura 2s linear infinite;
+}
+
+@keyframes rainbowAura{
+    0%{
+        filter:
+        drop-shadow(0 0 5px red)
+        drop-shadow(0 0 10px orange);
+    }
+
+    20%{
+        filter:
+        drop-shadow(0 0 5px yellow)
+        drop-shadow(0 0 10px lime);
+    }
+
+    40%{
+        filter:
+        drop-shadow(0 0 5px cyan)
+        drop-shadow(0 0 10px blue);
+    }
+
+    60%{
+        filter:
+        drop-shadow(0 0 5px violet)
+        drop-shadow(0 0 10px magenta);
+    }
+
+    80%{
+        filter:
+        drop-shadow(0 0 5px pink)
+        drop-shadow(0 0 10px gold);
+    }
+
+    100%{
+        filter:
+        drop-shadow(0 0 5px red)
+        drop-shadow(0 0 10px orange);
+    }
+}
+@keyframes rotateCircle{
+
+    from{
+        transform:
+        rotate(0deg);
+    }
+
+    to{
+        transform:
+        rotate(360deg);
+    }
+}
+
+.fireCircle::before{
+    background:
+    radial-gradient(
+        circle,
+        rgba(255,80,0,.4),
+        transparent 70%
+    );
+}
+
+.waterCircle::before{
+    background:
+    radial-gradient(
+        circle,
+        rgba(0,180,255,.4),
+        transparent 70%
+    );
+}
+
+.thunderCircle::before{
+    background:
+    radial-gradient(
+        circle,
+        rgba(255,255,0,.4),
+        transparent 70%
+    );
+}
+
+.natureCircle::before{
+    background:
+    radial-gradient(
+        circle,
+        rgba(0,255,100,.4),
+        transparent 70%
+    );
+}
+
+.darkCircle::before{
+    background:
+    radial-gradient(
+        circle,
+        rgba(180,0,255,.4),
+        transparent 70%
+    );
+}
+#monsterNameOverlay{
+    position:absolute;
+    top:15px;
+    left:15px;
+    z-index:10;
+
+    padding:8px 14px;
+
+    background:rgba(0,0,0,0.5);
+    border-radius:12px;
+
+    color:white;
+    font-size:24px;
+    font-weight:bold;
+
+    text-shadow:
+        0 0 8px #000,
+        0 0 15px #000;
+}
+
+.monster-container{
+    position:relative;
+}
+
+.monster-name{
+    position:absolute;
+    top:10px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:999;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+
+    width:90%;
+    max-width:420px;
+
+    color:white;
+    font-weight:bold;
+
+    background:rgba(0,0,0,.5);
+    padding:6px 12px;
+    border-radius:10px;
+
+    overflow:hidden;
+}
+
+#displayName{
+    font-family:"Yu Mincho",serif;
+    font-weight:900;
+
+    font-size:24px;
+
+    white-space:nowrap;
+
+    flex:1;
+    text-align:center;
+}
+#species{
+    display:none;
+}
+#nameLevel{
+    color:#ffd700;
+    font-size:20px;
+    font-weight:900;
+}
+.legendSparkle{
+    animation: legendSparkle 1.5s infinite;
+}
+
+@keyframes legendSparkle{
+    0%{
+        filter:
+        brightness(1)
+        drop-shadow(0 0 5px white);
+    }
+
+    50%{
+        filter:
+        brightness(1.3)
+        drop-shadow(0 0 15px white)
+        drop-shadow(0 0 30px gold);
+    }
+
+    100%{
+        filter:
+        brightness(1)
+        drop-shadow(0 0 5px white);
+    }
+}
+.status-overlay{
+
+    position:absolute;
+
+    left:0;
+    bottom:0;
+
+    width:100%;
+
+    padding:12px;
+
+    box-sizing:border-box;
+
+    background:
+    linear-gradient(
+        transparent,
+        rgba(0,0,0,.9)
+    );
+
+    z-index:50;
+}
+.status-label{
+
+    color:white;
+
+    font-weight:bold;
+
+    font-size:18px;
+
+    margin-bottom:5px;
+}
+
+.dex-item{
+
+    background:#222;
+
+    border-radius:12px;
+
+    padding:10px;
+
+    margin-bottom:10px;
+
+    text-align:center;
+
+    cursor:pointer;
+
+    transition:.2s;
+}
+
+.dex-item:hover{
+
+    background:#333;
+
+    transform:scale(1.02);
+}
+.dex-thumb{
+
+    width:100%;
+
+    height:120px;
+
+    object-fit:cover;
+
+    border-radius:10px;
+
+    margin-bottom:8px;
+}
+.sakuraGlow{
+    animation:sakuraAura 2.5s ease-in-out infinite;
+}
+@keyframes sakuraAura{
+
+    0%{
+        filter:
+        drop-shadow(0 0 5px #fff5fa)
+        drop-shadow(0 0 10px #ffd6ea);
+    }
+
+    50%{
+        filter:
+        drop-shadow(0 0 15px #ffffff)
+        drop-shadow(0 0 25px #ffd6ea)
+        drop-shadow(0 0 35px #ffb7d5);
+    }
+
+    100%{
+        filter:
+        drop-shadow(0 0 5px #fff5fa)
+        drop-shadow(0 0 10px #ffd6ea);
+    }
+}
+
+</style>
+
 </head>
 <body>
-  <canvas id="bgCanvas"></canvas>
-  <div class="bg"></div><div class="grid"></div><div class="glow g1"></div><div class="glow g2"></div>
-  <section class="hero">
-    <div class="badge">🚀 AI × GAME × EDUCATION</div>
-    <h1 class="title">AI PLAYGROUND</h1>
-    <p class="subtitle">AIを使ってゲームや教育コンテンツを制作する実験型クリエイティブポータル。<br>遊びながら学べる未来をつくる。</p>
-    <div class="cards">
-      <a href="sky/index.html" class="card sky-card"><div class="icon">🏝️</div><h3>SKY ISLAND</h3><p>七つの空島を巡るアクションRPG。<br>鍵・魔法陣・決闘空間・ボス戦を突破しよう。</p></a>
-      <a href="NEON/index.html" class="card"><div class="icon">⚡</div><h3>NEON STRIKER</h3><p>高速シューティング。<br>レーザー・ボム・斬り抜ける王道弾幕。</p></a>
-      <a href="NEONSURVIVOR/index.html" class="card"><div class="icon">🌀</div><h3>NEON SURVIVOR</h3><p>リップルで吸収進化。<br>7ステージ×ボス戦のサバイバル。</p></a>
-      <a href="uwasa7/index.html" class="card uwasa-card"><div class="icon">👻</div><h3>ウワサ撃退局</h3><p>ちょっとホラー＆アクション。<br>怪しいウワサの正体を暴いていこう。</p></a>
-      <a href="englishstudy/index.html" class="card"><div class="icon">📘</div><h3>ENGLISH STUDY</h3><p>AIに作らせた 英語学習コンテンツ。</p></a>
-      <a href="eiken2/index.html" class="card"><div class="icon">✍️</div><h3>EIKEN WRITING</h3><p>英検準2級に完全に振り切ったトレーニング。<br>英作文もある学習アプリ。</p></a>
-      <a href="cube/index.html" class="card"><div class="icon">🧊</div><h3>CUBE REVERSI 3D</h3><p>6面キューブで戦う立体リバーシ。<br>面をまたいで石を返す戦略ゲーム。</p></a>
-      <a href="fmonsters/index.html" class="card"><div class="icon">🐉</div><h3>fmonsters</h3><p>モンスター育成ゲーム<br>写真を撮って属性を決める。</p></a>
+
+<div class="game">
+<h1>フィギュアモンスターズ</h1>
+
+<input
+    id="nickname"
+    style="display:none;">
+
+<div class="monster-container">
+
+    <div class="monster-name">
+        <span id="displayName">たまご</span>
+        <span id="nameLevel">Lv.1</span>
     </div>
-  </section>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-  <script>
-    const canvas=document.getElementById("bgCanvas");
-    const scene=new THREE.Scene();
-    const camera=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,1000);camera.position.z=5;
-    const renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:true});
-    renderer.setSize(window.innerWidth,window.innerHeight);renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
-    const particlesGeometry=new THREE.BufferGeometry();const particlesCount=2000;const posArray=new Float32Array(particlesCount*3);
-    for(let i=0;i<particlesCount*3;i++)posArray[i]=(Math.random()-0.5)*20;
-    particlesGeometry.setAttribute("position",new THREE.BufferAttribute(posArray,3));
-    const particlesMaterial=new THREE.PointsMaterial({size:0.02,color:"#00ffff",transparent:true,opacity:0.8});
-    const particlesMesh=new THREE.Points(particlesGeometry,particlesMaterial);scene.add(particlesMesh);
-    let mouseX=0,mouseY=0;document.addEventListener("mousemove",event=>{mouseX=event.clientX/window.innerWidth-0.5;mouseY=event.clientY/window.innerHeight-0.5;});
-    function animate(){requestAnimationFrame(animate);particlesMesh.rotation.y+=0.001+mouseX*0.002;particlesMesh.rotation.x+=0.0005+mouseY*0.002;renderer.render(scene,camera);}animate();
-    window.addEventListener("resize",()=>{camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight);renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));});
-  </script>
+
+    <img
+        id="monsterImage"
+        src=""
+        alt="monster"
+        onclick="openMonsterImage()">
+<div class="status-overlay">
+
+    <div class="status-label">
+        満腹度 :
+        <span id="hungerText">50</span>%
+    </div>
+
+    <div class="bar">
+        <div class="fill"
+             id="hungerBar">
+        </div>
+    </div>
+
+    <div class="status-label">
+        経験値 :
+        <span id="expText">0</span>%
+    </div>
+
+    <div class="bar">
+        <div class="fill"
+             id="expBar">
+        </div>
+    </div>
+
+</div>
+
+</div>
+<div id="imageModal">
+
+<img
+id="fullMonsterImage">
+
+</div>
+<h2 id="species">たまご</h2>
+
+
+
+
+
+<div class="button-grid">
+
+<button
+class="feed"
+onclick="feed()">
+🍖 ごはん
+</button>
+
+<button
+class="train"
+onclick="train()">
+⚔️ 訓練
+</button>
+
+<button
+onclick="awaken()">
+💎 覚醒
+</button>
+
+<button
+onclick="rebirth()">
+🔄 転生
+</button>
+
+<button
+class="save"
+onclick="saveGame()">
+💾 保存
+</button>
+
+<button
+class="reset"
+onclick="resetGame()">
+🗑 初期化
+</button>
+
+</div>
+
+<div class="log" id="log">
+ようこそ！
+</div>
+
+<p>
+💎 覚醒石 :
+<span id="stoneText">0</span>
+</p>
+<p>
+🏆 転生ポイント :
+<span id="rebirthText">0</span>
+</p>
+<p>
+🏅 属性制覇率 :
+<span id="branchRate">
+0 / 5
+</span>
+</p>
+<p id="branchList"></p>
+
+
+<hr>
+
+<div id="rebirthSelect" style="display:none;">
+
+<h3>転生属性を選択</h3>
+
+<button onclick="selectBranch('fire')">
+🔥 火
+</button>
+
+<button onclick="selectBranch('water')">
+💧 水
+</button>
+
+<button onclick="selectBranch('thunder')">
+⚡ 雷
+</button>
+
+<button onclick="selectBranch('nature')">
+🌿 自然
+</button>
+
+<button onclick="selectBranch('dark')">
+🌙 闇
+</button>
+
+<button onclick="selectBranch('kami')">
+⛩ 神威
+</button>
+
+</div>
+
+
+<div
+id="monsterCard"
+class="monster-card"
+style="display:none;">
+
+
+<p id="cardRarity" class="rarity">
+★★★★★ SSR
+</p>
+
+<p id="cardElement">
+属性
+</p>
+
+<p id="cardType">
+タイプ
+</p>
+
+</div>
+
+<hr><div class="dex">
+<h3>📖 モンスター図鑑</h3>
+<p id="dexRate">
+0 / 30
+</p>
+<div id="dexList"></div>
+</div>
+
+</div>
+
+<script>
+const monsterImages = {
+
+0:"Images/Egg.jpg",
+1:"Images/Mini.jpg",
+2:"Images/Dragon.jpg",
+3:"Images/Astral.jpg",
+4:"Images/Ancient.jpg",
+
+5:"Images/frame.jpg",
+6:"Images/aqua.jpg",
+7:"Images/thunder.jpg",
+8:"Images/Forest.jpg",
+9:"Images/Shadow.jpg",
+
+10:"Images/Inferno.jpg",
+11:"Images/Leviathan.jpg",
+12:"Images/Lightning.jpg",
+13:"Images/Yggdrasil.jpg",
+14:"Images/Dark.jpg",
+
+15:"Images/Fire Emperor.jpg",
+16:"Images/Sea God.jpg",
+17:"Images/ThunderGod.jpg",
+18:"Images/WorldTree.jpg",
+19:"Images/Demon King.jpg",
+
+20:"Images/Phoenix.jpg",
+21:"Images/Poseidon.jpg",
+22:"Images/Zeus.jpg",
+23:"Images/Gaia.jpg",
+24:"Images/Lucifer.jpg",
+
+25:"Images/Amanomitsukai.jpg",
+26:"Images/Amenokaku.jpg",
+27:"Images/Takemikazuchi.jpg",
+28:"Images/Amaterasu.jpg",
+29:"Images/Amatsukami.jpg",
+};
+
+const monsters = [
+{name:"たまご",emoji:"🥚"},
+{name:"ミニドラ",emoji:"🐣"},
+{name:"ドラゴン",emoji:"🐉"},
+{name:"アストラルドラゴン",emoji:"🦄"},
+{name:"エンシェントドラゴン",emoji:"🐲"},
+
+{name:"フレイムロード",emoji:"🔥"},
+{name:"アクアロード",emoji:"💧"},
+{name:"サンダーロード",emoji:"⚡"},
+{name:"フォレストキング",emoji:"🌿"},
+{name:"シャドウロード",emoji:"🌙"},
+{name:"インフェルノドラゴン",emoji:"🔥"},
+{name:"リヴァイアサン",emoji:"🐋"},
+{name:"ライトニングロード",emoji:"⚡"},
+{name:"ユグドラシル",emoji:"🌳"},
+{name:"ダークエンペラー",emoji:"👿"},
+{name:"炎帝竜",emoji:"☀️"},
+{name:"海神竜",emoji:"🌊"},
+{name:"雷神竜",emoji:"⚡"},
+{name:"世界樹竜",emoji:"🌍"},
+{name:"魔王竜",emoji:"💀"},
+{name:"フェニックスロード",emoji:"🪽"},
+{name:"ポセイドンロード",emoji:"🔱"},
+{name:"ゼウスロード",emoji:"⚡"},
+{name:"ガイアロード",emoji:"🌎"},
+{name:"ルシファーロード",emoji:"😈"},
+{name:"天之御遣",emoji:"⛩"},
+{name:"天ノ迦久神",emoji:"⚔️"},
+{name:"建御雷神",emoji:"⚡"},
+{name:"天照大神",emoji:"☀️"},
+{name:"天津神",emoji:"🌸"},
+];
+
+const evolutionTable = [
+
+{
+    from:0,
+    level:3,
+    to:1,
+    text:"🐣 ミニドラに進化！"
+},
+
+{
+    from:1,
+    level:5,
+    to:2,
+    text:"🐉 ドラゴンに進化！"
+},
+
+{
+    from:2,
+    level:10,
+    to:3,
+    text:"🦄 アストラルドラゴンに進化！"
+},
+
+{
+    from:3,
+    level:15,
+    to:4,
+    text:"🐲 エンシェントドラゴンに進化！"
+}
+
+];
+
+const branchEvolutionTable = {
+
+fire:[
+
+{
+    from:4,
+    level:20,
+    to:5,
+    text:"🔥 フレイムロードに進化！"
+},
+
+{
+    from:5,
+    level:30,
+    to:10,
+    text:"🔥 インフェルノドラゴンに進化！"
+},
+
+{
+    from:10,
+    level:40,
+    to:15,
+    text:"☀️ 炎帝竜に進化！"
+},
+
+{
+    from:15,
+    level:50,
+    rarity:"★★★★★ SSR",
+    to:20,
+    text:"🪽 フェニックスロードに覚醒！"
+}
+
+],
+
+water:[
+
+{
+    from:4,
+    level:20,
+    to:6,
+    text:"💧 アクアロードに進化！"
+},
+
+{
+    from:6,
+    level:30,
+    to:11,
+    text:"🐋 リヴァイアサンに進化！"
+},
+
+{
+    from:11,
+    level:40,
+    to:16,
+    text:"🌊 海神竜に進化！"
+},
+
+{
+    from:16,
+    level:50,
+    rarity:"★★★★★ SSR",
+    to:21,
+    text:"🔱 ポセイドンロードに覚醒！"
+}
+
+],
+
+thunder:[
+
+{
+    from:4,
+    level:20,
+    to:7,
+    text:"⚡ サンダーロードに進化！"
+},
+
+{
+    from:7,
+    level:30,
+    to:12,
+    text:"⚡ ライトニングロードに進化！"
+},
+
+{
+    from:12,
+    level:40,
+    to:17,
+    text:"⚡ 雷神竜に進化！"
+},
+
+{
+    from:17,
+    level:50,
+    rarity:"★★★★★ SSR",
+    to:22,
+    text:"⚡ ゼウスロードに覚醒！"
+}
+
+],
+
+nature:[
+
+{
+    from:4,
+    level:20,
+    to:8,
+    text:"🌿 フォレストキングに進化！"
+},
+
+{
+    from:8,
+    level:30,
+    to:13,
+    text:"🌳 ユグドラシルに進化！"
+},
+
+{
+    from:13,
+    level:40,
+    to:18,
+    text:"🌍 世界樹竜に進化！"
+},
+
+{
+    from:18,
+    level:50,
+    rarity:"★★★★★ SSR",
+    to:23,
+    text:"🌎 ガイアロードに覚醒！"
+}
+
+],
+
+dark:[
+
+{
+    from:4,
+    level:20,
+    to:9,
+    text:"🌙 シャドウロードに進化！"
+},
+
+{
+    from:9,
+    level:30,
+    to:14,
+    text:"👿 ダークエンペラーに進化！"
+},
+
+{
+    from:14,
+    level:40,
+    to:19,
+    text:"💀 魔王竜に進化！"
+},
+
+{
+    from:19,
+    level:50,
+    rarity:"★★★★★ SSR",
+    to:24,
+    text:"😈 ルシファーロードに覚醒！"
+}
+
+],
+kami:[
+
+{
+    from:4,
+    level:20,
+    to:25,
+    text:"⛩ 天之御遣が降臨！"
+},
+
+{
+    from:25,
+    level:40,
+    to:26,
+    text:"⚔️ 天ノ迦久神へ進化！"
+},
+
+{
+    from:26,
+    level:60,
+    to:27,
+    text:"⚡ 建御雷神へ進化！"
+},
+
+{
+    from:27,
+    level:80,
+    to:28,
+    text:"☀️ 天照大神へ進化！"
+},
+
+{
+    from:28,
+    level:100,
+    to:29,
+    text:"🌸 天津神へ到達！"
+}
+
+]
+
+};
+
+let level = 1;
+let exp = 0;
+let hunger = 50;
+let stage = 0;
+let dex = [];
+let element = "";
+let buildType = "";
+let rarity = "★★ N";
+let branch = "";
+let awakeningStone = 0;
+let rebirthPoint = 0;
+let nextBranch = "";
+let completedBranches = [];
+
+function updateUI(){
+
+
+document.getElementById("nameLevel").innerText =
+"Lv." + level;
+document.getElementById("species").innerText =
+monsters[stage].name;
+const image =
+
+document.getElementById(
+    "monsterImage"
+);
+image.classList.remove(
+    "sparkle",
+    "fireAura",
+    "waterAura",
+    "thunderAura",
+    "natureAura",
+    "darkAura",
+    "fireGlow",
+    "waterGlow",
+    "thunderGlow",
+    "natureGlow",
+    "darkGlow",
+    "rainbowGlow",
+    "legendSparkle",
+    "sakuraGlow",
+);
+if(stage >= 10){
+
+    if(branch === "fire"){
+        image.classList.add("fireAura");
+    }
+
+    else if(branch === "water"){
+        image.classList.add("waterAura");
+    }
+
+    else if(branch === "thunder"){
+        image.classList.add("thunderAura");
+    }
+
+    else if(branch === "nature"){
+        image.classList.add("natureAura");
+    }
+
+    else if(branch === "dark"){
+        image.classList.add("darkAura");
+    }
+}
+if(stage >= 15 && stage < 20){
+    image.classList.add("legendSparkle");
+}
+if(stage >= 20){
+    image.classList.add("magicCircle");
+    image.classList.add("rainbowGlow");
+}
+if(stage >= 25){
+    image.classList.add("sakuraGlow");
+}
+else if(stage >= 20){
+    image.classList.add("rainbowGlow");
+}
+
+if(monsterImages[stage]){
+
+    image.src =
+    monsterImages[stage];
+
+}
+else{
+
+    image.src =
+    "images/egg.jpg";
+
+}
+
+document.getElementById("expBar").style.width =
+exp + "%";
+
+document.getElementById("hungerBar").style.width =
+hunger + "%";
+const hungerBar =
+document.getElementById("hungerBar");
+
+if(hunger > 50){
+
+    hungerBar.style.background =
+    "limegreen";
+
+}
+else if(hunger > 20){
+
+    hungerBar.style.background =
+    "orange";
+
+}
+else{
+
+    hungerBar.style.background =
+    "red";
+
+}
+
+document.getElementById("hungerText")
+.innerText = hunger;
+
+document.getElementById("expText")
+.innerText = exp;
+document.getElementById("stoneText")
+.innerText = awakeningStone;
+document.getElementById(
+    "rebirthText"
+).innerText = rebirthPoint;
+document.getElementById(
+    "branchRate"
+).innerText =
+
+completedBranches.length +
+" / 5";
+document.getElementById("displayName").innerText =
+monsters[stage].name;
+
+const name = document.getElementById("displayName");
+
+/* 属性色 */
+if(branch === "fire"){
+    name.style.color = "#ff5533";
+}
+else if(branch === "water"){
+    name.style.color = "#33ccff";
+}
+else if(branch === "thunder"){
+    name.style.color = "#ffd700";
+}
+else if(branch === "nature"){
+    name.style.color = "#66ff66";
+}
+else if(branch === "dark"){
+    name.style.color = "#cc66ff";
+}
+else{
+    name.style.color = "white";
+}
+
+if(rarity === "★★★★★ SSR"){
+    name.style.textShadow =
+        "0 0 10px gold, " +
+        "0 0 20px gold, " +
+        "0 0 40px orange";
+}
+else{
+    name.style.textShadow=
+        "0 0 10px black, " +
+        "0 0 20px black";
+}
+
+let nickname =
+monsters[stage].name;
+
+document.getElementById("displayName").innerText =
+
+monsters[stage].name;
+document.getElementById(
+    "dexRate"
+).innerText =
+
+dex.length +
+" / " +
+monsters.length;
+document.getElementById(
+    "branchList"
+).innerHTML = `
+${completedBranches.includes("fire") ? "✅" : "⬜"} 火<br>
+${completedBranches.includes("water") ? "✅" : "⬜"} 水<br>
+${completedBranches.includes("thunder") ? "✅" : "⬜"} 雷<br>
+${completedBranches.includes("nature") ? "✅" : "⬜"} 自然<br>
+${completedBranches.includes("dark") ? "✅" : "⬜"} 闇
+`;
+renderDex();
+}
+
+function log(text){
+document.getElementById("log").innerText = text;
+}
+
+function feed(){
+
+hunger += 10;
+
+if(hunger > 100){
+hunger = 100;
+}
+
+log("ごはんを食べた！");
+saveGame();
+updateUI();
+}
+
+function train(){
+
+    hunger = 100;
+
+    exp = 0;
+
+    level += 5;
+
+    awakeningStone += 10;
+
+    rarity = "★★★★★ SSR";
+
+    log(
+        "デバッグモード Lv" +
+        level
+    );
+
+    evolve();
+
+    saveGame();
+    updateUI();
+}
+function awaken(){
+
+    if(rarity === "★★★★★ SSR"){
+
+        log("すでにSSRです！");
+        return;
+    }
+
+    if(awakeningStone < 5){
+
+        log("覚醒石が足りません！");
+        return;
+    }
+
+    awakeningStone -= 5;
+
+    if(rarity === "★★ N"){
+
+        rarity = "★★★ R";
+    }
+    else if(rarity === "★★★ R"){
+
+        rarity = "★★★★ SR";
+    }
+    else if(rarity === "★★★★ SR"){
+
+        rarity = "★★★★★ SSR";
+    }
+
+    log("💎 覚醒成功！");
+
+    updateMonsterCard();
+
+    saveGame();
+    updateUI();
+}
+
+function rebirth(){
+
+    if(stage < 20){
+
+        log(
+            "神話モンスターでのみ転生できます！"
+        );
+
+        return;
+    }
+
+    const select =
+    document.getElementById(
+        "rebirthSelect"
+    );
+
+    select.style.display =
+    "block";
+
+    select.scrollIntoView({
+        behavior:"smooth",
+        block:"center"
+    });
+}
+
+function selectBranch(type){
+if(
+    type === "kami" &&
+    dex.length < 25
+){
+    log(
+        "📖 全図鑑コンプリートで解放"
+    );
+    return;
+}
+    nextBranch = type;
+
+    rebirthPoint++;
+
+    level = 1;
+    exp = 0;
+    hunger = 50;
+
+    stage = 0;
+
+    rarity = "★★ N";
+
+    const types = [
+
+    "パワー型",
+    "スピード型",
+    "防御型",
+    "回復型"
+
+];
+
+buildType =
+
+types[
+    Math.floor(
+        Math.random() *
+        types.length
+    )
+];
+
+    if(type === "fire"){
+
+        element = "🔥 火";
+        branch = "fire";
+    }
+    else if(type === "water"){
+
+        element = "💧 水";
+        branch = "water";
+    }
+    else if(type === "thunder"){
+
+        element = "⚡ 雷";
+        branch = "thunder";
+    }
+    else if(type === "nature"){
+
+        element = "🌿 自然";
+        branch = "nature";
+    }
+    else if(type === "dark"){
+
+        element = "🌙 闇";
+        branch = "dark";
+    }
+else if(type === "kami"){
+    element = "⛩ 神威";
+    branch = "kami";
+}
+
+    document.getElementById(
+        "rebirthSelect"
+    ).style.display = "none";
+
+    updateMonsterCard();
+
+    log(
+        "🔄 転生完了！"
+    );
+
+    saveGame();
+    updateUI();
+}
+function evolveWithEffect(
+    newStage,
+    message
+){
+
+    const monster =
+    document.getElementById(
+    "monsterImage"
+);
+
+    monster.classList.add(
+        "evolving"
+    );
+
+    log("✨✨✨進化中...✨✨✨");
+
+    setTimeout(() => {
+
+        stage = newStage;
+
+        unlockMonster(newStage);
+
+        monster.classList.remove(
+            "evolving"
+        );
+
+        log(message);
+if(newStage >= 20){
+
+    if(
+        !completedBranches.includes(
+            branch
+        )
+    ){
+
+        completedBranches.push(
+            branch
+        );
+    }
+
+}
+
+        saveGame();
+
+        updateUI();
+
+    }, 2000);
+
+}
+function evolve(){
+
+    const normalEvolution =
+    evolutionTable.find(e =>
+
+        e.from === stage &&
+        level >= e.level
+
+    );
+
+    if(normalEvolution){
+
+        evolveWithEffect(
+            normalEvolution.to,
+            normalEvolution.text
+        );
+
+        return;
+    }
+
+    const branchTable =
+    branchEvolutionTable[branch];
+
+    if(!branchTable){
+
+        return;
+    }
+
+    const branchEvolution =
+    branchTable.find(e => {
+
+        if(e.from !== stage){
+
+            return false;
+        }
+
+        if(level < e.level){
+
+            return false;
+        }
+
+        if(
+            e.rarity &&
+            rarity !== e.rarity
+        ){
+
+            return false;
+        }
+
+        return true;
+
+    });
+
+    if(!branchEvolution){
+
+        return;
+    }
+
+    evolveWithEffect(
+
+        branchEvolution.to,
+
+        branchEvolution.text
+
+    );
+
+}
+
+
+function unlockMonster(id){
+
+if(!dex.includes(id)){
+dex.push(id);
+}
+}
+function renderDex(){
+
+    let html = "";
+
+    dex.forEach(id => {
+
+        html += `
+        <div class="dex-item">
+
+            <a
+            onclick="showDexMonster(${id})"
+            style="
+                cursor:pointer;
+                color:white;
+                text-decoration:none;
+            ">
+
+            ${monsters[id].emoji}
+            ${monsters[id].name}
+
+            </a>
+
+        </div>
+        `;
+
+    });
+
+    if(html === ""){
+        html = "未発見";
+    }
+
+    document.getElementById(
+        "dexList"
+    ).innerHTML = html;
+}
+
+function showDexMonster(id){
+
+    const modal =
+    document.getElementById(
+        "imageModal"
+    );
+
+    const fullImage =
+    document.getElementById(
+        "fullMonsterImage"
+    );
+
+    fullImage.src =
+    monsterImages[id];
+
+    modal.style.display =
+    "flex";
+}
+
+function saveGame(){
+
+const saveData = {
+
+level,
+exp,
+hunger,
+awakeningStone,
+rebirthPoint,
+completedBranches,
+stage,
+dex,
+
+
+nickname:
+document.getElementById("nickname").value,
+
+element,
+rarity,
+branch,
+nextBranch,
+lastPlayed: Date.now()
+
+};
+localStorage.setItem(
+"figureMonsterSave",
+JSON.stringify(saveData)
+);
+}
+
+function loadGame(){
+
+    const raw =
+    localStorage.getItem(
+        "figureMonsterSave"
+    );
+
+if(!raw){
+rarity = "★★ N";
+    unlockMonster(0);
+
+    const branches = [
+        "fire",
+        "water",
+        "thunder",
+        "nature",
+        "dark"
+    ];
+
+    branch =
+    branches[
+        Math.floor(
+            Math.random() *
+            branches.length
+        )
+    ];
+
+    if(branch === "fire"){
+        element = "🔥 火";
+    }
+    else if(branch === "water"){
+        element = "💧 水";
+    }
+    else if(branch === "thunder"){
+        element = "⚡ 雷";
+    }
+    else if(branch === "nature"){
+        element = "🌿 自然";
+    }
+    else if(branch === "dark"){
+        element = "🌙 闇";
+    }
+
+    saveGame();
+
+    return;
+}
+
+
+const data =
+JSON.parse(raw);
+
+rarity =
+data.rarity || "";
+
+branch =
+data.branch || "";
+nextBranch =
+data.nextBranch || "";
+level = data.level;
+exp = data.exp;
+hunger = data.hunger;
+awakeningStone =
+data.awakeningStone || 0;
+
+rebirthPoint =
+data.rebirthPoint || 0;
+completedBranches =
+data.completedBranches || [];
+
+stage = data.stage;
+dex = data.dex || [0];
+
+const now = Date.now();
+
+const minutes =
+Math.floor(
+(now - data.lastPlayed) /
+60000
+);
+
+hunger -= minutes;
+
+if(hunger < 0){
+
+    hunger = 0;
+}
+
+document.getElementById("nickname").value =
+data.nickname || "";
+element =
+data.element || "";
+
+
+if(element){
+
+    updateMonsterCard();
+}
+
+
+log("セーブデータを読み込みました");
+}
+
+function resetGame(){
+
+if(confirm("データを削除しますか？")){
+
+localStorage.removeItem(
+"figureMonsterSave"
+);
+
+location.reload();
+}
+}
+function updateMonsterCard(){
+
+    const card =
+    document.getElementById("monsterCard");
+
+    card.style.display = "block";
+
+    card.className = "monster-card";
+
+    
+    document.getElementById("cardElement")
+    .innerText = element;
+
+    document.getElementById("cardType")
+    .innerText = buildType;
+
+    document.getElementById("cardRarity")
+    .innerText = rarity;
+
+    if(element.includes("火")){
+
+        card.classList.add("fire");
+
+    }else if(element.includes("水")){
+
+        card.classList.add("water");
+
+    }else if(element.includes("雷")){
+
+        card.classList.add("thunder");
+
+    }else if(element.includes("自然")){
+
+        card.classList.add("nature");
+
+    }else if(element.includes("闇")){
+
+        card.classList.add("dark");
+    }
+else if(element.includes("神威")){
+    card.classList.add("kami");
+}
+
+    const rarityLabel =
+    document.getElementById("cardRarity");
+
+    rarityLabel.className = "rarity";
+
+   if(rarity === "★★★★★ SSR"){
+
+    rarityLabel.classList.add("ssr");
+
+}
+else if(rarity === "★★★★ SR"){
+
+    rarityLabel.classList.add("sr");
+
+}
+else if(rarity === "★★★ R"){
+
+    rarityLabel.classList.add("r");
+
+}
+else{
+
+    rarityLabel.classList.add("n");
+
+}
+
+}
+function rarityUpgrade(){
+
+    const roll = Math.random();
+
+    if(rarity === "★★ N"){
+
+        if(roll < 0.6){
+
+            rarity = "★★★ R";
+
+            log("🌟 N → R に昇格！");
+        }
+    }
+
+    else if(rarity === "★★★ R"){
+
+        if(roll < 0.4){
+
+            rarity = "★★★★ SR";
+
+            log("✨ R → SR に昇格！");
+        }
+    }
+
+    else if(rarity === "★★★★ SR"){
+
+        if(roll < 0.05){
+
+            rarity = "★★★★★ SSR";
+
+            log("👑 SR → SSR に昇格！");
+        }
+    }
+
+    updateMonsterCard();
+}
+
+document
+.getElementById("nickname")
+.addEventListener("input",()=>{
+
+saveGame();
+updateUI();
+
+});
+
+setInterval(() => {
+
+    hunger--;
+
+    if(hunger < 0){
+
+        hunger = 0;
+    }
+
+    saveGame();
+    updateUI();
+
+}, 60000);
+function openMonsterImage(){
+
+    const modal =
+    document.getElementById(
+        "imageModal"
+    );
+
+    const fullImage =
+    document.getElementById(
+        "fullMonsterImage"
+    );
+
+    fullImage.src =
+    document.getElementById(
+        "monsterImage"
+    ).src;
+
+    modal.style.display =
+    "flex";
+}
+
+document
+.getElementById(
+    "imageModal"
+)
+.onclick = function(){
+
+    this.style.display =
+    "none";
+};
+loadGame();
+updateUI();
+
+</script>
+
 </body>
 </html>
