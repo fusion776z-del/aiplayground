@@ -131,7 +131,6 @@ input{
 
     border-radius:20px;
 
-    min-height:220px;
 text-align:center;
 }
 .fire{
@@ -155,6 +154,22 @@ text-align:center;
 .dark{
     background:linear-gradient(135deg,#41295a,#2f0743);
 }
+.kami{
+
+    background:
+    linear-gradient(
+        135deg,
+        #ffd6ea,
+        #ffc0cb,
+        #fff5fa
+    );
+
+    color:#7a2c4a;
+
+    box-shadow:
+    0 0 15px rgba(255,192,203,.8);
+}
+
 .rarity{
 
     font-size:20px;
@@ -423,38 +438,38 @@ text-align:center;
 @keyframes rainbowAura{
     0%{
         filter:
-        drop-shadow(0 0 20px red)
-        drop-shadow(0 0 40px orange);
+        drop-shadow(0 0 5px red)
+        drop-shadow(0 0 10px orange);
     }
 
     20%{
         filter:
-        drop-shadow(0 0 20px yellow)
-        drop-shadow(0 0 40px lime);
+        drop-shadow(0 0 5px yellow)
+        drop-shadow(0 0 10px lime);
     }
 
     40%{
         filter:
-        drop-shadow(0 0 20px cyan)
-        drop-shadow(0 0 40px blue);
+        drop-shadow(0 0 5px cyan)
+        drop-shadow(0 0 10px blue);
     }
 
     60%{
         filter:
-        drop-shadow(0 0 20px violet)
-        drop-shadow(0 0 40px magenta);
+        drop-shadow(0 0 5px violet)
+        drop-shadow(0 0 10px magenta);
     }
 
     80%{
         filter:
-        drop-shadow(0 0 20px pink)
-        drop-shadow(0 0 40px gold);
+        drop-shadow(0 0 5px pink)
+        drop-shadow(0 0 10px gold);
     }
 
     100%{
         filter:
-        drop-shadow(0 0 20px red)
-        drop-shadow(0 0 40px orange);
+        drop-shadow(0 0 5px red)
+        drop-shadow(0 0 10px orange);
     }
 }
 @keyframes rotateCircle{
@@ -672,6 +687,30 @@ text-align:center;
     border-radius:10px;
 
     margin-bottom:8px;
+}
+.sakuraGlow{
+    animation:sakuraAura 2.5s ease-in-out infinite;
+}
+@keyframes sakuraAura{
+
+    0%{
+        filter:
+        drop-shadow(0 0 5px #fff5fa)
+        drop-shadow(0 0 10px #ffd6ea);
+    }
+
+    50%{
+        filter:
+        drop-shadow(0 0 15px #ffffff)
+        drop-shadow(0 0 25px #ffd6ea)
+        drop-shadow(0 0 35px #ffb7d5);
+    }
+
+    100%{
+        filter:
+        drop-shadow(0 0 5px #fff5fa)
+        drop-shadow(0 0 10px #ffd6ea);
+    }
 }
 
 </style>
@@ -1211,7 +1250,8 @@ image.classList.remove(
     "natureGlow",
     "darkGlow",
     "rainbowGlow",
-    "legendSparkle"
+    "legendSparkle",
+    "sakuraGlow",
 );
 if(stage >= 10){
 
@@ -1242,6 +1282,13 @@ if(stage >= 20){
     image.classList.add("magicCircle");
     image.classList.add("rainbowGlow");
 }
+if(stage >= 25){
+    image.classList.add("sakuraGlow");
+}
+else if(stage >= 20){
+    image.classList.add("rainbowGlow");
+}
+
 if(monsterImages[stage]){
 
     image.src =
@@ -1906,6 +1953,9 @@ function updateMonsterCard(){
 
         card.classList.add("dark");
     }
+else if(element.includes("神威")){
+    card.classList.add("kami");
+}
 
     const rarityLabel =
     document.getElementById("cardRarity");
