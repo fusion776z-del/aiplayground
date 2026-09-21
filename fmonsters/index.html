@@ -822,6 +822,10 @@ onclick="resetGame()">
 🌙 闇
 </button>
 
+<button onclick="selectBranch('kami')">
+⛩ 神威
+</button>
+
 </div>
 
 
@@ -848,7 +852,7 @@ style="display:none;">
 <hr><div class="dex">
 <h3>📖 モンスター図鑑</h3>
 <p id="dexRate">
-0 / 27
+0 / 30
 </p>
 <div id="dexList"></div>
 </div>
@@ -886,8 +890,13 @@ const monsterImages = {
 21:"Images/Poseidon.jpg",
 22:"Images/Zeus.jpg",
 23:"Images/Gaia.jpg",
-24:"Images/Lucifer.jpg"
+24:"Images/Lucifer.jpg",
 
+25:"Images/Amanomitsukai.jpg",
+26:"Images/Amenokaku.jpg",
+27:"Images/Takemikazuchi.jpg",
+28:"Images/Amaterasu.jpg",
+29:"Images/Amatsukami.jpg",
 };
 
 const monsters = [
@@ -917,6 +926,11 @@ const monsters = [
 {name:"ゼウスロード",emoji:"⚡"},
 {name:"ガイアロード",emoji:"🌎"},
 {name:"ルシファーロード",emoji:"😈"},
+{name:"天之御遣",emoji:"⛩"},
+{name:"天ノ迦久神",emoji:"⚔️"},
+{name:"建御雷神",emoji:"⚡"},
+{name:"天照大神",emoji:"☀️"},
+{name:"天津神",emoji:"🌸"},
 ];
 
 const evolutionTable = [
@@ -971,14 +985,14 @@ fire:[
 
 {
     from:10,
-    level:50,
+    level:40,
     to:15,
     text:"☀️ 炎帝竜に進化！"
 },
 
 {
     from:15,
-    level:70,
+    level:50,
     rarity:"★★★★★ SSR",
     to:20,
     text:"🪽 フェニックスロードに覚醒！"
@@ -1004,14 +1018,14 @@ water:[
 
 {
     from:11,
-    level:50,
+    level:40,
     to:16,
     text:"🌊 海神竜に進化！"
 },
 
 {
     from:16,
-    level:70,
+    level:50,
     rarity:"★★★★★ SSR",
     to:21,
     text:"🔱 ポセイドンロードに覚醒！"
@@ -1037,14 +1051,14 @@ thunder:[
 
 {
     from:12,
-    level:50,
+    level:40,
     to:17,
     text:"⚡ 雷神竜に進化！"
 },
 
 {
     from:17,
-    level:70,
+    level:50,
     rarity:"★★★★★ SSR",
     to:22,
     text:"⚡ ゼウスロードに覚醒！"
@@ -1070,14 +1084,14 @@ nature:[
 
 {
     from:13,
-    level:50,
+    level:40,
     to:18,
     text:"🌍 世界樹竜に進化！"
 },
 
 {
     from:18,
-    level:70,
+    level:50,
     rarity:"★★★★★ SSR",
     to:23,
     text:"🌎 ガイアロードに覚醒！"
@@ -1103,17 +1117,55 @@ dark:[
 
 {
     from:14,
-    level:50,
+    level:40,
     to:19,
     text:"💀 魔王竜に進化！"
 },
 
 {
     from:19,
-    level:70,
+    level:50,
     rarity:"★★★★★ SSR",
     to:24,
     text:"😈 ルシファーロードに覚醒！"
+}
+
+],
+kami:[
+
+{
+    from:4,
+    level:60,
+    to:25,
+    text:"⛩ 天之御遣が降臨！"
+},
+
+{
+    from:25,
+    level:70,
+    to:26,
+    text:"⚔️ 天ノ迦久神へ進化！"
+},
+
+{
+    from:26,
+    level:80,
+    to:27,
+    text:"⚡ 建御雷神へ進化！"
+},
+
+{
+    from:27,
+    level:90,
+    to:28,
+    text:"☀️ 天照大神へ進化！"
+},
+
+{
+    from:28,
+    level:100,
+    to:29,
+    text:"🌸 天津神へ到達！"
 }
 
 ]
@@ -1410,7 +1462,15 @@ function rebirth(){
 }
 
 function selectBranch(type){
-
+if(
+    type === "kami" &&
+    dex.length < 25
+){
+    log(
+        "📖 全図鑑コンプリートで解放"
+    );
+    return;
+}
     nextBranch = type;
 
     rebirthPoint++;
@@ -1466,7 +1526,10 @@ types[
         element = "🌙 闇";
         branch = "dark";
     }
-
+else if(type === "kami"){
+    element = "⛩ 神威";
+    branch = "kami";
+}
 
     document.getElementById(
         "rebirthSelect"
