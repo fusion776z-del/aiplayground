@@ -590,7 +590,8 @@ font-size:30px;
         0px -2px 0 #000,
         2px  0px 0 #000,
        -2px  0px 0 #000;
-}#species{
+}
+#species{
     display:none;
 }
 #levelBadge{
@@ -628,25 +629,30 @@ font-size:30px;
 }
 
 @keyframes legendSparkle{
+
     0%{
         filter:
-        brightness(1)
-        drop-shadow(0 0 5px white);
+        brightness(1.05)
+        drop-shadow(0 0 10px white)
+        drop-shadow(0 0 20px white);
     }
 
     50%{
         filter:
-        brightness(1.3)
-        drop-shadow(0 0 15px white)
+        brightness(1.25)
+        drop-shadow(0 0 10px white)
+        drop-shadow(0 0 20px white)
         drop-shadow(0 0 30px gold);
     }
 
     100%{
         filter:
-        brightness(1)
-        drop-shadow(0 0 5px white);
+        brightness(1.05)
+        drop-shadow(0 0 10px white)
+        drop-shadow(0 0 20px white);
     }
 }
+
 .status-overlay{
 
     position:absolute;
@@ -889,7 +895,7 @@ onclick="resetGame()">
 <p>
 🏅 属性制覇率 :
 <span id="branchRate">
-0 / 5
+0 / 6
 </span>
 </p>
 <p id="branchList"></p>
@@ -1010,21 +1016,25 @@ const monsters = [
 {name:"サンダーロード",emoji:"⚡"},
 {name:"フォレストキング",emoji:"🌿"},
 {name:"シャドウロード",emoji:"🌙"},
+
 {name:"インフェルノドラゴン",emoji:"🔥"},
 {name:"リヴァイアサン",emoji:"🐋"},
 {name:"ライトニングロード",emoji:"⚡"},
 {name:"ユグドラシル",emoji:"🌳"},
 {name:"ダークエンペラー",emoji:"👿"},
+
 {name:"炎帝竜",emoji:"☀️"},
 {name:"海神竜",emoji:"🌊"},
 {name:"雷神竜",emoji:"⚡"},
 {name:"世界樹竜",emoji:"🌍"},
 {name:"魔王竜",emoji:"💀"},
+
 {name:"フェニックスロード",emoji:"🪽"},
 {name:"ポセイドンロード",emoji:"🔱"},
 {name:"ゼウスロード",emoji:"⚡"},
 {name:"ガイアロード",emoji:"🌎"},
 {name:"ルシファーロード",emoji:"😈"},
+
 {name:"天之御遣",emoji:"⛩"},
 {name:"天ノ迦久神",emoji:"⚔️"},
 {name:"建御雷神",emoji:"⚡"},
@@ -1429,7 +1439,7 @@ document.getElementById(
 ).innerText =
 
 completedBranches.length +
-" / 5";
+" / 6";
 document.getElementById("displayName").innerText =
 monsters[stage].name;
 
@@ -1457,9 +1467,9 @@ else{
 
 if(rarity === "★★★★★ SSR"){
     name.style.textShadow =
-        "0 0 10px gold, " +
-        "0 0 20px gold, " +
-        "0 0 40px orange";
+        "0 0 10px black, " +
+        "0 0 20px black, " +
+        "0 0 40px black";
 }
 else{
     name.style.textShadow=
@@ -1599,7 +1609,7 @@ if(
     dex.length < 25
 ){
     log(
-        "📖 全図鑑コンプリートで解放"
+        "📖 全属性図鑑コンプリートで解放"
     );
     return;
 }
