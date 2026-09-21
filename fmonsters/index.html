@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>フィギュアモンスターズ Ver0.7</title>
+<title>フィギュアモンスターズ Ver1.0</title>
 
 <style>
 body{
@@ -36,10 +36,7 @@ h1{
     white-space:nowrap;
 }
 
-.monster{
-    text-align:center;
-    font-size:150px;
-}
+
 
 .bar{
     height:20px;
@@ -1278,17 +1275,26 @@ if(stage >= 10){
 if(stage >= 15 && stage < 20){
     image.classList.add("legendSparkle");
 }
-if(stage >= 20){
-    image.classList.add("magicCircle");
-    image.classList.add("rainbowGlow");
-}
 if(stage >= 25){
-    image.classList.add("sakuraGlow");
+
+    image.classList.add(
+        "magicCircle"
+    );
+
+    image.classList.add(
+        "sakuraGlow"
+    );
 }
 else if(stage >= 20){
-    image.classList.add("rainbowGlow");
-}
 
+    image.classList.add(
+        "magicCircle"
+    );
+
+    image.classList.add(
+        "rainbowGlow"
+    );
+}
 if(monsterImages[stage]){
 
     image.src =
