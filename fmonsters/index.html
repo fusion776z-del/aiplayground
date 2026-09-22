@@ -1422,27 +1422,6 @@ document.getElementById("hungerBar")
 document.getElementById("shardText")
 .innerText = shard;
 
-const hungerBar =
-document.getElementById("hungerBar");
-
-if(hunger > 50){
-
-    hungerBar.style.background =
-    "limegreen";
-
-}
-else if(hunger > 20){
-
-    hungerBar.style.background =
-    "orange";
-
-}
-else{
-
-    hungerBar.style.background =
-    "red";
-
-}
 
 
 
@@ -1884,7 +1863,6 @@ const saveData = {
 level,
 exp,
 shard,
-hunger,
 awakeningStone,
 rebirthPoint,
 completedBranches,
@@ -1970,7 +1948,6 @@ data.nextBranch || "";
 level = data.level;
 exp = data.exp;
 shard = data.shard || 0;
-hunger = data.hunger;
 awakeningStone =
 data.awakeningStone || 0;
 
