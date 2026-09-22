@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>フィギュアモンスターズ Ver1.5</title>
+<title>フィギュアモンスターズ Ver1.6</title>
 
 <style>
 body{
@@ -178,7 +178,22 @@ text-align:center;
     color:#ffd700;
     text-shadow:0 0 10px gold;
 }
+.ur{
+    color:#00ffff;
+    text-shadow:
+        0 0 10px cyan,
+        0 0 20px cyan,
+        0 0 30px white;
+}
 
+.lr{
+    color:#ff4444;
+    text-shadow:
+        0 0 10px red,
+        0 0 20px gold,
+        0 0 40px white,
+        0 0 60px hotpink;
+}
 .sr{
     color:#ff66ff;
 }
@@ -806,10 +821,10 @@ text-align:center;
 </div>
 
 
-    <div class="status-label">
-        満腹度 :
-        <span id="hungerText">40</span>%
-    </div>
+   <div class="status-label">
+    💎 覚醒石のかけら :
+<span id="shardText">0</span>%
+</div>
 
     <div class="bar">
         <div class="fill"
@@ -848,7 +863,7 @@ id="fullMonsterImage">
 <button
 class="feed"
 onclick="feed()">
-🍖 ごはん
+💎 採掘
 </button>
 
 <button
@@ -865,18 +880,6 @@ onclick="awaken()">
 <button
 onclick="rebirth()">
 🔄 転生
-</button>
-
-<button
-class="save"
-onclick="saveGame()">
-💾 保存
-</button>
-
-<button
-class="reset"
-onclick="resetGame()">
-🗑 初期化
 </button>
 
 </div>
@@ -963,6 +966,15 @@ style="display:none;">
 <div id="dexList"></div>
 </div>
 
+<br>
+
+<button
+class="reset"
+onclick="resetGame()">
+🗑 初期化
+</button>
+
+</div>
 </div>
 
 <script>
@@ -1284,7 +1296,7 @@ kami:[
 
 let level = 1;
 let exp = 0;
-let hunger = 50;
+let shard = 0;
 let stage = 0;
 let dex = [];
 let element = "";
@@ -1295,6 +1307,7 @@ let awakeningStone = 0;
 let rebirthPoint = 0;
 let nextBranch = "";
 let completedBranches = [];
+
 
 function updateUI(){
 
@@ -1401,8 +1414,13 @@ else{
 document.getElementById("expBar").style.width =
 exp + "%";
 
-document.getElementById("hungerBar").style.width =
-hunger + "%";
+document.getElementById("hungerBar")
+.style.width = Math.min(shard,100) + "%";
+
+
+document.getElementById("shardText")
+.innerText = shard;
+
 const hungerBar =
 document.getElementById("hungerBar");
 
@@ -1425,8 +1443,7 @@ else{
 
 }
 
-document.getElementById("hungerText")
-.innerText = hunger;
+
 
 document.getElementById("expText")
 .innerText = exp;
@@ -1509,71 +1526,54 @@ document.getElementById("log").innerText = text;
 
 function feed(){
 
-hunger += 10;
+    awakeningStone++;
 
-if(hunger > 100){
-hunger = 100;
+    log("💎 覚醒石を1個入手！");
+
+    saveGame();
+    updateUI();
+
 }
-
-log("ごはんを食べた！");
-saveGame();
-updateUI();
-}
-
 function train(){
 
-    hunger = 100;
+    exp += 20;
+    shard += 20;
+    if(exp >= 100){
 
-    exp = 0;
+        exp -= 100;
+        level++;
 
-    level += 5;
+        log("🎉 Lv." + level + " に上がった！");
 
-    awakeningStone += 10;
+        evolve();
+    }
+    else{
 
-    rarity = "★★★★★ SSR";
+        log("⚔️ 訓練した！");
+    }
+while(shard >= 100){
 
-    log(
-        "デバッグモード Lv" +
-        level
-    );
+    shard -= 100;
+    awakeningStone++;
 
-    evolve();
+    log("💎 覚醒石を獲得！");
+}
+
 
     saveGame();
     updateUI();
 }
 function awaken(){
 
-    if(rarity === "★★★★★ SSR"){
-
-        log("すでにSSRです！");
-        return;
-    }
-
-    if(awakeningStone < 5){
+    if(awakeningStone < 10){
 
         log("覚醒石が足りません！");
         return;
     }
 
-    awakeningStone -= 5;
+    awakeningStone -= 10;
 
-    if(rarity === "★★ N"){
-
-        rarity = "★★★ R";
-    }
-    else if(rarity === "★★★ R"){
-
-        rarity = "★★★★ SR";
-    }
-    else if(rarity === "★★★★ SR"){
-
-        rarity = "★★★★★ SSR";
-    }
-
-    log("💎 覚醒成功！");
-
-    updateMonsterCard();
+    rarityUpgrade();
 
     saveGame();
     updateUI();
@@ -1777,14 +1777,24 @@ function evolve(){
             return false;
         }
 
-        if(
-            e.rarity &&
-            rarity !== e.rarity
-        ){
+if(e.rarity){
 
-            return false;
-        }
+    const rarityRank = {
+        "★★ N": 1,
+        "★★★ R": 2,
+        "★★★★ SR": 3,
+        "★★★★★ SSR": 4,
+        "★★★★★★ UR": 5,
+        "★★★★★★★ LR": 6
+    };
 
+    if(
+        rarityRank[rarity] <
+        rarityRank[e.rarity]
+    ){
+        return false;
+    }
+}
         return true;
 
     });
@@ -1872,6 +1882,7 @@ const saveData = {
 
 level,
 exp,
+shard,
 hunger,
 awakeningStone,
 rebirthPoint,
@@ -1957,6 +1968,7 @@ nextBranch =
 data.nextBranch || "";
 level = data.level;
 exp = data.exp;
+shard = data.shard || 0;
 hunger = data.hunger;
 awakeningStone =
 data.awakeningStone || 0;
@@ -1973,16 +1985,35 @@ const now = Date.now();
 
 const minutes =
 Math.floor(
-(now - data.lastPlayed) /
-60000
+    (now - data.lastPlayed) /
+    60000
 );
 
-hunger -= minutes;
+// オフライン経験値
+exp += minutes * 1;
 
-if(hunger < 0){
+// オフラインかけら
+shard += minutes * 1;
 
-    hunger = 0;
+while(shard >= 100){
+
+    shard -= 100;
+    awakeningStone++;
 }
+
+// Lvアップ処理
+while(exp >= 100){
+
+    exp -= 100;
+    level++;
+}
+
+ evolve();
+log(
+    "⏰ " +
+    minutes +
+    "分の放置経験値を獲得！"
+);
 
 document.getElementById("nickname").value =
 data.nickname || "";
@@ -2053,32 +2084,35 @@ else if(element.includes("神威")){
     card.classList.add("kami");
 }
 
-    const rarityLabel =
-    document.getElementById("cardRarity");
+const rarityLabel =
+document.getElementById("cardRarity");
 
-    rarityLabel.className = "rarity";
+rarityLabel.className = "rarity";
 
-   if(rarity === "★★★★★ SSR"){
+if(rarity === "★★★★★★★ LR"){
+
+    rarityLabel.classList.add("lr");
+}
+else if(rarity === "★★★★★★ UR"){
+
+    rarityLabel.classList.add("ur");
+}
+else if(rarity === "★★★★★ SSR"){
 
     rarityLabel.classList.add("ssr");
-
 }
 else if(rarity === "★★★★ SR"){
 
     rarityLabel.classList.add("sr");
-
 }
 else if(rarity === "★★★ R"){
 
     rarityLabel.classList.add("r");
-
 }
 else{
 
     rarityLabel.classList.add("n");
-
 }
-
 }
 function rarityUpgrade(){
 
@@ -2086,37 +2120,55 @@ function rarityUpgrade(){
 
     if(rarity === "★★ N"){
 
-        if(roll < 0.6){
-
-            rarity = "★★★ R";
-
-            log("🌟 N → R に昇格！");
-        }
+        rarity = "★★★ R";
+        log("🌟 N → R に昇格！");
     }
 
     else if(rarity === "★★★ R"){
 
-        if(roll < 0.4){
-
-            rarity = "★★★★ SR";
-
-            log("✨ R → SR に昇格！");
-        }
+        rarity = "★★★★ SR";
+        log("✨ R → SR に昇格！");
     }
 
     else if(rarity === "★★★★ SR"){
 
+        rarity = "★★★★★ SSR";
+        log("👑 SR → SSR に昇格！");
+    }
+
+    else if(rarity === "★★★★★ SSR"){
+
+        if(roll < 0.20){
+
+            rarity = "★★★★★★ UR";
+            log("💎 SSR → UR に昇格！！");
+        }
+        else{
+
+            log("💥 昇格失敗...");
+        }
+    }
+
+    else if(rarity === "★★★★★★ UR"){
+
         if(roll < 0.05){
 
-            rarity = "★★★★★ SSR";
-
-            log("👑 SR → SSR に昇格！");
+            rarity = "★★★★★★★ LR";
+            log("🌈 UR → LR に昇格！！！");
         }
+        else{
+
+            log("💥 昇格失敗...");
+        }
+    }
+
+    else if(rarity === "★★★★★★★ LR"){
+
+        log("🏆 既に最高レアです！");
     }
 
     updateMonsterCard();
 }
-
 document
 .getElementById("nickname")
 .addEventListener("input",()=>{
@@ -2128,17 +2180,32 @@ updateUI();
 
 setInterval(() => {
 
-    hunger--;
+    exp += 5;
+    shard += 5;
 
-    if(hunger < 0){
+    while(shard >= 100){
 
-        hunger = 0;
+        shard -= 100;
+        awakeningStone++;
+
+        log("💎 覚醒石を獲得！");
+    }
+
+    if(exp >= 100){
+
+        exp -= 100;
+        level++;
+
+        log("⏰ 時間経過でLvアップ！");
+
+        evolve();
     }
 
     saveGame();
     updateUI();
 
 }, 60000);
+
 function openMonsterImage(){
 
     const modal =
