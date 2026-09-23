@@ -1496,22 +1496,45 @@ else if(branch === "nature"){
 else if(branch === "dark"){
     name.style.color = "#cc66ff";
 }
+else if(branch === "kami"){
+ 
+    name.style.color = "#ffffff";
+ 
+    name.style.textShadow =
+        "2px 2px 0 #ffd700," +
+        "-2px 2px 0 #ffd700," +
+        "2px -2px 0 #ffd700," +
+        "-2px -2px 0 #ffd700," +
+        "0 0 10px #fff," +
+        "0 0 20px #ffd700," +
+        "0 0 30px #ffd700";
+}
+
 else{
     name.style.color = "white";
 }
 
-if(rarity === "★★★★★ SSR"){
+if(branch === "kami"){
     name.style.textShadow =
-        "0 0 10px black, " +
-        "0 0 20px black, " +
+        "2px 2px 0 #ffd700," +
+        "-2px 2px 0 #ffd700," +
+        "2px -2px 0 #ffd700," +
+        "-2px -2px 0 #ffd700," +
+        "0 0 10px #fff," +
+        "0 0 20px #ffd700," +
+        "0 0 30px #ffd700";
+}
+else if(rarity === "★★★★★ SSR"){
+    name.style.textShadow =
+        "0 0 10px black," +
+        "0 0 20px black," +
         "0 0 40px black";
 }
 else{
-    name.style.textShadow=
-        "0 0 10px black, " +
+    name.style.textShadow =
+        "0 0 10px black," +
         "0 0 20px black";
 }
-
 let nickname =
 monsters[stage].name;
 
