@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>フィギュアモンスターズ Ver1.6</title>
+<title>フィギュアモンスターズ Ver1.7</title>
 
 <style>
 body{
@@ -188,13 +188,17 @@ text-align:center;
 }
 
 .lr{
-    color:#ff4444;
+    color:#ffffff;
+
     text-shadow:
-        0 0 10px red,
-        0 0 20px gold,
-        0 0 40px white,
-        0 0 60px hotpink;
+        0 0 5px #000,
+        0 0 10px #ffd700,
+        0 0 20px #ffd700,
+        0 0 30px #ffae00;
+
+    font-weight:900;
 }
+
 .sr{
     color:#ff66ff;
 }
@@ -894,8 +898,17 @@ onclick="rebirth()">
 <span id="stoneText">0</span>
 </p>
 <p>
-🏆 転生ポイント :
-<span id="rebirthText">0</span>
+🏆 育成ボーナス :
+<span id="bonusText">0</span>%
+<br>
+転生回数 :
+<span id="rebirthCountText">0</span>回
+<br>
+UR達成 :
+<span id="urText">0</span>回
+<br>
+LR達成 :
+<span id="lrText">0</span>回
 </p>
 <p>
 🏅 属性制覇率 :
@@ -1305,6 +1318,10 @@ let buildType = "";
 let rarity = "★★ N";
 let branch = "";
 let awakeningStone = 0;
+let rebirthCount = 0;
+let urCount = 0;
+let lrCount = 0;
+let bonusRate = 0;
 let rebirthPoint = 0;
 let nextBranch = "";
 let completedBranches = [];
@@ -1413,28 +1430,48 @@ else{
 }
 
 document.getElementById("expBar").style.width =
-exp + "%";
+Math.round(exp) + "%";
+
 
 document.getElementById("hungerBar")
 .style.width = Math.min(shard,100) + "%";
 
 
 document.getElementById("shardText")
-.innerText = shard;
-
-
-
+.innerText = Math.round(shard);
 
 document.getElementById("expText")
-.innerText = exp;
+.innerText = Math.round(exp);
+
 document.getElementById("stoneText")
 .innerText = awakeningStone;
+document.getElementById("bonusText")
+.innerText = bonusRate;
+
+document.getElementById("urText")
+.innerText = urCount;
+
+document.getElementById("lrText")
+.innerText = lrCount;
+document.getElementById(
+    "rebirthCountText"
+).innerText = rebirthCount;
+
+const rebirth =
 document.getElementById(
     "rebirthText"
-).innerText = rebirthPoint;
+);
+
+if(rebirth){
+    rebirth.innerText =
+    rebirthPoint;
+}
+
 document.getElementById(
     "branchRate"
 ).innerText =
+
+
 
 completedBranches.length +
 " / 6";
@@ -1516,9 +1553,11 @@ function feed(){
 }
 function train(){
 
-    exp += 20;
-    shard += 20;
-    if(exp >= 100){
+const trainGain =
+20 * (1 + bonusRate / 100);
+
+exp += trainGain;
+shard += trainGain;    if(exp >= 100){
 
         exp -= 100;
         level++;
@@ -1545,13 +1584,13 @@ while(shard >= 100){
 }
 function awaken(){
 
-    if(awakeningStone < 10){
+    if(awakeningStone < 2){
 
         log("覚醒石が足りません！");
         return;
     }
 
-    awakeningStone -= 10;
+    awakeningStone -= 2;
 
     rarityUpgrade();
 
@@ -1595,8 +1634,8 @@ if(
     return;
 }
     nextBranch = type;
-
-    rebirthPoint++;
+    rebirthCount++;
+    bonusRate += 1;
 
     level = 1;
     exp = 0;
@@ -1868,7 +1907,10 @@ rebirthPoint,
 completedBranches,
 stage,
 dex,
-
+rebirthCount,
+bonusRate,
+urCount,
+lrCount,
 
 nickname:
 document.getElementById("nickname").value,
@@ -1928,7 +1970,7 @@ rarity = "★★ N";
     else if(branch === "dark"){
         element = "🌙 闇";
     }
-
+    updateMonsterCard();
     saveGame();
 
     return;
@@ -1938,6 +1980,16 @@ rarity = "★★ N";
 const data =
 JSON.parse(raw);
 
+rebirthCount =
+data.rebirthCount || 0;
+bonusRate =
+data.bonusRate || 0;
+
+urCount =
+data.urCount || 0;
+
+lrCount =
+data.lrCount || 0;
 rarity =
 data.rarity || "";
 
@@ -1967,11 +2019,11 @@ Math.floor(
     60000
 );
 
-// オフライン経験値
-exp += minutes * 1;
+const offlineGain =
+minutes * (1 + bonusRate / 100);
 
-// オフラインかけら
-shard += minutes * 1;
+exp += offlineGain;
+shard += offlineGain;
 
 while(shard >= 100){
 
@@ -2119,6 +2171,8 @@ function rarityUpgrade(){
         if(roll < 0.20){
 
             rarity = "★★★★★★ UR";
+urCount++;
+bonusRate += 1;
             log("💎 SSR → UR に昇格！！");
         }
         else{
@@ -2132,6 +2186,8 @@ function rarityUpgrade(){
         if(roll < 0.05){
 
             rarity = "★★★★★★★ LR";
+lrCount++;
+bonusRate += 2;
             log("🌈 UR → LR に昇格！！！");
         }
         else{
@@ -2158,9 +2214,11 @@ updateUI();
 
 setInterval(() => {
 
-    exp += 5;
-    shard += 5;
+const gain =
+5 * (1 + bonusRate / 100);
 
+exp += gain;
+shard += gain;
     while(shard >= 100){
 
         shard -= 100;
