@@ -598,7 +598,7 @@ text-align:center;
     color:white;
     font-weight:900;
 
-    font-size:clamp(24px, 6vw, 30px);
+    font-size:clamp(18px, 5vw, 28px);
     white-space:nowrap;
     overflow:hidden;
 
@@ -616,35 +616,27 @@ text-align:center;
     display:none;
 }
 #levelBadge{
-
     position:absolute;
+    top:-5px;
+    right:10px;
 
-    top:-10px;
-    right:20px;
+    font-size:clamp(14px,4vw,22px);
 
-    z-index:999;
+    padding:4px 8px;
 
-    background:
-    rgba(0,0,0,.7);
-
+    text-align:right;
     color:#ffd700;
-
-    font-size:28px;
-
     font-weight:900;
 
-    padding:
-    6px 14px;
+    background:rgba(0,0,0,.7);
 
-    border-radius:12px;
+    border-radius:10px;
+    border:2px solid gold;
 
     text-shadow:
+        0 0 4px gold,
         0 0 8px gold;
-
-    border:
-        2px solid gold;
 }
-
 .legendSparkle{
     animation: legendSparkle 1.5s infinite;
 }
@@ -827,7 +819,7 @@ text-align:center;
 
 
    <div class="status-label">
-    💎 覚醒石のかけら :
+    覚醒石のかけら :
 <span id="shardText">0</span>%
 </div>
 
@@ -1662,7 +1654,7 @@ if(
 
     level = 1;
     exp = 0;
-    hunger = 50;
+   
 
     stage = 0;
 
