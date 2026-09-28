@@ -1466,7 +1466,7 @@ document.getElementById(
 
 
 completedBranches.length +
-" / 6";
+" / 5";
 document.getElementById("displayName").innerText =
 monsters[stage].name;
 
@@ -1641,7 +1641,7 @@ function rebirth(){
 function selectBranch(type){
 if(
     type === "kami" &&
-    dex.length < 25
+    completedBranches.length < 5
 ){
     log(
         "📖 全属性図鑑コンプリートで解放"
