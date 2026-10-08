@@ -598,7 +598,7 @@ text-align:center;
     color:white;
     font-weight:900;
 
-    font-size:clamp(18px, 5vw, 28px);
+    font-size:clamp(24px, 6vw, 30px);
     white-space:nowrap;
     overflow:hidden;
 
@@ -616,27 +616,35 @@ text-align:center;
     display:none;
 }
 #levelBadge{
+
     position:absolute;
-    top:-5px;
-    right:10px;
 
-    font-size:clamp(14px,4vw,22px);
+    top:-10px;
+    right:20px;
 
-    padding:4px 8px;
+    z-index:999;
 
-    text-align:right;
+    background:
+    rgba(0,0,0,.7);
+
     color:#ffd700;
+
+    font-size:28px;
+
     font-weight:900;
 
-    background:rgba(0,0,0,.7);
+    padding:
+    6px 14px;
 
-    border-radius:10px;
-    border:2px solid gold;
+    border-radius:12px;
 
     text-shadow:
-        0 0 4px gold,
         0 0 8px gold;
+
+    border:
+        2px solid gold;
 }
+
 .legendSparkle{
     animation: legendSparkle 1.5s infinite;
 }
@@ -819,7 +827,7 @@ text-align:center;
 
 
    <div class="status-label">
-    覚醒石のかけら :
+    💎 覚醒石のかけら :
 <span id="shardText">0</span>%
 </div>
 
@@ -1466,7 +1474,7 @@ document.getElementById(
 
 
 completedBranches.length +
-" / 5";
+" / 6";
 document.getElementById("displayName").innerText =
 monsters[stage].name;
 
@@ -1569,7 +1577,7 @@ function feed(){
 function train(){
 
 const trainGain =
-20 * (1 + bonusRate / 100);
+30 * (1 + bonusRate / 100);
 
 exp += trainGain;
 shard += trainGain;    if(exp >= 100){
@@ -1641,7 +1649,7 @@ function rebirth(){
 function selectBranch(type){
 if(
     type === "kami" &&
-    completedBranches.length < 5
+    dex.length < 25
 ){
     log(
         "📖 全属性図鑑コンプリートで解放"
@@ -1650,7 +1658,7 @@ if(
 }
     nextBranch = type;
     rebirthCount++;
-    bonusRate += 1;
+    bonusRate += 5;
 
     level = 1;
     exp = 0;
@@ -2037,7 +2045,14 @@ Math.floor(
 const offlineGain =
 minutes * (1 + bonusRate / 100);
 
-exp += offlineGain;
+// 経験値減少
+exp -= minutes * 3;
+
+if(exp < 0){
+    exp = 0;
+}
+
+// かけら増加
 shard += offlineGain;
 
 while(shard >= 100){
@@ -2229,31 +2244,29 @@ updateUI();
 
 setInterval(() => {
 
+// 経験値減少
+exp -= 3;
+
+if(exp < 0){
+    exp = 0;
+}
+
+// かけら増加
 const gain =
 5 * (1 + bonusRate / 100);
 
-exp += gain;
 shard += gain;
-    while(shard >= 100){
 
-        shard -= 100;
-        awakeningStone++;
+while(shard >= 100){
 
-        log("💎 覚醒石を獲得！");
-    }
+    shard -= 100;
+    awakeningStone++;
 
-    if(exp >= 100){
+    log("💎 覚醒石を獲得！");
+}
 
-        exp -= 100;
-        level++;
-
-        log("⏰ 時間経過でLvアップ！");
-
-        evolve();
-    }
-
-    saveGame();
-    updateUI();
+saveGame();
+updateUI();
 
 }, 60000);
 
